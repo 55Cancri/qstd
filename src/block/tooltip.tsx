@@ -25,9 +25,18 @@ export const TooltipContainer = React.forwardRef<
   HTMLDivElement,
   _t.BaseBlockProps
 >(function TooltipContainer(props, ref) {
-  const { children, ...rest } = props;
+  const { children, className, style, ...rest } = props;
+
+  // Pass through Panda props as-is - consumer's Panda will handle them
+  // Use style prop for any inline styling needs
   return (
-    <Base {...rest} ref={ref as any} role="tooltip">
+    <Base
+      className={className}
+      style={style}
+      ref={ref as any}
+      role="tooltip"
+      {...rest}
+    >
       {children}
     </Base>
   );
@@ -123,10 +132,10 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
   const arrowAnchorStyle: React.CSSProperties = side.startsWith("top")
     ? { bottom: -anchorOffset }
     : side.startsWith("bottom")
-      ? { top: -anchorOffset }
-      : side.startsWith("left")
-        ? { right: -anchorOffset }
-        : { left: -anchorOffset };
+    ? { top: -anchorOffset }
+    : side.startsWith("left")
+    ? { right: -anchorOffset }
+    : { left: -anchorOffset };
   const arrowStyle: React.CSSProperties =
     side.startsWith("top") || side.startsWith("bottom")
       ? { left: arrowX || undefined, ...arrowAnchorStyle }
@@ -134,12 +143,12 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
   const transformOrigin = side.startsWith("top")
     ? "center bottom"
     : side.startsWith("bottom")
-      ? "center top"
-      : side.startsWith("left")
-        ? "right center"
-        : side.startsWith("right")
-          ? "left center"
-          : "center";
+    ? "center top"
+    : side.startsWith("left")
+    ? "right center"
+    : side.startsWith("right")
+    ? "left center"
+    : "center";
 
   // wrapper for children to get reference element
   // Handle case where children might be a complex structure
@@ -334,60 +343,73 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
 
     // NOTES ON DEFAULTS vs PANDA OVERRIDES (custom path)
     // - We want sensible defaults, but Panda props must be able to override them.
-    // - Inline styles would beat Panda classes, so we avoid inline visual defaults.
-    // - Instead, we provide default Panda props only when the child hasn't set them.
-    //   This keeps the child as the sole visual surface and preserves overrideability.
-    const defaultPandaProps: Record<string, any> = {};
+    // - Use inline styles for defaults to avoid css() class name escaping issues with special characters.
+    // - Consumers can still override with Panda props (which get scanned by their Panda instance).
+    const defaultStyles: React.CSSProperties = {};
     if (
       childProps.bg === undefined &&
       childProps.background === undefined &&
       !(childProps.style?.background || childProps.style?.backgroundColor)
     ) {
-      defaultPandaProps.bg = "rgba(20,20,20,0.95)";
+      defaultStyles.background = "rgba(20,20,20,0.95)";
     }
     if (childProps.color === undefined && !childProps.style?.color) {
-      defaultPandaProps.color = "white";
+      defaultStyles.color = "white";
     }
     const hasPadding =
       childProps.p !== undefined ||
       childProps.padding !== undefined ||
       childProps.px !== undefined ||
       childProps.py !== undefined ||
-      childProps.style?.padding !== undefined;
+      childProps.paddingLeft !== undefined ||
+      childProps.paddingRight !== undefined ||
+      childProps.paddingTop !== undefined ||
+      childProps.paddingBottom !== undefined ||
+      childProps.style?.padding !== undefined ||
+      childProps.style?.paddingLeft !== undefined ||
+      childProps.style?.paddingRight !== undefined ||
+      childProps.style?.paddingTop !== undefined ||
+      childProps.style?.paddingBottom !== undefined;
     if (!hasPadding) {
-      defaultPandaProps.px = "10px";
-      defaultPandaProps.py = "8px";
+      defaultStyles.paddingLeft = "10px"; // 2.5 * 4px
+      defaultStyles.paddingRight = "10px";
+      defaultStyles.paddingTop = "8px"; // 2 * 4px
+      defaultStyles.paddingBottom = "8px";
     }
     if (
       childProps.borderRadius === undefined &&
       childProps.rounded === undefined &&
       childProps.style?.borderRadius === undefined
     ) {
-      defaultPandaProps.borderRadius = 6;
+      defaultStyles.borderRadius = "6px";
     }
     if (
       childProps.boxShadow === undefined &&
       childProps.shadow === undefined &&
       childProps.style?.boxShadow === undefined
     ) {
-      defaultPandaProps.boxShadow = "0 6px 18px rgba(0,0,0,0.18)";
+      defaultStyles.boxShadow = "0 6px 18px rgba(0,0,0,0.18)";
     }
     if (
       childProps.fontSize === undefined &&
       childProps.style?.fontSize === undefined
     ) {
-      defaultPandaProps.fontSize = 13;
+      defaultStyles.fontSize = "13px";
     }
 
-    // Merge className for custom element
+    // Merge className for custom element (no defaultsClassName needed - using inline styles)
     const mergedClassName = [childProps.className, className ?? "tooltip-root"]
       .filter(Boolean)
       .join(" ");
+
+    // Merge inline styles
+    const mergedStyle = { ...defaultStyles, ...childProps.style };
 
     // Compose event handlers
     const combinedProps: Record<string, any> = {
       ...childProps,
       ...floatingProps,
+      style: mergedStyle,
     };
 
     Object.keys(floatingProps).forEach((key) => {
@@ -472,14 +494,14 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
           return React.cloneElement(
             el,
             {
-              // Put default Panda props first, so explicit child Panda props overwrite them
-              ...defaultPandaProps,
+              // Spread childProps first
               ...childProps,
               ref: mergedChildRef as any,
+              // Then override className with merged value (must be after ...childProps)
               className: mergedClassName,
               style: {
-                // Keep visuals on the child so Panda can override
-                ...(childProps.style || {}),
+                // Apply inline defaults first, then user styles, then position
+                ...mergedStyle,
                 position: "relative",
               },
             },

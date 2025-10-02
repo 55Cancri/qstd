@@ -172,6 +172,13 @@ export default defineConfig({
     "react-dom",
     "react/jsx-runtime",
 
+    // PANDA CSS (consumer's Panda installation)
+    // Keep as external so imports resolve to consumer's styled-system at runtime
+    "panda/css",
+    "panda/jsx",
+    "panda/patterns",
+    "panda/tokens",
+
     // DEPENDENCIES (auto-installed, but kept external for optimal bundling)
     "framer-motion",
     "@floating-ui/react",

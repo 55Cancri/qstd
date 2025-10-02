@@ -29,7 +29,8 @@
       "types": "./dist/preset/index.d.ts",
       "import": "./dist/preset/index.js",
       "require": "./dist/preset/index.cjs"
-    }
+    },
+    "./react/styles.css": "./dist/react/index.css"
   },
   "files": [
     "dist",
@@ -37,8 +38,11 @@
     "README.md",
     "CHANGELOG.md"
   ],
+  "sideEffects": [
+    "dist/react/index.css"
+  ],
   "scripts": {
-    "build": "panda codegen && tsup",
+    "build": "panda codegen && panda cssgen && tsup && node scripts/inject-css-import.js",
     "dev": "tsup --watch",
     "prepublishOnly": "pnpm build",
     "test": "vitest run",

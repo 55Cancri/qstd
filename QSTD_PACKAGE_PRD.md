@@ -218,7 +218,8 @@ import { defineConfig } from "@pandacss/dev";
 import qstdPreset from "qstd/preset";
 
 export default defineConfig({
-  presets: [qstdPreset],
+  // IMPORTANT: Include base preset first to get Panda's default colors
+  presets: ["@pandacss/dev/presets", qstdPreset],
 
   include: ["./src/**/*.{ts,tsx}"],
 

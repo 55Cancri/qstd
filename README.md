@@ -88,8 +88,11 @@ import { defineConfig } from "@pandacss/dev";
 import qstdPreset from "qstd/preset";
 
 export default defineConfig({
-  presets: [qstdPreset],
+  // IMPORTANT: Include base preset to get default colors (neutral, red, blue, etc.)
+  presets: ["@pandacss/dev/presets", qstdPreset],
+
   include: ["./src/**/*.{ts,tsx}"],
+
   theme: {
     extend: {
       // Your custom theme

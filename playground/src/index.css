@@ -1,0 +1,41 @@
+/*
+ * CSS Layer Declaration for Panda CSS
+ * 
+ * CRITICAL: This @layer declaration defines the cascade order for Panda CSS.
+ * Order matters: reset < base < tokens < recipes < utilities (lowest to highest priority)
+ * 
+ * WHY LAYERS ARE REQUIRED:
+ * - CSS rules OUTSIDE of @layer have HIGHER specificity than rules inside layers
+ * - Even if a selector is more specific, unlayered CSS beats layered CSS
+ * 
+ * WHAT HAPPENS WITHOUT @layer:
+ * Example issue we encountered:
+ *   * { padding: 0; }  ← Outside layer = highest priority
+ *   .px_6 { padding-inline: 1.5rem; }  ← Inside @layer utilities = BLOCKED!
+ * 
+ * Result: Padding utilities don't work because the reset overrides them!
+ * 
+ * THE FIX:
+ * Wrap your resets/base styles in the appropriate layers so Panda's utilities
+ * can override them as intended.
+ */
+@layer reset, base, tokens, recipes, utilities;
+
+@layer reset {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--colors-neutral-100);
+  color: var(--colors-neutral-900);
+}
+
+[data-theme="dark"] body {
+  background: var(--colors-neutral-800);
+  color: var(--colors-neutral-100);
+}

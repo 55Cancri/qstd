@@ -4,6 +4,7 @@ import * as mmb from "music-metadata-browser";
 import { IconDefinition, IconName } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { RotatingLines } from "react-loader-spinner";
+import { css } from "panda/css";
 
 import * as _l from "./literals";
 import * as _t from "./types";
@@ -279,18 +280,34 @@ export const extractElAndStyles = (
 
   const cursor = anyProps.isLoading ? "not-allowed" : "pointer";
 
-  const btnProps =
-    extract.is === "btn" ? { display: "flex", alignI: "center", cursor } : {};
-  const linkProps = extract.isLink
-    ? {
+  // Generate CSS classes at runtime using css() function
+  const btnClassName =
+    extract.is === "btn"
+      ? css({ display: "flex", alignI: "center", cursor })
+      : "";
+
+  const linkClassName = extract.isLink
+    ? css({
         color: { base: "blue.500", _dark: "blue.400" },
         _hover: { textDecoration: "underline" },
         cursor,
-      }
-    : {};
+      })
+    : "";
+
+  // Merge classNames with any existing className from props
+  const mergedClassName = [btnClassName, linkClassName, anyProps.className]
+    .filter(Boolean)
+    .join(" ");
 
   // [component, styles]
-  return [comp, { ...btnProps, ...linkProps, ...motionProps, ...remaining }];
+  return [
+    comp,
+    {
+      ...motionProps,
+      ...remaining,
+      className: mergedClassName,
+    },
+  ];
 };
 
 function getIcon(
