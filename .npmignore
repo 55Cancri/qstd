@@ -1,0 +1,25 @@
+# Source files
+src/
+examples/
+styled-system/
+
+# Config files
+tsconfig.json
+tsup.config.ts
+panda.config.ts
+
+# Documentation (keep only README, CHANGELOG)
+SUMMARY.md
+PUBLISH.md
+QSTD_PACKAGE_PRD.md
+
+# Build artifacts
+*.tsbuildinfo
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log

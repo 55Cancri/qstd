@@ -1,0 +1,138 @@
+// loading icons
+import { BeatLoader } from "react-spinners";
+import { Oval, RotatingLines, TailSpin, ThreeDots } from "react-loader-spinner";
+
+import { styled } from "panda/jsx";
+import { motion } from "framer-motion";
+
+export const base = styled("div", { base: { m: 0 } });
+
+export const tags = {
+  div: base,
+  a: styled("a"),
+  br: styled("br"),
+  button: styled("button"),
+  canvas: styled("canvas"),
+  form: styled("form"),
+  h1: styled("h1"),
+  h2: styled("h2"),
+  h3: styled("h3"),
+  hr: styled("hr"),
+  nav: styled("nav"),
+  main: styled("main"),
+  aside: styled("aside"),
+  article: styled("article"),
+  section: styled("section"),
+  details: styled("details"),
+  header: styled("header"),
+  footer: styled("footer"),
+  strong: styled("strong"),
+  em: styled("em"),
+  img: styled("img"),
+  del: styled("del"),
+  ins: styled("ins"),
+  kbd: styled("kbd"),
+  code: styled("code"),
+  mark: styled("mark"),
+  samp: styled("samp"),
+  small: styled("small"),
+  sub: styled("sub"),
+  sup: styled("sup"),
+  u: styled("u"),
+  var: styled("var"),
+  input: styled("input"),
+  label: styled("label"),
+  legend: styled("legend"),
+  p: styled("p"),
+  select: styled("select"),
+  span: styled("span"),
+  svg: styled("svg"),
+  textarea: styled("textarea"),
+  table: styled("table"),
+  tr: styled("tr"),
+  th: styled("th"),
+  td: styled("td"),
+  tbody: styled("tbody"),
+  thead: styled("thead"),
+  tfoot: styled("tfoot"),
+  progress: styled("progress"),
+  ol: styled("ol"),
+  ul: styled("ul"),
+  li: styled("li"),
+  blockquote: styled("blockquote"),
+  pre: styled("pre"),
+} as const;
+
+// WHY: Delay motion element creation until needed.
+// We intentionally do NOT define StyledByTag as styled(motion.x). Doing so would
+// intersect Panda's large prop surface with motion props for every element,
+// which significantly increases tsserver completion cost during JSX completions.
+// Instead, we derive a MotionByTag map and switch to it at render-time only when
+// motion props are present on <Block ...>. This keeps IntelliSense fast while still
+// providing fully-typed motion when requested.
+// Motion-enabled counterparts derived from StyledByTag keys
+export const motionTags = {
+  div: styled(motion.div, { base: { m: 0 } }),
+  a: styled(motion.a),
+  br: styled(motion.br),
+  button: styled(motion.button),
+  canvas: styled(motion.canvas),
+  form: styled(motion.form),
+  h1: styled(motion.h1),
+  h2: styled(motion.h2),
+  h3: styled(motion.h3),
+  hr: styled(motion.hr),
+  nav: styled(motion.nav),
+  main: styled(motion.main),
+  aside: styled(motion.aside),
+  article: styled(motion.article),
+  section: styled(motion.section),
+  details: styled(motion.details),
+  header: styled(motion.header),
+  footer: styled(motion.footer),
+  strong: styled(motion.strong),
+  em: styled(motion.em),
+  img: styled(motion.img),
+  del: styled(motion.del),
+  ins: styled(motion.ins),
+  kbd: styled(motion.kbd),
+  code: styled(motion.code),
+  mark: styled(motion.mark),
+  samp: styled(motion.samp),
+  small: styled(motion.small),
+  sub: styled(motion.sub),
+  sup: styled(motion.sup),
+  u: styled(motion.u),
+  var: styled(motion.var),
+  input: styled(motion.input),
+  label: styled(motion.label),
+  legend: styled(motion.legend),
+  p: styled(motion.p),
+  select: styled(motion.select),
+  span: styled(motion.span),
+  svg: styled(motion.svg),
+  textarea: styled(motion.textarea),
+  table: styled(motion.table),
+  tr: styled(motion.tr),
+  th: styled(motion.th),
+  td: styled(motion.td),
+  tbody: styled(motion.tbody),
+  thead: styled(motion.thead),
+  tfoot: styled(motion.tfoot),
+  progress: styled(motion.progress),
+  ol: styled(motion.ol),
+  ul: styled(motion.ul),
+  li: styled(motion.li),
+  blockquote: styled(motion.blockquote),
+  pre: styled(motion.pre),
+} as const satisfies { [K in keyof typeof tags]: unknown };
+
+export const loadingIconsMap = {
+  rotatingLines: RotatingLines,
+  spinner: TailSpin,
+  beat: BeatLoader,
+  dots: ThreeDots,
+  oval: Oval,
+} as const;
+
+export const loadingIcons = Object.keys(loadingIconsMap);

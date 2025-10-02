@@ -1,53 +1,47 @@
-# dependencies
-*node_modules
-*dist
-
-# sst
-*.sst
-*styled-system
-*.build
-*.dist
-
-# opennext
-.open-next
-
-# TypeScript incremental compilation cache (.tsbuildinfo files)
-# These files contain dependency graphs and compilation metadata that enable:
-# - Lightning-fast incremental builds (skip unchanged files)
-# - Cross-package dependency tracking in monorepos
-# - Intelligent recompilation when dependencies change
-# 
-# IMPORTANT: These files are machine-specific and should NOT be committed
-# but should be preserved locally. Deleting them forces full recompilation
-# which can be 10-50x slower for the initial build after deletion.
-*.tsbuildinfo
-**/.tsbuildinfo
-
-# Auto-generated TypeScript declaration files for configs
-vite.config.d.ts
-*.config.d.ts
-
-# misc
-.DS_Store
-*.log
-
-# local env files
-*.env
-.env*.local
-
-# Playwright
+# Dependencies
 node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+.pnp
+.pnp.js
 
-# Our test artifacts
-/packages/tests/results/
-/packages/tests/snapshots/
-*test-results/
-*-snapshots/
-*.last-run.json
-**/output.txt/
-test-failed-*.png
-error-context.md
+# Build outputs
+dist/
+build/
+styled-system/
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Testing
+coverage/
+*.lcov
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.history/
+
+# Misc
+*.tgz
+.npmrc

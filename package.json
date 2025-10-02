@@ -1,0 +1,102 @@
+{
+  "name": "qstd",
+  "version": "0.1.0",
+  "description": "Standard Block component and utilities library with Panda CSS",
+  "author": "malin1",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/block/index.js",
+  "module": "./dist/block/index.mjs",
+  "types": "./dist/block/index.d.ts",
+  "exports": {
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.cjs"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "node": {
+        "import": "./dist/server/index.js",
+        "require": "./dist/server/index.cjs"
+      }
+    },
+    "./preset": {
+      "types": "./dist/preset/index.d.ts",
+      "import": "./dist/preset/index.js",
+      "require": "./dist/preset/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "panda.config.ts",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "panda codegen && tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "pnpm build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@floating-ui/react": "^0.27.12",
+    "@fortawesome/fontawesome-svg-core": "^7.0.0",
+    "@fortawesome/free-brands-svg-icons": "^7.0.0",
+    "@fortawesome/free-regular-svg-icons": "^7.0.0",
+    "@fortawesome/free-solid-svg-icons": "^7.0.0",
+    "@fortawesome/react-fontawesome": "^3.0.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.15.0",
+    "motion-dom": "^12.23.21",
+    "music-metadata-browser": "^2.5.11",
+    "nanoid": "^5.1.5",
+    "react-icons": "^5.5.0",
+    "react-loader-spinner": "^6.1.6",
+    "react-spinners": "^0.17.0",
+    "use-immer": "^0.11.0"
+  },
+  "devDependencies": {
+    "@pandacss/dev": "^1.2.0",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.8",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "eslint": "^9.28.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.1.4"
+  },
+  "keywords": [
+    "react",
+    "component",
+    "ui",
+    "panda-css",
+    "utilities",
+    "typescript",
+    "hooks"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ericmorr/qstd"
+  },
+  "bugs": {
+    "url": "https://github.com/ericmorr/qstd/issues"
+  },
+  "homepage": "https://github.com/ericmorr/qstd#readme"
+}
