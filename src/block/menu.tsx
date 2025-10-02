@@ -9,6 +9,7 @@ import {
   useFloating,
   FloatingPortal,
 } from "@floating-ui/react";
+import { css } from "panda/css";
 
 import * as _t from "./types";
 import * as _l from "./literals";
@@ -201,50 +202,62 @@ export default function Menu(props: _t.MenuBlockProps) {
     const { style: restStyle, ...restPanda } = (rest as any) || {};
 
     // Default Panda props (applied first, can be overridden by child/rest)
-    const defaultPanda: Record<string, any> = {};
+    // Build defaults and use css() for runtime generation
+    const defaultStyles: Record<string, any> = {};
     if (
       childProps.borderRadius === undefined &&
       childProps.rounded === undefined &&
       childProps.style?.borderRadius === undefined
     )
-      defaultPanda.borderRadius = "md";
+      defaultStyles.borderRadius = "md";
     if (
       childProps.shadow === undefined &&
       childProps.boxShadow === undefined &&
       childProps.style?.boxShadow === undefined
     )
-      defaultPanda.shadow = "lg";
+      defaultStyles.shadow = "lg";
     if (
       childProps.bg === undefined &&
       childProps.background === undefined &&
       !(childProps.style?.background || childProps.style?.backgroundColor)
     )
-      defaultPanda.bg = { base: "neutral.100", _dark: "neutral.900" };
+      defaultStyles.bg = { base: "neutral.100", _dark: "neutral.900" };
     if (
       childProps.overflow === undefined &&
       childProps.style?.overflow === undefined
     )
-      defaultPanda.overflow = "hidden";
+      defaultStyles.overflow = "hidden";
     if (
       childProps.outline === undefined &&
       childProps.style?.outline === undefined
     )
-      defaultPanda.outline = "none";
+      defaultStyles.outline = "none";
+
+    // Generate runtime CSS for defaults
+    const defaultsClassName = Object.keys(defaultStyles).length > 0
+      ? css(defaultStyles)
+      : "";
 
     const mergedStyle: React.CSSProperties = {
       ...(childProps.style || {}),
       ...(restStyle || {}),
     };
 
+    // Merge classNames: defaults, parent Panda (if any), child
+    const mergedClassName = [defaultsClassName, childProps.className]
+      .filter(Boolean)
+      .join(" ");
+
     const contentNode = React.cloneElement(
       customContainerEl,
       {
-        // Defaults first
-        ...defaultPanda,
+        // Defaults are now in mergedClassName via css()
         // Then Panda props coming from the parent <Block is="menu" ...>
         ...restPanda,
         // Finally explicit props on the provided container win
         ...childProps,
+        // Apply merged className
+        className: mergedClassName,
         // Apply menu event props to the actual container
         ...menuEventProps,
         role: childProps.role ?? "menu",

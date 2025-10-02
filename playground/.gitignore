@@ -1,0 +1,13 @@
+# Dependencies
+node_modules
+
+# Build
+dist
+styled-system
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+

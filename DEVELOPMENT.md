@@ -428,3 +428,71 @@ Remember:
 - ✅ Push: `git push --follow-tags`
 
 That's it! 4 commands and you're done. 🚀
+
+---
+
+## 🎨 Using qstd in a Consumer Project (Panda CSS Setup)
+
+### Critical Requirements
+
+**1. PostCSS Configuration** (REQUIRED):
+```js
+// postcss.config.cjs
+module.exports = {
+  plugins: {
+    "@pandacss/dev/postcss": {},
+  },
+};
+```
+
+**Without this file:** Block components render but have NO STYLES!
+
+**2. Panda Config with Base Preset**:
+```ts
+// panda.config.ts
+import { defineConfig } from "@pandacss/dev";
+import qstdPreset from "qstd/preset";
+
+export default defineConfig({
+  // CRITICAL: Must include base preset for default colors
+  presets: ["@pandacss/dev/presets", qstdPreset],
+  
+  // Must scan qstd dist for prop usage
+  include: [
+    "./src/**/*.{ts,tsx}",
+    "./node_modules/qstd/dist/**/*.{js,mjs}",
+  ],
+  
+  outdir: "styled-system",
+  jsxFramework: "react",
+});
+```
+
+**3. CSS File with Layers**:
+```css
+/* src/index.css */
+@layer reset, base, tokens, recipes, utilities;
+
+/* Your custom styles */
+```
+
+**4. Import CSS in main.tsx**:
+```tsx
+import "./index.css";
+```
+
+### Troubleshooting: Styles Not Applying
+
+**Symptom:** Block components render, classes applied, but no visual styles
+
+**Cause:** PostCSS not configured
+
+**Fix:** Add `postcss.config.cjs` with Panda plugin
+
+**Verify it's working:**
+```tsx
+<Block debug>Test</Block>
+```
+
+Should show a red border. If not, PostCSS isn't processing.
+

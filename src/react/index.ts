@@ -5,6 +5,10 @@
  * import Block, { useDebounce, useThrottle, useMatchMedia, ImageFile } from "qstd/react";
  */
 
+// Import pre-generated Panda CSS styles for Block's internal styling
+// tsup will extract this CSS and output it as dist/react/index.css
+import "../../styled-system/styles.css";
+
 import React from "react";
 
 // Re-export Block component as default

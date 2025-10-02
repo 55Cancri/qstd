@@ -45,3 +45,9 @@ Thumbs.db
 # Misc
 *.tgz
 .npmrc
+
+# Playground
+playground/node_modules/
+playground/dist/
+playground/styled-system/
+playground/.pnpm-debug.log
