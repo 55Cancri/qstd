@@ -124,7 +124,11 @@ export type SkeletonCircleProps = Pick<
   "height" | "h" | "width" | "w" | "size" | "borderRadius" | "br"
 > & { is: "skeleton"; as: "circle" };
 
-export type BtnBlockProps = HTMLStyledProps<typeof _l.motionTags.button> &
+// Base button props without onChange
+type BtnBlockPropsBase = Omit<
+  HTMLStyledProps<typeof _l.motionTags.button>,
+  "onChange"
+> &
   BlockMotionProps &
   IconProps &
   LoadingProps & {
@@ -133,8 +137,29 @@ export type BtnBlockProps = HTMLStyledProps<typeof _l.motionTags.button> &
     type?: "button" | "submit" | "reset";
     onClick?: React.MouseEventHandler;
     tooltip?: boolean | React.ReactNode | string;
-    filepicker?: boolean;
   };
+
+// Button with filepicker
+export type BtnFilepickerProps = BtnBlockPropsBase & {
+  filepicker: true;
+  onChange?: (files: File[]) => void;
+  multiple?: boolean;
+  accept?: string;
+};
+
+// Regular button
+export type BtnStandardProps = BtnBlockPropsBase & {
+  filepicker?: false | undefined;
+  onChange?: React.FormEventHandler<HTMLButtonElement>;
+};
+
+// Combined type for internal use (kept simple to avoid complexity)
+export type BtnBlockProps = BtnBlockPropsBase & {
+  filepicker?: boolean;
+  multiple?: boolean;
+  accept?: string;
+  onChange?: any; // Kept as any to avoid union complexity
+};
 
 export type InputBlockProps = HTMLStyledProps<typeof _l.tags.input> &
   BlockMotionProps & { is: "input"; error?: string } & Omit<

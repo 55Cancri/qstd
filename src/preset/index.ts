@@ -142,6 +142,12 @@ const preset: Preset = {
   },
 
   utilities: {
+    rounded: {
+      values: { type: "boolean | number" },
+      transform(value: boolean | number) {
+        return { borderRadius: typeof value === "boolean" ? 9999 : value };
+      },
+    },
     extend: {
       grid: {
         values: { type: "boolean" },
@@ -188,8 +194,11 @@ const preset: Preset = {
           return { position: "sticky" };
         },
       },
-      rounded: {
-        // types will be inferred from transform function signature, no need tos specify values
+      // use br for numbers
+      borderRadius: {
+        className: "rounded",
+        shorthand: "br",
+        values: { type: "boolean | number" },
         transform(value: boolean | number) {
           return { borderRadius: typeof value === "boolean" ? 9999 : value };
         },
@@ -523,13 +532,6 @@ const preset: Preset = {
         values: { type: "boolean" },
         transform(value) {
           return { aspectRatio: value === true ? 1 : value };
-        },
-      },
-      borderRadius: {
-        className: "rounded",
-        shorthand: "br",
-        transform(value) {
-          return { borderRadius: value === true ? 9999 : value };
         },
       },
     },

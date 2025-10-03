@@ -51,3 +51,5 @@ playground/node_modules/
 playground/dist/
 playground/styled-system/
 playground/.pnpm-debug.log
+ts-trace/
+performance/ts-trace/

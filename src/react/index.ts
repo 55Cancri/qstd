@@ -14,6 +14,9 @@ import React from "react";
 // Re-export Block component as default
 export { default } from "../block/index";
 
+// Re-export types
+export type { RadioOption } from "../block/types";
+
 // Note: ImageFile, AudioFile, VideoFile, MediaFile are globally declared
 // They're automatically available when qstd is installed - no need to import!
 
