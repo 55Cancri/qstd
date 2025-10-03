@@ -230,7 +230,7 @@ export default defineConfig({
 ### Command
 
 ```bash
-cd /path/to/qstd
+cd qstd
 
 # Final build
 pnpm build

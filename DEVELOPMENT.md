@@ -9,7 +9,7 @@
 ### 1. Get Re-oriented (30 seconds)
 
 ```bash
-cd /path/to/qstd
+cd qstd
 
 # Check current version
 cat package.json | grep version
@@ -85,10 +85,10 @@ pnpm publish --access public
 git push --follow-tags
 ```
 
-### 4. Test in gpt-v2 (2 minutes)
+### 4. Test in Your Project (2 minutes)
 
 ```bash
-cd /path/to/gpt-v2/packages/client
+cd /path/to/your-project
 
 # Update to latest
 pnpm update qstd
@@ -216,9 +216,9 @@ Both client and server re-export it automatically via their `index.ts`.
    pnpx tsx tests/test-all.ts
    ```
 
-2. **Link to gpt-v2:**
+2. **Link to your project:**
    ```bash
-   cd /path/to/gpt-v2/packages/client
+   cd /path/to/your-project
    pnpm add /path/to/qstd
    # Test in your app
    ```
@@ -327,7 +327,7 @@ Before running `pnpm publish`:
 - [ ] CHANGELOG.md updated
 - [ ] Version bumped (`pnpm version patch/minor/major`)
 - [ ] Git committed
-- [ ] Tested locally in gpt-v2 (optional but recommended)
+- [ ] Tested locally in your project (optional but recommended)
 
 ---
 
@@ -413,7 +413,7 @@ pnpm build
 
 ## 💡 Tips
 
-1. **Test locally first** - Use `pnpm add /path/to/qstd` in gpt-v2 before publishing
+1. **Test locally first** - Use `pnpm add /path/to/qstd` in your project before publishing
 2. **Use tests/** - Keep test files there, run with `pnpx tsx`
 3. **Read SUMMARY.md** - Has complete function list
 4. **Check READY.md** - Quick reference of current state
