@@ -4,13 +4,13 @@
 **Location:** `/performance/TYPESCRIPT_PERFORMANCE.md`  
 **Date:** October 3, 2025  
 **Purpose:** Measure and validate TypeScript editor performance for Block component typing  
-**Source:** Adapted from gpt-v2 project's `typescript-language-service-performance.md`
+**Source:** Adapted from example-project project's `typescript-language-service-performance.md`
 
 ---
 
 ## Improvements Made for qstd
 
-This document was adapted from the gpt-v2 project and enhanced with:
+This document was adapted from the example-project project and enhanced with:
 
 ### ✅ Additions
 

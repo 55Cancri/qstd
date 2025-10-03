@@ -51,7 +51,7 @@
 
 ### qstd/react
 
-**3 Hooks** (exact implementations from gpt-v2):
+**3 Hooks** (exact implementations from consumer-project):
 
 - `useDebounce(value, delay?)` - Debounce string value
 - `useThrottle(value, interval?)` - Throttle string value
@@ -59,7 +59,7 @@
 
 ### qstd/preset
 
-**Complete Panda CSS preset** from gpt-v2:
+**Complete Panda CSS preset** from consumer-project:
 
 - Custom utilities: grid, flex, cols, rows, debug, shortcuts (h, w, p, br, etc.)
 - Custom conditions: \_dark, \_hover, \_active, radio states, etc.
@@ -242,7 +242,7 @@ npm publish --access public
 ### After Publishing
 
 ```bash
-# In gpt-v2 or any project
+# In consumer-project or any project
 pnpm add qstd
 
 # Use it

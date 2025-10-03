@@ -1057,7 +1057,7 @@ MAJOR.MINOR.PATCH
 
 ### Phase 4: Block Component Migration (Week 2)
 
-- [ ] Copy all Block files from gpt-v2
+- [ ] Copy all Block files from consumer-project
 - [ ] Create `src/block/` directory
 - [ ] Update all import paths (remove `panda/` references)
 - [ ] Update to import from `qstd` internally if needed
@@ -1114,10 +1114,10 @@ MAJOR.MINOR.PATCH
 - [ ] Verify package installs correctly
 - [ ] Test in fresh project
 
-### Phase 10: Migrate gpt-v2 (Week 4)
+### Phase 10: Migrate consumer-project (Week 4)
 
-- [ ] Install `qstd` in gpt-v2 client package
-- [ ] Install `qstd` in gpt-v2 server package
+- [ ] Install `qstd` in consumer-project client package
+- [ ] Install `qstd` in consumer-project server package
 - [ ] Update all Block imports to `import Block from "qstd/block"`
 - [ ] Update panda.config.ts to use qstd preset
 - [ ] Replace utility function imports with `qstd/client` or `qstd/server`
@@ -1251,8 +1251,8 @@ pnpx vite-bundle-visualizer
 - [ ] Package published to npm successfully
 - [ ] All exports work correctly (block, client, server, react, preset)
 - [ ] Tree-shaking verified at function level
-- [ ] gpt-v2 successfully migrated to use qstd
-- [ ] No regressions in gpt-v2 functionality
+- [ ] consumer-project successfully migrated to use qstd
+- [ ] No regressions in consumer-project functionality
 - [ ] All Block variants work identically
 - [ ] Full TypeScript support with no type errors
 - [ ] Documentation complete and deployed

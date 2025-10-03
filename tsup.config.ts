@@ -11,7 +11,7 @@ import * as path from "node:path"; // Use namespace import to avoid esModuleInte
  * → Why: tsup.config.ts isn't covered by tsconfig.json's include array
  *
  * WHY TSUP IS NEEDED:
- * - Your other projects (gpt-v2) use Vite, which bundles for the BROWSER
+ * - Your other projects (other-projects) use Vite, which bundles for the BROWSER
  * - This is an NPM PACKAGE that needs to work in multiple environments (browser, Node.js, CJS, ESM)
  * - tsup bundles TypeScript → JavaScript for distribution to consumers
  * - Without it: Consumers would get raw .ts files (won't work) or you'd need to run tsc manually

@@ -124,14 +124,14 @@ import Block from "qstd/react";
 
 ## 🐛 SPECIFIC STYLING ISSUES TO TEST
 
-When comparing qstd playground vs gpt-v2 playground (working reference), these specific issues must be verified after any fix:
+When comparing qstd playground vs consumer-project playground (working reference), these specific issues must be verified after any fix:
 
 | Component      | Issue                                                                            | Test Method                                    |
 | -------------- | -------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **Tooltip**    | ❌ Tooltip does not have padding (gpt-v2 has padding)                            | Hover over tooltip button, inspect padding     |
+| **Tooltip**    | ❌ Tooltip does not have padding (consumer-project has padding)                            | Hover over tooltip button, inspect padding     |
 | **All blocks** | ❌ Padding not working on components (`p`, `px`, `py` props ignored)             | Inspect computed styles for padding values     |
 | **Input**      | ❌ Search icon overlaps placeholder text (no left padding)                       | Check input with LeftIcon, verify spacing      |
-| **Input**      | ❌ Red error state not showing on input and label (gpt-v2 shows red)             | Use error prop, verify red border/label color  |
+| **Input**      | ❌ Red error state not showing on input and label (consumer-project shows red)             | Use error prop, verify red border/label color  |
 | **Drawer**     | ❌ Drawer layout broken (exact issue not specified)                              | Open drawer, verify layout and button spacing  |
 | **Button**     | ❌ Loading button: icon stacks on top of text instead of left alignment          | Trigger isLoading, verify flex row layout      |
 | **Switch**     | ❌ Switch track length same as thumb (should be 2x longer, oval not circle)      | Compare track width vs thumb width             |
@@ -150,7 +150,7 @@ After implementing a fix:
 3. [ ] Start dev server: `pnpm dev`
 4. [ ] Take screenshot and save to memories/
 5. [ ] Test each item in the table above
-6. [ ] Compare with gpt-v2 screenshot (memories/gpt-v2-playground-block.png)
+6. [ ] Compare with consumer-project screenshot (memories/consumer-project-playground-block.png)
 7. [ ] Document results in this file under "Attempt #X"
 ```
 
@@ -193,9 +193,9 @@ The qstd playground cannot properly style Block components because:
 - Panda can't extract from this format
 - **Result:** No CSS generated for Block's internal utilities
 
-**gpt-v2 vs qstd:**
+**consumer-project vs qstd:**
 
-- **gpt-v2:** Scans Block's source directly → Works ✅
+- **consumer-project:** Scans Block's source directly → Works ✅
 - **qstd playground:** Scans Block's compiled dist → Fails ❌
 
 **What we ruled out:**
@@ -290,7 +290,7 @@ The qstd playground cannot properly style Block components because:
 
 - All Block components styled correctly
 - Screenshot shows proper spacing, colors, alignment
-- Matches gpt-v2 playground appearance
+- Matches consumer-project playground appearance
 
 #### Step 3: Document & Verify
 
@@ -895,12 +895,12 @@ From accessibility snapshot and screenshot:
 - ❌ Loading spinner may not be aligned properly
 - ❌ Switch, Progress internal layouts may be incorrect
 
-**gpt-v2 Playground (Expected State):**
+**consumer-project Playground (Expected State):**
 
-- Location: `memories/gpt-v2-playground-block.png`
+- Location: `memories/consumer-project-playground-block.png`
 - Shows: How Block should look when working correctly
-- Note: gpt-v2 server was not running during this session for comparison screenshot
-- From previous `COMPLETE_FINAL.md`: All Block variants worked correctly in gpt-v2
+- Note: consumer-project server was not running during this session for comparison screenshot
+- From previous `COMPLETE_FINAL.md`: All Block variants worked correctly in consumer-project
 
 **Specific Styling Failures Expected:**
 Based on `BLOCK_STYLING_ISSUE.md`, these should be broken:
@@ -1246,7 +1246,7 @@ Given constraints: ✅ Preset required, ❌ No CSS imports, ❌ Panda can't extr
 
 ## 🔬 DIAGNOSIS: Object Properties vs JSX Extraction (Oct 2, 2025)
 
-**gpt-v2 works:** Scans Block source with JSX patterns: `<styled.div flex alignI="center">`
+**consumer-project works:** Scans Block source with JSX patterns: `<styled.div flex alignI="center">`
 **qstd fails:** Block uses object spread: `const props = { display: "flex" }`
 
 **Confirmed:**
@@ -1273,7 +1273,7 @@ Given constraints: ✅ Preset required, ❌ No CSS imports, ❌ Panda can't extr
 - Examined cssgen output - only 2 utilities extracted
 - Tested Ark UI - unstyled, not applicable
 
-**Key insight:** gpt-v2 works because it scans Block's source directly; qstd playground only has compiled dist files.
+**Key insight:** consumer-project works because it scans Block's source directly; qstd playground only has compiled dist files.
 
 ---
 
@@ -1298,7 +1298,7 @@ return [comp, { ...btnProps, ...remaining }];
 
 **Why this fails for consumers:**
 
-- gpt-v2 scans Block source + all app code → Sees JSX usage elsewhere → Generates CSS ✅
+- consumer-project scans Block source + all app code → Sees JSX usage elsewhere → Generates CSS ✅
 - qstd playground scans only playground source + compiled dist → No JSX patterns found → No CSS ❌
 
 Consumer gets: Block renders structurally but zero internal styling (no flex, no padding, etc.)
@@ -1995,7 +1995,7 @@ The issue **IS**:
 
 - ✅ Something specific to padding utilities
 - ✅ Affects `px`, `py` but not `rounded`
-- ✅ Only in distributed package context (works in gpt-v2)
+- ✅ Only in distributed package context (works in consumer-project)
 
 ### Hypothesis: styled() Component Issue
 
@@ -3211,7 +3211,7 @@ Ready for npm publish.
 
 ### Summary
 
-Migrated TypeScript performance testing documentation from gpt-v2, created testing infrastructure, and executed comprehensive performance validation of qstd's type system.
+Migrated TypeScript performance testing documentation from consumer-project, created testing infrastructure, and executed comprehensive performance validation of qstd's type system.
 
 ### Test Results
 
