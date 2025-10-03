@@ -41,3 +41,4 @@ pnpm analyze:tsserver
 - Hover: 12ms avg
 
 See [TYPESCRIPT_PERFORMANCE.md](./TYPESCRIPT_PERFORMANCE.md) for full documentation.
+

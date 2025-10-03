@@ -1,7 +1,8 @@
 /**
  * Comprehensive test of qstd package
  */
-import * as Q from "./dist/client/index.js";
+// @ts-expect-error
+import * as Q from "../src/client/index.ts";
 
 console.log("🧪 Testing qstd v0.1.0 - Complete Package\n");
 console.log("=".repeat(60));
@@ -132,4 +133,3 @@ console.log(
 console.log("  - Panda preset: ✓ Complete with custom utilities");
 console.log("  - Block component: ✓ Placeholder (migration in progress)");
 console.log("\n🚀 Ready for publishing!");
-
