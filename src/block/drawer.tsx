@@ -324,7 +324,7 @@ export default function Drawer(props: _t.DrawerBlockProps) {
 
 // show cancel btn and others at the bottom of the drawer when on mobile,
 // show close btn and others at the top of the drawer when on desktop
-export function ButtonGroup(props: _t.DrawerBlockProps) {
+export function BtnGroup(props: React.ComponentProps<typeof MotionDiv>) {
   const [isDesktop] = useMatchMedia(breakpoint);
   const { children, ...rest } = props;
   if (isDesktop) {
@@ -338,7 +338,7 @@ export function ButtonGroup(props: _t.DrawerBlockProps) {
   }
 }
 
-export function CloseButton(props: Omit<_t.BtnBlockProps, "is">) {
+export function CloseBtn(props: React.ComponentProps<typeof MotionBtn>) {
   const [isDesktop] = useMatchMedia(breakpoint);
   const { children, ...rest } = props;
   if (isDesktop) {

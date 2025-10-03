@@ -8,7 +8,7 @@ import Radio, { Item as RadioItem } from "./radio";
 import Textarea, { Label as TextareaLabel } from "./textarea";
 import Input, { LeftIcon, RightSide, Label as InputLabel } from "./input";
 import Accordion, { Item as AccordionItem } from "./accordion";
-import Drawer, { ButtonGroup, CloseButton } from "./drawer";
+import Drawer, { BtnGroup, CloseBtn } from "./drawer";
 import Progress, { TrackBg, TrackFill } from "./progress";
 import Tooltip, { TooltipContainer } from "./tooltip";
 import Checkbox from "./checkbox";
@@ -19,6 +19,12 @@ import * as _f from "./fns";
 const Hr = _l.motionTags.hr;
 const Skeleton = _l.motionTags.div;
 
+// Overloads for strict type checking based on filepicker prop
+function Block(props: _t.BtnFilepickerProps): React.ReactElement;
+function Block(props: _t.BtnStandardProps): React.ReactElement;
+function Block(props: _t.BlockProps): React.ReactElement;
+
+// Implementation signature
 function Block(props: _t.BlockProps) {
   const anyProps = props as any; // prevent type evaluation explosion
   const {
@@ -108,13 +114,17 @@ function Block(props: _t.BlockProps) {
             type="file"
             ref={fileInputRef}
             multiple={multiple}
+            accept={anyProps.accept}
             style={{ display: "none" }}
             onChange={async (e) => {
               const files = Array.from(e.target.files ?? []) as File[];
               const selectedFiles = files.length
                 ? await _f.prepareFiles(files)
                 : [];
-              anyProps.onChange(selectedFiles);
+              // When filepicker is true, onChange expects File[], not FormEvent
+              if (anyProps.onChange) {
+                (anyProps.onChange as (files: File[]) => void)(selectedFiles);
+              }
             }}
             value=""
           />
@@ -199,8 +209,8 @@ const AccordionNamespace = {
 
 // Block.Drawer namespace
 const DrawerNamespace = {
-  ButtonGroup,
-  CloseButton,
+  CloseBtn,
+  BtnGroup,
 } as const;
 
 // Block.Progress namespace
@@ -238,4 +248,3 @@ const CompoundBlock: BlockComponent = Object.assign(Block, {
 }) satisfies BlockComponent;
 
 export default CompoundBlock;
-

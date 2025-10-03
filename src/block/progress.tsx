@@ -72,7 +72,7 @@ export default function Progress(props: _t.ProgressBlockProps) {
                   layout
                   key={i}
                   h={8}
-                  br
+                  rounded
                   initial={{ scale: 0, width: 0, opacity: 0 }}
                   animate={{
                     scale: 1,
@@ -113,7 +113,7 @@ export default function Progress(props: _t.ProgressBlockProps) {
     <MotionDiv
       data-progress-bg
       gridArea="1 / 1"
-      br
+      rounded
       h={barHeight}
       w
       bg={{ base: "neutral.200", _dark: "neutral.700" }}
@@ -168,7 +168,7 @@ export function TrackBg(props: _t.BaseBlockProps) {
     <MotionDiv
       data-track-bg
       gridArea="1 / 1"
-      br
+      rounded
       h={h ?? 8}
       w
       bg={{ base: "neutral.200", _dark: "neutral.700" }}
@@ -193,7 +193,7 @@ export function TrackFill(props: TrackFillPublicProps) {
     <MotionDiv
       data-track-fill
       gridArea="1 / 1"
-      br
+      rounded
       h={h ?? 8}
       bg={{ base: "neutral.200", _dark: "neutral.700" }}
       {...(rest as MotionDivProps)}

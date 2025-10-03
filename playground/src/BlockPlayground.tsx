@@ -2,6 +2,7 @@ import React from "react";
 import Block from "qstd/react";
 import type { RadioOption } from "qstd/react";
 
+// Updated drawer components: BtnGroup and CloseBtn
 export default function BlockPlayground() {
   // Local state carried over from Chatbox examples
   const [isChecked, setIsChecked] = React.useState(false);
@@ -361,6 +362,81 @@ export default function BlockPlayground() {
             </Block>
           </Block>
           <Block is="skeleton" as="block" h={8} br={4} w="85%" />
+        </Block>
+      </Block>
+
+      {/* Drawer */}
+      <Block grid rowG={3}>
+        <Block is="txt" as="h2" fontSize="lg" fontWeight="semibold">
+          Drawer
+        </Block>
+        <Block flex="wrap" gap={3}>
+          <Block is="btn" onClick={() => setIsDrawerOpen(true)}>
+            Open Drawer
+          </Block>
+        </Block>
+      </Block>
+
+      <Block
+        is="drawer"
+        open={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      >
+        <Block grid rowG={4} px={6} pb={6}>
+          <Block is="txt" as="h2" fontSize="xl" fontWeight="bold">
+            Drawer Title
+          </Block>
+          <Block is="txt">
+            This is the drawer content. You can put any content here.
+          </Block>
+          <Block.Drawer.BtnGroup>
+            <Block is="btn" onClick={() => setIsDrawerOpen(false)}>
+              Cancel
+            </Block>
+            <Block
+              is="btn"
+              bg="blue.500"
+              color="white"
+              px={4}
+              py={1}
+              br={32}
+              onClick={() => setIsDrawerOpen(false)}
+            >
+              Confirm
+            </Block>
+          </Block.Drawer.BtnGroup>
+          <Block.Drawer.CloseBtn onClick={() => setIsDrawerOpen(false)} />
+        </Block>
+      </Block>
+
+      {/* FilePicker */}
+      <Block grid rowG={3}>
+        <Block is="txt" as="h2" fontSize="lg" fontWeight="semibold">
+          FilePicker
+        </Block>
+        <Block flex="wrap" gap={3}>
+          <Block
+            is="btn"
+            filepicker
+            accept="image/*"
+            onChange={(files) => {
+              console.log("Selected files:", files);
+              alert(`Selected ${files.length} file(s)`);
+            }}
+          >
+            Choose Image
+          </Block>
+          <Block
+            is="btn"
+            filepicker
+            multiple
+            onChange={(files) => {
+              console.log("Selected files:", files);
+              alert(`Selected ${files.length} file(s)`);
+            }}
+          >
+            Choose Multiple Files
+          </Block>
         </Block>
       </Block>
 
