@@ -3,7 +3,7 @@ import Block from "qstd/react";
 import type { RadioOption } from "qstd/react";
 
 // Updated drawer components: BtnGroup and CloseBtn
-export default function BlockPlayground() {
+export default function Playground() {
   // Local state carried over from Chatbox examples
   const [isChecked, setIsChecked] = React.useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);

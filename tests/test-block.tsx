@@ -1,8 +1,11 @@
 /**
- * Test Block component
+ * Test Block component (post-build validation)
+ *
+ * Run `pnpm build` first, then:
+ * node tests/test-block.tsx
  */
-import Block from "./dist/block/index.js";
-import React from "react";
+// @ts-expect-error
+import Block from "../dist/block/index.js";
 
 console.log("🧪 Testing Block component...\n");
 
@@ -26,4 +29,3 @@ console.log("  ✓ Block.Tooltip:", typeof Block.Tooltip);
 
 console.log("\n✅ Block component fully migrated!");
 console.log("📦 Bundle size: ~140KB (full component with all variants)");
-
