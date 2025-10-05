@@ -148,7 +148,7 @@ export function RightSide(
 }
 RightSide.displayName = RightSideNameKey;
 
-export function Label(props: _t.InputBlockProps & LabelProps) {
+export function Label(props: Omit<_t.InputBlockProps, "is"> & LabelProps) {
   const { value, error, required, children, hasLeftIcon, ...rest } = props;
   const ml = hasLeftIcon ? 6 : 1;
 
