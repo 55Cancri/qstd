@@ -88,10 +88,18 @@ import { defineConfig } from "@pandacss/dev";
 import qstdPreset from "qstd/preset";
 
 export default defineConfig({
+  preflight: true,
+
   // IMPORTANT: Include base preset to get default colors (neutral, red, blue, etc.)
   presets: ["@pandacss/dev/presets", qstdPreset],
 
   include: ["./src/**/*.{ts,tsx}"],
+
+  outdir: "styled-system",
+
+  // REQUIRED: Enables Panda CSS to detect props on the Block component
+  // Without this, styles like bg="red" won't generate CSS utilities
+  jsxFramework: "react",
 
   theme: {
     extend: {
@@ -100,6 +108,8 @@ export default defineConfig({
   },
 });
 ```
+
+**⚠️ Critical:** The `jsxFramework: "react"` setting is **required** for the Block component to work correctly. Without it, Panda CSS cannot detect style props like `bg="red"` on the Block component, and no CSS utilities will be generated.
 
 ## Global Types
 

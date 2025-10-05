@@ -451,7 +451,7 @@ module.exports = {
 
 **Without this file:** Block components render but have NO STYLES!
 
-**2. Panda Config with Base Preset**:
+**2. Panda Config with Base Preset and jsxFramework** (REQUIRED):
 
 ```ts
 // panda.config.ts
@@ -459,16 +459,23 @@ import { defineConfig } from "@pandacss/dev";
 import qstdPreset from "qstd/preset";
 
 export default defineConfig({
+  preflight: true,
+
   // CRITICAL: Must include base preset for default colors
   presets: ["@pandacss/dev/presets", qstdPreset],
 
-  // Must scan qstd dist for prop usage
-  include: ["./src/**/*.{ts,tsx}", "./node_modules/qstd/dist/**/*.{js,mjs}"],
+  // Scan your source code
+  include: ["./src/**/*.{ts,tsx}", "./pages/**/*.{js,jsx,ts,tsx}"],
 
   outdir: "styled-system",
+
+  // REQUIRED: Enables Panda CSS to detect props on Block component
+  // Without this, styles like bg="red" won't generate CSS utilities
   jsxFramework: "react",
 });
 ```
+
+**⚠️ CRITICAL:** The `jsxFramework: "react"` setting is **required** for the Block component to work. Without it, Panda CSS cannot detect style props like `bg="red"` on external components, and no CSS utilities will be generated.
 
 **3. CSS File with Layers**:
 
@@ -487,16 +494,27 @@ import "./index.css";
 
 ### Troubleshooting: Styles Not Applying
 
-**Symptom:** Block components render, classes applied, but no visual styles
+**Symptom:** Block components render, classes applied (like `bg_red`, `m_0`), but no visual styles
 
-**Cause:** PostCSS not configured
+**Primary Cause:** Missing `jsxFramework: "react"` in panda.config.ts
 
-**Fix:** Add `postcss.config.cjs` with Panda plugin
+**Fix:** Add `jsxFramework: "react"` to your Panda config and run `panda codegen`
+
+**Secondary Cause:** PostCSS not configured
+
+**Fix:** Ensure `postcss.config.cjs` exists with Panda plugin
 
 **Verify it's working:**
 
 ```tsx
-<Block debug>Test</Block>
+<Block bg="red" debug>
+  Test
+</Block>
 ```
 
-Should show a red border. If not, PostCSS isn't processing.
+Should show red background and debug border. If not:
+
+1. Check `jsxFramework: "react"` is in panda.config.ts
+2. Run `pnpm prepare` (or `panda codegen`) to regenerate
+3. Restart dev server
+4. Check PostCSS config exists
