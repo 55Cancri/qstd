@@ -19,13 +19,9 @@ import * as _f from "./fns";
 const Hr = _l.motionTags.hr;
 const Skeleton = _l.motionTags.div;
 
-// Overloads for strict type checking based on filepicker prop
-function Block(props: _t.BtnFilepickerProps): React.ReactElement;
-function Block(props: _t.BtnStandardProps): React.ReactElement;
-function Block(props: _t.BlockProps): React.ReactElement;
-
-// Implementation signature
-function Block(props: _t.BlockProps) {
+function Block<T extends _t.Is>(props: _t.BlockProps<T>): React.ReactElement;
+function Block(props: _t.BaseBlockProps): React.ReactElement;
+function Block(props: any) {
   const anyProps = props as any; // prevent type evaluation explosion
   const {
     _motion,

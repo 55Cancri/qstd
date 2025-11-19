@@ -2,16 +2,41 @@
  * Export file types for consumers
  * Import these in your project if you need ImageFile, AudioFile, VideoFile types
  */
-import { IAudioMetadata } from "music-metadata-browser";
 import { type Transition, type VariantLabels } from "framer-motion";
 import { IconName, SizeProp } from "@fortawesome/fontawesome-svg-core";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import type { TargetAndTransition } from "motion-dom";
 import { Placement } from "@floating-ui/react";
 import { IconType } from "react-icons/lib";
+import * as React from "react";
 
-import { type HTMLStyledProps } from "panda/jsx";
+// Import Panda types directly to avoid HTMLStyledProps complexity
+import { JsxStyleProps } from "../../styled-system/types";
 import * as _l from "./literals";
+
+// Define the subset of IAudioMetadata we actually use
+interface AudioMetadataSource {
+  format: {
+    container?: string;
+    codec?: string;
+    sampleRate?: number;
+    numberOfChannels?: number;
+    bitrate?: number;
+    duration?: number;
+  };
+  common: {
+    track?: { no: number | null; of: number | null };
+    disk?: { no: number | null; of: number | null };
+    year?: number;
+    title?: string;
+    artist?: string;
+    artists?: string[];
+    albumartist?: string;
+    album?: string;
+    genre?: string[];
+    picture?: { format: string; data: Uint8Array }[];
+  };
+}
 
 // Global type augmentation - automatically applies when package is installed
 declare global {
@@ -39,7 +64,7 @@ declare global {
   interface AudioFile extends File {
     id: string;
     preview: string;
-    source: IAudioMetadata["common"] & IAudioMetadata["format"];
+    source: AudioMetadataSource["common"] & AudioMetadataSource["format"];
   }
 
   type MediaFile = File | ImageFile | AudioFile;
@@ -58,7 +83,7 @@ export type Icon =
   | React.ReactElement
   | (() => React.ReactElement);
 
-export type IconProps = {
+export interface IconProps {
   iconPrefix?: "solid" | "regular" | "brands";
   className?: string;
   startIcon?: Icon;
@@ -67,7 +92,7 @@ export type IconProps = {
   iconSize?: SizeProp; // FontAwesome-specific size, renamed to avoid conflict with PandaCSS size
   pulse?: boolean;
   spin?: boolean;
-};
+}
 
 export type LoadingIcon = keyof typeof _l.loadingIconsMap;
 
@@ -82,61 +107,84 @@ export type LoadingProps = {
 
 // framer motion
 type BlockMotionProps = {
-  initial?: boolean | TargetAndTransition | VariantLabels;
-  animate?: TargetAndTransition | VariantLabels;
-  exit?: TargetAndTransition | VariantLabels;
-  variants?: { [key: string]: TargetAndTransition };
-  whileHover?: TargetAndTransition | VariantLabels;
-  whileTap?: TargetAndTransition | VariantLabels;
-  whileFocus?: TargetAndTransition | VariantLabels;
-  layout?: boolean | "position" | "size" | "preserve-aspect";
-  _motion?: Transition; // Custom transition prop for global motion config
+  initial?: any;
+  animate?: any;
+  exit?: any;
+  variants?: any;
+  whileHover?: any;
+  whileTap?: any;
+  whileFocus?: any;
+  layout?: any;
+  _motion?: any; // Custom transition prop for global motion config
 };
 
-export type BaseBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps &
-  IconProps & {
-    is?: undefined;
-    as?: keyof typeof _l.tags;
-    tooltip?: boolean | React.ReactNode | string;
-    portalContainer?: Element | DocumentFragment;
-    filepicker?: boolean;
-    portal?: boolean;
-  };
+// Shared props interface to reduce intersection complexity
+// We use an interface to encourage TS to cache this type
+export interface SharedBlockProps extends JsxStyleProps, BlockMotionProps, IconProps {
+  tooltip?: boolean | React.ReactNode | string;
+  portalContainer?: Element | DocumentFragment;
+  filepicker?: boolean;
+  portal?: boolean;
+  as?: React.ElementType;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+// Helper to omit conflicting props from HTML attributes
+type OmittedHTMLProps =
+  | "color"
+  | "width"
+  | "height"
+  | "translate"
+  | "content"
+  | "as"
+  | "onAnimationStart"
+  | "onAnimationEnd"
+  | "onAnimationIteration"
+  | "onDrag"
+  | "onDragStart"
+  | "onDragEnd"
+  | "onDragOver"
+  | "onDragEnter"
+  | "onDragLeave"
+  | "onDrop";
+type HTMLProps<T extends React.ElementType> = Omit<
+  React.ComponentProps<T>,
+  OmittedHTMLProps
+>;
+
+export type BaseBlockProps = SharedBlockProps & HTMLProps<"div"> & { is?: undefined };
 
 // simplified variants with motion support
-type TxtBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps & {
+type TxtBlockProps = SharedBlockProps & HTMLProps<"div"> & {
     is: "txt";
     as?: "p" | "span" | "h1" | "h2" | "h3" | "em" | "strong"; // defaults to p
   };
 
-export type HrBlockProps = HTMLStyledProps<typeof _l.motionTags.hr> &
-  BlockMotionProps & { is: "hr" } & PropsFor<"hr">;
+export type HrBlockProps = SharedBlockProps & HTMLProps<"hr"> & { is: "hr" };
 
-export type SkeletonBlockProps = Pick<
-  HTMLStyledProps<typeof _l.tags.div>,
-  "height" | "h" | "width" | "w" | "size" | "borderRadius" | "br"
-> & { is: "skeleton"; as: "block" };
+export type SkeletonBlockProps = SharedBlockProps & HTMLProps<"div"> & {
+  is: "skeleton";
+  as: "block";
+  // Custom skeleton props
+  size?: any;
+  br?: any;
+};
 
-export type SkeletonCircleProps = Pick<
-  HTMLStyledProps<typeof _l.tags.div>,
-  "height" | "h" | "width" | "w" | "size" | "borderRadius" | "br"
-> & { is: "skeleton"; as: "circle" };
+export type SkeletonCircleProps = SharedBlockProps & HTMLProps<"div"> & {
+  is: "skeleton";
+  as: "circle";
+  size?: any;
+  br?: any;
+};
 
 // Base button props without onChange
-type BtnBlockPropsBase = Omit<
-  HTMLStyledProps<typeof _l.motionTags.button>,
-  "onChange"
-> &
-  BlockMotionProps &
-  IconProps &
+type BtnBlockPropsBase = SharedBlockProps & Omit<HTMLProps<"button">, "onChange"> &
   LoadingProps & {
     is: "btn";
     disabled?: boolean;
     type?: "button" | "submit" | "reset";
     onClick?: React.MouseEventHandler;
-    tooltip?: boolean | React.ReactNode | string;
   };
 
 // Button with filepicker
@@ -161,14 +209,13 @@ export type BtnBlockProps = BtnBlockPropsBase & {
   onChange?: any; // Kept as any to avoid union complexity
 };
 
-export type InputBlockProps = HTMLStyledProps<typeof _l.tags.input> &
-  BlockMotionProps & { is: "input"; error?: string } & Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
-    "children"
-  >;
+export type InputBlockProps = SharedBlockProps & Omit<HTMLProps<"input">, "children"> & {
+    is: "input";
+    error?: string;
+    children?: React.ReactNode;
+  };
 
-export type TextareaBlockProps = HTMLStyledProps<typeof _l.tags.textarea> &
-  BlockMotionProps & {
+export type TextareaBlockProps = SharedBlockProps & Omit<HTMLProps<"textarea">, "children"> & {
     is: "textarea";
     error?: string;
     /** Maximum number of rows the textarea can expand to */
@@ -177,33 +224,30 @@ export type TextareaBlockProps = HTMLStyledProps<typeof _l.tags.textarea> &
     minRows?: number;
     /** Callback fired when the textarea height changes */
     onHeightChange?: (height: number, meta: { rowHeight: number }) => void;
-  } & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "children">;
+    children?: React.ReactNode;
+  };
 
-export type CheckboxBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps & {
+export type CheckboxBlockProps = SharedBlockProps & HTMLProps<"div"> & {
     is: "checkbox";
     onChecked?: (value: boolean) => void;
     indeterminate?: boolean;
     checked?: boolean;
   };
 
-export type ProgressBlockProps = HTMLStyledProps<typeof _l.motionTags.div> &
-  BlockMotionProps & {
+export type ProgressBlockProps = SharedBlockProps & HTMLProps<"progress"> & {
     is: "progress";
     value: number;
     max?: number;
     steps?: number;
-  } & PropsFor<"progress">;
+  };
 
-export type SwitchBlockProps = Omit<
-  HTMLStyledProps<typeof _l.tags.input>,
-  "onChange"
-> &
-  BlockMotionProps & {
+export type SwitchBlockProps = SharedBlockProps & Omit<HTMLProps<"button">, "onChange"> & {
     is: "switch";
     thumbSize?: number;
     onChange?: (checked: boolean) => void;
-  } & Omit<PropsFor<"button">, "onChange">;
+    checked?: boolean;
+    defaultChecked?: boolean;
+  };
 
 export type AccordionBlockProps = {
   is: "accordion";
@@ -213,8 +257,7 @@ export type AccordionBlockProps = {
   children: React.ReactElement | React.ReactElement[];
 };
 
-export type DrawerBlockProps = HTMLStyledProps<typeof _l.motionTags.div> &
-  BlockMotionProps & {
+export type DrawerBlockProps = SharedBlockProps & HTMLProps<"div"> & {
     is: "drawer";
     open: boolean;
     hideHandle?: boolean;
@@ -224,8 +267,6 @@ export type DrawerBlockProps = HTMLStyledProps<typeof _l.motionTags.div> &
     outsideClickClose?: boolean;
     closeOnEsc?: boolean;
     onClose?: () => void;
-    //   _backdrop?: GridProps;
-    //   children: any;
   };
 
 export type RadioOption = {
@@ -234,11 +275,7 @@ export type RadioOption = {
   disabled?: boolean;
 };
 
-export type RadioBlockProps = Omit<
-  HTMLStyledProps<typeof _l.base>,
-  "onChange" | "children"
-> &
-  BlockMotionProps & {
+export type RadioBlockProps = SharedBlockProps & Omit<HTMLProps<"div">, "onChange" | "children"> & {
     is: "radio";
     /** Controlled value for single-select radio group */
     value?: string | null;
@@ -258,8 +295,7 @@ export type RadioBlockProps = Omit<
     children?: never;
   };
 
-export type MenuBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps & {
+export type MenuBlockProps = SharedBlockProps & HTMLProps<"div"> & {
     is: "menu";
     trigger?: React.ReactNode;
     variant: "click" | "hover";
@@ -272,8 +308,7 @@ export type MenuBlockProps = HTMLStyledProps<typeof _l.base> &
     width?: string | number;
   };
 
-type LinkBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps & {
+type LinkBlockProps = SharedBlockProps & HTMLProps<"div"> & {
     is: "link";
     href?: string;
     to?: string;
@@ -281,152 +316,98 @@ type LinkBlockProps = HTMLStyledProps<typeof _l.base> &
     rel?: string;
   };
 
-type ImgBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps & {
+type ImgBlockProps = SharedBlockProps & HTMLProps<"img"> & {
     is: "img";
     src: string;
     alt: string;
   };
 
-type SelectBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps & {
+type SelectBlockProps = SharedBlockProps & HTMLProps<"select"> & {
     is: "select";
-  } & Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "children">;
+  };
 
-type BlockquoteBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps & {
+type BlockquoteBlockProps = SharedBlockProps & HTMLProps<"blockquote"> & {
     is: "blockquote";
-  } & PropsFor<"blockquote">;
+  };
 
-type PreBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps & {
+type PreBlockProps = SharedBlockProps & HTMLProps<"pre"> & {
     is: "pre";
-  } & PropsFor<"pre">;
+  };
 
 // Form variants with as constraints
-type FormBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps &
+type FormBlockProps = SharedBlockProps & HTMLProps<"form"> &
   (
-    | ({ is: "form"; as?: undefined } & PropsFor<"form">)
-    | ({ is: "form"; as: "label" } & PropsFor<"label">)
-    | ({ is: "form"; as: "legend" } & PropsFor<"legend">)
+    | ({ is: "form"; as?: undefined })
+    | ({ is: "form"; as: "label" } & HTMLProps<"label">)
+    | ({ is: "form"; as: "legend" } & HTMLProps<"legend">)
   );
 
 // Table variants with as constraints
-type TableBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps &
+type TableBlockProps = SharedBlockProps & HTMLProps<"table"> &
   (
-    | ({ is: "table"; as?: undefined } & PropsFor<"table">)
-    | ({ is: "table"; as: "tr" } & PropsFor<"tr">)
-    | ({ is: "table"; as: "td" } & PropsFor<"td">)
-    | ({ is: "table"; as: "th" } & PropsFor<"th">)
-    | ({ is: "table"; as: "tbody" } & PropsFor<"tbody">)
-    | ({ is: "table"; as: "thead" } & PropsFor<"thead">)
-    | ({ is: "table"; as: "tfoot" } & PropsFor<"tfoot">)
+    | ({ is: "table"; as?: undefined })
+    | ({ is: "table"; as: "tr" } & HTMLProps<"tr">)
+    | ({ is: "table"; as: "td" } & HTMLProps<"td">)
+    | ({ is: "table"; as: "th" } & HTMLProps<"th">)
+    | ({ is: "table"; as: "tbody" } & HTMLProps<"tbody">)
+    | ({ is: "table"; as: "thead" } & HTMLProps<"thead">)
+    | ({ is: "table"; as: "tfoot" } & HTMLProps<"tfoot">)
   );
 
 // List variants with required as
-type ListBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps &
+type ListBlockProps = SharedBlockProps & HTMLProps<"div"> &
   (
-    | ({ is: "list"; as: "ul" } & PropsFor<"ul">)
-    | ({ is: "list"; as: "ol" } & PropsFor<"ol">)
-    | ({ is: "list"; as: "li" } & PropsFor<"li">)
+    | ({ is: "list"; as: "ul" } & HTMLProps<"ul">)
+    | ({ is: "list"; as: "ol" } & HTMLProps<"ol">)
+    | ({ is: "list"; as: "li" } & HTMLProps<"li">)
   );
 
 // SEO variants with required as
-type SeoBlockProps = HTMLStyledProps<typeof _l.base> &
-  BlockMotionProps &
+type SeoBlockProps = SharedBlockProps & HTMLProps<"div"> &
   (
-    | ({ is: "seo"; as: "nav" } & PropsFor<"nav">)
-    | ({ is: "seo"; as: "main" } & PropsFor<"main">)
-    | ({ is: "seo"; as: "aside" } & PropsFor<"aside">)
-    | ({ is: "seo"; as: "article" } & PropsFor<"article">)
-    | ({ is: "seo"; as: "section" } & PropsFor<"section">)
-    | ({ is: "seo"; as: "details" } & PropsFor<"details">)
-    | ({ is: "seo"; as: "header" } & PropsFor<"header">)
-    | ({ is: "seo"; as: "footer" } & PropsFor<"footer">)
+    | ({ is: "seo"; as: "nav" } & HTMLProps<"nav">)
+    | ({ is: "seo"; as: "main" } & HTMLProps<"main">)
+    | ({ is: "seo"; as: "aside" } & HTMLProps<"aside">)
+    | ({ is: "seo"; as: "article" } & HTMLProps<"article">)
+    | ({ is: "seo"; as: "section" } & HTMLProps<"section">)
+    | ({ is: "seo"; as: "details" } & HTMLProps<"details">)
+    | ({ is: "seo"; as: "header" } & HTMLProps<"header">)
+    | ({ is: "seo"; as: "footer" } & HTMLProps<"footer">)
   );
 
-/*
- * as?: keyof React.JSX.IntrinsicElements;
- * txt?: boolean; // ✅
- * btn?: boolean; // ✅
- * button?: boolean; // ✅
- * input?: boolean; // ✅
- * textarea?: boolean; // ✅
- * checkbox?: boolean; // ✅
- * filepicker?: boolean; // ✅
- * progress?: boolean; // ✅
- * accordion?: boolean; // ✅
- * tooltip?: // ✅
- * hr?: // ✅
- * skeleton?: // ✅ circle, square, rectangle
- * toggle?: boolean; // ✅
- * drawer?: boolean; // ✅
- * radio?: boolean; // ✅
- * menu?: boolean; // ✅
- * link?: boolean; // ✅
- * img?: boolean;
- * icon?: Icon; // ✅ (including pandacss stroke color and width!!)
- * startIcon?: Icon; // ✅
- * endIcon?: Icon; // ✅
- */
+export type BlockPropsMap = {
+  hr: HrBlockProps;
+  txt: TxtBlockProps;
+  btn: BtnFilepickerProps | BtnStandardProps;
+  input: InputBlockProps;
+  textarea: TextareaBlockProps;
+  checkbox: CheckboxBlockProps;
+  accordion: AccordionBlockProps;
+  progress: ProgressBlockProps;
+  switch: SwitchBlockProps;
+  drawer: DrawerBlockProps;
+  radio: RadioBlockProps;
+  menu: MenuBlockProps;
+  link: LinkBlockProps;
+  img: ImgBlockProps;
+  select: SelectBlockProps;
+  skeleton: SkeletonBlockProps | SkeletonCircleProps;
+  blockquote: BlockquoteBlockProps;
+  pre: PreBlockProps;
+  form: FormBlockProps;
+  table: TableBlockProps;
+  list: ListBlockProps;
+  seo: SeoBlockProps;
+};
 
-// Complete union with all requested variants
-type AllBlockProps =
-  | BaseBlockProps
-  | TxtBlockProps
-  | HrBlockProps
-  | BtnBlockProps
-  | InputBlockProps
-  | TextareaBlockProps
-  | CheckboxBlockProps
-  | ProgressBlockProps
-  | AccordionBlockProps
-  | SwitchBlockProps
-  | DrawerBlockProps
-  | RadioBlockProps
-  | MenuBlockProps
-  | LinkBlockProps
-  | ImgBlockProps
-  | SelectBlockProps
-  | SkeletonCircleProps
-  | SkeletonBlockProps
-  | BlockquoteBlockProps
-  | PreBlockProps
-  | FormBlockProps
-  | TableBlockProps
-  | ListBlockProps
-  | SeoBlockProps;
+export type Is = keyof BlockPropsMap;
 
-// main Block component with all variants
-export type BlockProps = AllBlockProps;
-
-// discriminated-union API (is/as)
-export type Is =
-  | "hr"
-  | "txt"
-  | "btn"
-  | "input"
-  | "textarea"
-  | "checkbox"
-  | "accordion"
-  | "progress"
-  | "switch"
-  | "drawer"
-  | "radio"
-  | "menu"
-  | "link"
-  | "img"
-  | "select"
-  | "skeleton"
-  | "blockquote"
-  | "pre"
-  | "form"
-  | "table"
-  | "list"
-  | "seo";
+export type BlockProps<T extends Is | undefined = undefined> =
+  T extends undefined
+    ? BaseBlockProps
+    : T extends Is
+    ? BlockPropsMap[T]
+    : never;
 
 export type SkeletonAs = "circle" | "block";
 export type TxtAs = "p" | "span" | "h1" | "h2" | "h3" | "em" | "strong";
@@ -459,6 +440,3 @@ export type CoreTooltipProps = {
   offsetVal?: number;
   className?: string;
 };
-
-// Note: ImageFile, AudioFile, VideoFile, MediaFile are declared globally above
-// No need to export them explicitly - they're available globally when qstd is installed

@@ -1,6 +1,5 @@
 import React from "react";
 import { nanoid } from "nanoid";
-import * as mmb from "music-metadata-browser";
 import { IconDefinition, IconName } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { RotatingLines } from "react-loader-spinner";
@@ -56,6 +55,7 @@ export const extractImageMetadata = (f: File) => {
 
 export const extractAudioMetadata = async (f: File) => {
   // thoroughly extact data from audio file
+  const mmb = await import("music-metadata-browser");
   const meta = await mmb.parseBlob(f, { duration: true });
 
   return new Promise<AudioFile>((res, rej) => {

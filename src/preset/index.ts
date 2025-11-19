@@ -38,7 +38,27 @@ const preset: Preset = {
   name: "qstd-preset",
 
   globalCss: {
-    ":root": { colorScheme: "light dark" },
+    ":root": {
+      /**
+       * Default UA surfaces (forms, scrollbars, etc.) to light mode so
+       * projects that do not opt into dark mode still get consistent styling.
+       */
+      colorScheme: "light",
+    },
+    "html[data-theme=light]": {
+      /**
+       * Keep the UA elements in sync with Panda's light theme tokens whenever
+       * a consumer sets data-theme="light".
+       */
+      colorScheme: "light",
+    },
+    "html[data-theme=dark]": {
+      /**
+       * Propagate the dark theme toggle down to the browser chrome so native
+       * controls respect the chosen theme.
+       */
+      colorScheme: "dark",
+    },
     html: {
       fontSize: 16,
       lineHeight: 1.5,
