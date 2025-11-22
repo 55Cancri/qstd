@@ -63,7 +63,33 @@ export function useMyHook() { /* ... */ }
 # Variants: src/block/accordion.tsx, drawer.tsx, etc.
 ```
 
-### 3. Version & Publish (1 minute)
+### 3. Test Locally in Playground (2 minutes)
+
+The playground directory has a symbolic link to the root package, so you can test changes locally before publishing:
+
+```bash
+# In root directory: Build your changes
+pnpm build
+
+# OR run in watch mode (auto-rebuilds on changes)
+pnpm dev
+
+# In another terminal, navigate to playground
+cd playground
+
+# Regenerate Panda CSS to pick up preset changes
+pnpm prepare   # Runs 'panda codegen'
+
+# Run the playground dev server
+pnpm dev
+
+# Test your changes in the browser
+# Make changes → rebuild → refresh browser
+```
+
+**Note:** The playground uses a symbolic link (`"qstd": "link:.."` in playground/package.json), so changes to the root package are immediately available after rebuilding.
+
+### 4. Version & Publish (1 minute)
 
 ```bash
 # Commit your changes
@@ -85,7 +111,7 @@ pnpm publish --access public
 git push --follow-tags
 ```
 
-### 4. Test in Your Project (2 minutes)
+### 5. Install in Your Main App (2 minutes)
 
 ```bash
 cd /path/to/your-project

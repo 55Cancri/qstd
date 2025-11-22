@@ -185,9 +185,16 @@ const preset: Preset = {
         },
       },
       center: {
-        values: { type: "boolean" },
-        transform() {
-          return { placeContent: "center", placeItems: "center" };
+        values: { type: "boolean | 'x' | 'y'" },
+        transform(value?: boolean | "x" | "y") {
+          if (value === "x") {
+            return { justifyContent: "center" };
+          }
+          if (value === "y") {
+            return { alignItems: "center" };
+          } else {
+            return { placeContent: "center", placeItems: "center" };
+          }
         },
       },
       relative: {

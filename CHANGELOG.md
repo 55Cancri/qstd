@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-11-22
+
+### Added
+
+- Enhanced `center` utility to support directional centering
+  - `center` - centers both axes (placeContent + placeItems)
+  - `center="x"` - centers horizontally (justifyContent)
+  - `center="y"` - centers vertically (alignItems)
+- Added `prepare:local` convenience script for local testing workflow
+- Updated DEVELOPMENT.md with local testing workflow using playground symbolic link
+
+## [0.1.6] - Previous
+
 ### Added
 
 - Initial package structure
@@ -16,8 +29,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React hooks placeholder: useDebounce, useToggle, useLocalStorage
 - Panda CSS preset placeholder
 - Block component placeholder
-
-## [0.1.0] - TBD
-
-Initial beta release (to be published)
 

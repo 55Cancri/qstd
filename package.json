@@ -45,6 +45,7 @@
     "build": "panda codegen && panda cssgen && tsup && node scripts/inject-css-import.js",
     "dev": "tsup --watch",
     "prepublishOnly": "pnpm build",
+    "prepare:local": "pnpm build && cd playground && pnpm prepare",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:all": "pnpx tsx tests/test-all.ts",
