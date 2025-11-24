@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-11-24
+
+### Added
+
+- Added `Log` utility module with logging functions
+  - `log()` - Pretty print values with JSON.stringify
+  - `info()` - Log with [info] prefix
+  - `warn()` - Log with [warn] prefix
+  - `error()` - Log with [error] prefix
+  - Available in both `qstd/client` and `qstd/server`
+
 ## [0.2.0] - 2025-11-22
 
 ### Added

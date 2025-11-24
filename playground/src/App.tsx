@@ -83,6 +83,7 @@ export default function App() {
         </Block>
         <Block
           is="btn"
+          center="x"
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
           bg={{ base: "neutral.200", _dark: "neutral.700" }}
           px={4}
@@ -173,8 +174,8 @@ export default function App() {
                   progress2 > 60
                     ? "green.400"
                     : progress2 > 30
-                      ? "yellow.400"
-                      : "red.400",
+                    ? "yellow.400"
+                    : "red.400",
               }}
             />
           </Block>

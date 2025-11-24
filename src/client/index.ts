@@ -7,6 +7,7 @@ export * as Money from "../shared/money";
 export * as Time from "../shared/time";
 export * as Flow from "../shared/flow";
 export * as Random from "../shared/random";
+export * as Log from "../shared/log";
 
 // Client-specific utilities (DOM)
 export * as Dom from "./dom";
