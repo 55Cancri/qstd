@@ -144,3 +144,5 @@ export function useMatchMedia(
 
   return value;
 }
+
+export * from "./use-theme";

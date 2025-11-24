@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2025-11-24
+
+### Added
+
+- Added `useTheme` hook for managing light/dark theme
+  - Syncs with localStorage and across components using events
+  - Provides `theme`, `isManual` state and `toggleTheme`, `update` functions
+  - Available in `qstd/react`
+
 ## [0.2.1] - 2025-11-24
 
 ### Added

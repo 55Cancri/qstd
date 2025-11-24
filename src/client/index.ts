@@ -11,4 +11,3 @@ export * as Log from "../shared/log";
 
 // Client-specific utilities (DOM)
 export * as Dom from "./dom";
-
