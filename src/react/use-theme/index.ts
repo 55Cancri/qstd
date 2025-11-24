@@ -53,7 +53,7 @@ export function useTheme() {
     });
   };
 
-  const toggleTheme = (theme?: "light" | "dark") => {
+  const toggle = (theme?: "light" | "dark") => {
     setStore((prev) => {
       const next = {
         value: theme ?? (prev.value === "light" ? "dark" : "light"),
@@ -64,5 +64,5 @@ export function useTheme() {
     });
   };
 
-  return { ...store, update, toggleTheme };
+  return { ...store, update, toggle };
 }
