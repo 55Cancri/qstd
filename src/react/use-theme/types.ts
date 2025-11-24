@@ -1,7 +1,6 @@
 export type Theme = "light" | "dark";
 
 export type ThemeStore = {
-  theme: Theme;
+  value: Theme;
   isManual: boolean;
 };
-

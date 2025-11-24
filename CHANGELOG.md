@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-11-24
+
+### Changed
+
+- Updated `useTheme` hook to automatically set `data-theme` attribute on `document.documentElement`
+- Renamed internal store property from `theme` to `value` for better clarity
+- Code cleanup in theme utility functions
+
 ## [0.2.2] - 2025-11-24
 
 ### Added

@@ -12,10 +12,13 @@ export type { Theme, ThemeStore } from "./types";
 export function useTheme() {
   const [store, setStore] = React.useState<_t.ThemeStore>(_f.getInitialStore);
 
+  // Apply theme to HTML element whenever store changes
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-theme", store.value);
+  }, [store.value]);
+
   // Sync with localStorage changes (from other tabs/windows)
   React.useEffect(() => {
-    if (typeof window === "undefined") return;
-
     const handleStorageChange = (e: StorageEvent) => {
       if (
         e.key === _l.THEME_STORAGE_KEY ||
@@ -53,7 +56,7 @@ export function useTheme() {
   const toggleTheme = (theme?: "light" | "dark") => {
     setStore((prev) => {
       const next = {
-        theme: theme ?? (prev.theme === "light" ? "dark" : "light"),
+        value: theme ?? (prev.value === "light" ? "dark" : "light"),
         isManual: true,
       };
       _f.saveStore(next);
