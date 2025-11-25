@@ -63,6 +63,7 @@ export function useTheme() {
   };
 
   const toggle = (theme?: "light" | "dark") => {
+    console.log("toggle theme");
     const newStore: _t.ThemeStore = {
       value: theme ?? (storeRef.current.value === "light" ? "dark" : "light"),
       isManual: true,
