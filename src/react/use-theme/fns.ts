@@ -14,7 +14,7 @@ export const getInitialStore = (): _t.ThemeStore => {
     if (stored) {
       const parsed = JSON.parse(stored);
       return {
-        value: parsed.theme ?? getInitialTheme(),
+        value: parsed.value ?? getInitialTheme(),
         isManual: parsed.isManual ?? false,
       };
     }

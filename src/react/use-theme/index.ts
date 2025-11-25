@@ -11,22 +11,20 @@ export type { Theme, ThemeStore } from "./types";
  */
 export function useTheme() {
   const [store, setStore] = React.useState<_t.ThemeStore>(_f.getInitialStore);
-  const [shouldSave, setShouldSave] = React.useState(false);
+  const storeRef = React.useRef(store);
+  const isInternalUpdateRef = React.useRef(false);
+
+  // Keep ref in sync with state
+  React.useEffect(() => {
+    storeRef.current = store;
+  }, [store]);
 
   // Apply theme to HTML element whenever store changes
   React.useEffect(() => {
     document.documentElement.setAttribute("data-theme", store.value);
   }, [store.value]);
 
-  // Save to localStorage after state changes (when triggered by user actions)
-  React.useEffect(() => {
-    if (shouldSave) {
-      _f.saveStore(store);
-      setShouldSave(false);
-    }
-  }, [store, shouldSave]);
-
-  // Sync with localStorage changes (from other tabs/windows)
+  // Sync with localStorage changes (from other tabs/windows) and custom events (same-tab)
   React.useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (
@@ -37,8 +35,11 @@ export function useTheme() {
       }
     };
 
-    // Listen for custom event (same-tab sync)
     const handleThemeChange = (e: Event) => {
+      if (isInternalUpdateRef.current) {
+        isInternalUpdateRef.current = false;
+        return;
+      }
       const customEvent = e as CustomEvent<_t.ThemeStore>;
       if (customEvent.detail) {
         setStore(customEvent.detail);
@@ -55,16 +56,20 @@ export function useTheme() {
   }, []);
 
   const update = (updates: Partial<_t.ThemeStore>) => {
-    setStore((prev) => ({ ...prev, ...updates }));
-    setShouldSave(true);
+    const newStore = { ...storeRef.current, ...updates };
+    setStore(newStore);
+    isInternalUpdateRef.current = true;
+    _f.saveStore(newStore);
   };
 
   const toggle = (theme?: "light" | "dark") => {
-    setStore((prev) => ({
-      value: theme ?? (prev.value === "light" ? "dark" : "light"),
+    const newStore: _t.ThemeStore = {
+      value: theme ?? (storeRef.current.value === "light" ? "dark" : "light"),
       isManual: true,
-    }));
-    setShouldSave(true);
+    };
+    setStore(newStore);
+    isInternalUpdateRef.current = true;
+    _f.saveStore(newStore);
   };
 
   return { ...store, update, toggle };

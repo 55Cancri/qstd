@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2025-11-25
+
+### Fixed
+
+- Improved `useTheme` hook reliability with refs to prevent stale closures
+  - Added `storeRef` to always access current state
+  - Added `isInternalUpdateRef` to distinguish internal vs external updates
+  - Fixed localStorage parsing to use correct `parsed.value` property
+  - Prevents duplicate state updates from custom events
+
 ## [0.2.5] - 2025-11-25
 
 ### Fixed
