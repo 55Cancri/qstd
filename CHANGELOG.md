@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2025-11-25
+
+### Fixed
+
+- Fixed `useTheme` hook toggle function not updating `data-theme` attribute
+  - Moved localStorage save logic to effect to avoid race condition with event listeners
+  - State updates now properly trigger theme changes on HTML element
+
 ## [0.2.4] - 2025-11-24
 
 ### Changed

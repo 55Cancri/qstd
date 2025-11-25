@@ -11,11 +11,20 @@ export type { Theme, ThemeStore } from "./types";
  */
 export function useTheme() {
   const [store, setStore] = React.useState<_t.ThemeStore>(_f.getInitialStore);
+  const [shouldSave, setShouldSave] = React.useState(false);
 
   // Apply theme to HTML element whenever store changes
   React.useEffect(() => {
     document.documentElement.setAttribute("data-theme", store.value);
   }, [store.value]);
+
+  // Save to localStorage after state changes (when triggered by user actions)
+  React.useEffect(() => {
+    if (shouldSave) {
+      _f.saveStore(store);
+      setShouldSave(false);
+    }
+  }, [store, shouldSave]);
 
   // Sync with localStorage changes (from other tabs/windows)
   React.useEffect(() => {
@@ -46,22 +55,16 @@ export function useTheme() {
   }, []);
 
   const update = (updates: Partial<_t.ThemeStore>) => {
-    setStore((prev) => {
-      const next = { ...prev, ...updates };
-      _f.saveStore(next);
-      return next;
-    });
+    setStore((prev) => ({ ...prev, ...updates }));
+    setShouldSave(true);
   };
 
   const toggle = (theme?: "light" | "dark") => {
-    setStore((prev) => {
-      const next = {
-        value: theme ?? (prev.value === "light" ? "dark" : "light"),
-        isManual: true,
-      };
-      _f.saveStore(next);
-      return next;
-    });
+    setStore((prev) => ({
+      value: theme ?? (prev.value === "light" ? "dark" : "light"),
+      isManual: true,
+    }));
+    setShouldSave(true);
   };
 
   return { ...store, update, toggle };
