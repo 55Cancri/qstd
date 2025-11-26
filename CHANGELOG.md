@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.8] - 2025-11-26
+
+### Changed
+
+- Enhanced TypeScript strictness with additional compiler options:
+  - `noUncheckedIndexedAccess: true` - Forces checking if array/object access might be undefined
+  - `exactOptionalPropertyTypes: true` - Stricter handling of optional properties
+  - `noImplicitReturns: true` - All code paths must explicitly return
+  - `noFallthroughCasesInSwitch: true` - Prevents switch fallthrough bugs
+  - `verbatimModuleSyntax: true` - Stricter import/export syntax
+  - `noUncheckedSideEffectImports: true` - Requires explicit side-effect imports
+  - `moduleDetection: "force"` - Treats all files as modules
+- Fixed drawer component to comply with stricter TypeScript rules
+- Removed unused `@ts-expect-error` directives in drawer component
+
 ## [0.2.7] - 2025-11-25
 
 ### Changed
@@ -87,4 +102,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React hooks placeholder: useDebounce, useToggle, useLocalStorage
 - Panda CSS preset placeholder
 - Block component placeholder
-

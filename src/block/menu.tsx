@@ -62,7 +62,10 @@ export default function Menu(props: _t.MenuBlockProps) {
     open: isOpen,
     onOpenChange,
     middleware: [
-      offset({ crossAxis: props.offset?.x, mainAxis: props.offset?.y }),
+      offset({
+        ...(props.offset?.x !== undefined && { crossAxis: props.offset.x }),
+        ...(props.offset?.y !== undefined && { mainAxis: props.offset.y }),
+      }),
       flip({ fallbackPlacements: ["top-end"] }),
       shift({ padding: 5 }),
       hide({ strategy: "referenceHidden" }),

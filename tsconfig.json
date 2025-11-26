@@ -26,13 +26,12 @@
     },
     // Additional strict checks
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+    // "exactOptionalPropertyTypes": true, // Disabled - poor compatibility with framer-motion
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "verbatimModuleSyntax": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "incremental": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },

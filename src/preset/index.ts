@@ -315,14 +315,15 @@ const preset: Preset = {
       cols: {
         transform(value) {
           if (typeof value !== "string") return {};
-          const [templatePart, gapPart] = value.split("/").map((s) => s.trim());
+          const [templatePart = "", gapPart] = value.split("/").map((s) => s.trim());
           const templateWords = templatePart.split(/\s+/);
           let alignContent = "",
             gridTemplate = "",
             columnGap = "";
           const alignmentValues = ["start", "center", "end"];
-          if (alignmentValues.includes(templateWords[0])) {
-            alignContent = templateWords[0];
+          const firstWord = templateWords[0];
+          if (firstWord && alignmentValues.includes(firstWord)) {
+            alignContent = firstWord;
             if (templateWords.length > 1)
               gridTemplate = templateWords.slice(1).join(" ");
           } else gridTemplate = templateWords.join(" ");
@@ -353,14 +354,15 @@ const preset: Preset = {
       rows: {
         transform(value) {
           if (typeof value !== "string") return {};
-          const [templatePart, gapPart] = value.split("/").map((s) => s.trim());
+          const [templatePart = "", gapPart] = value.split("/").map((s) => s.trim());
           const templateWords = templatePart.split(/\s+/);
           let justifyContent = "",
             gridTemplate = "",
             rowGap = "";
           const justifyValues = ["start", "end", "between", "center"];
-          const justifyValue = justifyValues.includes(templateWords[0])
-            ? templateWords[0]
+          const firstWord = templateWords[0];
+          const justifyValue = firstWord && justifyValues.includes(firstWord)
+            ? firstWord
             : "";
           if (justifyValue) {
             justifyContent =

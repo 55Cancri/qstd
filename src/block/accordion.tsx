@@ -1,5 +1,5 @@
 import React from "react";
-import { Updater, useImmer } from "use-immer";
+import { type Updater, useImmer } from "use-immer";
 
 import Icon from "./icon";
 import useResizeObserver from "./use-resize-observer";

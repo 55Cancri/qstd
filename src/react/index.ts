@@ -7,6 +7,7 @@
 
 // Import pre-generated Panda CSS styles for Block's internal styling
 // tsup will extract this CSS and output it as dist/react/index.css
+// @ts-expect-error - CSS import for bundler
 import "../../styled-system/styles.css";
 
 import React from "react";

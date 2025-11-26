@@ -35,7 +35,7 @@ export const num = (props: RandProps = {}) => {
  */
 export const shuffle = <T>(xs: T[]) => {
   return xs.reduceRight((r, _, __, s) => {
-    const randomItem = s.splice(0 | (Math.random() * s.length), 1)[0];
+    const randomItem = s.splice(0 | (Math.random() * s.length), 1)[0]!;
     return r.push(randomItem), r;
   }, [] as T[]);
 };

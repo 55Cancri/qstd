@@ -1,5 +1,5 @@
 import React from "react";
-import { MotionConfig, Transition } from "framer-motion";
+import { MotionConfig, type Transition } from "framer-motion";
 
 import * as _l from "./literals";
 import * as _t from "./types";

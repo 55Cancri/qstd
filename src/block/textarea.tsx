@@ -215,7 +215,7 @@ function calculateNodeHeight(
   value: string,
   minRows = 1,
   maxRows = Infinity
-) {
+): [number, number] {
   // Create hidden textarea if it doesn't exist
   if (!hiddenTextarea) {
     hiddenTextarea = document.createElement("textarea");
@@ -394,7 +394,7 @@ export default function Textarea(props: _t.TextareaBlockProps) {
     <Base grid rows="/ 4">
       <Base grid relative>
         {labelWithProps}
-        <MotionConfig transition={_motion}>
+        <MotionConfig {...(_motion && { transition: _motion })}>
           <Txtarea
             ref={ref}
             value={value}

@@ -9,14 +9,14 @@ import {
   type Target,
   type TargetAndTransition,
 } from "framer-motion";
-import { IconName, SizeProp } from "@fortawesome/fontawesome-svg-core";
-import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
-import { Placement } from "@floating-ui/react";
-import { IconType } from "react-icons/lib";
+import type { IconName, SizeProp } from "@fortawesome/fontawesome-svg-core";
+import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import type { Placement } from "@floating-ui/react";
+import type { IconType } from "react-icons/lib";
 import * as React from "react";
 
 // Import Panda types directly to avoid HTMLStyledProps complexity
-import { JsxStyleProps } from "../../styled-system/types";
+import type { JsxStyleProps } from "../../styled-system/types";
 import * as _l from "./literals";
 
 // Define the subset of IAudioMetadata we actually use
