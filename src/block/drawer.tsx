@@ -3,6 +3,7 @@ import {
   useMotionValue,
   useDragControls,
   AnimatePresence,
+  type PanInfo,
 } from "framer-motion";
 import { createPortal } from "react-dom";
 
@@ -19,7 +20,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   const ref = React.useRef<HTMLDivElement | null>(null);
   const dragHandleRef = React.useRef<HTMLDivElement | null>(null);
   const [isDesktop] = useMatchMedia(breakpoint);
-  const closeFnRef = React.useRef<any>(null);
+  const closeFnRef = React.useRef<(() => void) | null>(null);
   const dragControls = useDragControls();
   const { open, setOpen } = useDrawer();
   const { onClose, ...rest } = props;
@@ -37,30 +38,40 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   };
   const closeDrawer = () => setOpen(false);
 
-  // the fn needs to be stored in a ref to avoid stale fns in the esc close event listeners
-  closeFnRef.current = () => {
-    closeDrawer();
-    onClose?.();
-  };
+  // Update ref in an effect to avoid mutating during render
+  React.useEffect(() => {
+    closeFnRef.current = () => {
+      closeDrawer();
+      onClose?.();
+    };
+  });
 
-  const onDragStart = (e: any, info: any) => {
+  const onDragStart = (
+    e: PointerEvent | React.PointerEvent,
+    info?: PanInfo
+  ) => {
     console.log({ e });
     if (isDesktop) return;
     const noDragEl = document.querySelector("[data-no-drag]");
-    if (!noDragEl || !noDragEl.contains(e.target)) {
+    if (!noDragEl || !noDragEl.contains(e.target as Node)) {
       // if (!e.target.classList.contains("no-drag")) {
       dragControls.start(e);
     } else {
-      // @ts-ignore
-      dragControls.componentControls.forEach((entry) => {
-        entry.stop(e, info);
-      });
+      // @ts-expect-error - componentControls is internal framer-motion API
+      dragControls.componentControls.forEach(
+        (entry: {
+          stop: (e: PointerEvent | React.PointerEvent, info?: PanInfo) => void;
+        }) => {
+          entry.stop(e, info);
+        }
+      );
     }
   };
 
   React.useEffect(() => {
     if (props.open) openDrawer();
-    else closeFnRef.current();
+    else closeFnRef.current?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- React 19 compiler handles deps
   }, [props.open]);
 
   React.useEffect(() => {
@@ -77,7 +88,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
     const closeOnEsc = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || props.closeOnEsc === false) return;
       console.log("[close] esc key");
-      closeFnRef.current();
+      closeFnRef.current?.();
     };
 
     container.addEventListener("focusout", trapFocus);
@@ -88,7 +99,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
       container.removeEventListener("keydown", closeOnEsc);
       document.body.style.overflow = "auto";
     };
-  }, [open]);
+  }, [open, props.closeOnEsc]);
 
   // observe changes in y values
   React.useEffect(() => {
@@ -96,7 +107,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
       // threshold for y px below bottom to automatically close drawer
       if (latestY > 150) {
         console.log("[close] latestY > 150");
-        closeFnRef.current();
+        closeFnRef.current?.();
       }
     });
 
@@ -110,7 +121,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
     const outsideClickClose = props.outsideClickClose ?? true;
     if (!outsideClickClose) return;
     console.log("[close] clicked backdrop");
-    closeFnRef.current();
+    closeFnRef.current?.();
   };
 
   return createPortal(
@@ -123,9 +134,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
           <MotionDiv
             grid
             key="drawer"
-            onClick={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) =>
-              e.stopPropagation()
-            }
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
             position="fixed"
             //   variants={{
             //     initial: { height: 0, opacity: 0 },
@@ -191,16 +200,17 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
                     exit: { height: 0, opacity: 0 },
                   },
                   drag: "y",
-                  style: { y } as any,
+                  style: { y },
                   dragControls,
-                  // @ts-ignore
-                  onPointerDown: (...args) => onDragStart(args[0], args[1]),
-                  // onPointerDown: (x, y) => onDragStart(x, y),
+                  onPointerDown: (e: React.PointerEvent) => onDragStart(e),
                   //   drag={hasBackdrop ? "y" : false}
                   dragElastic: 0,
                   // prevent drawer from being dragged higher than what its opened to
                   dragConstraints: { top: 0 },
-                  onDragEnd: (_, drag) => {
+                  onDragEnd: (
+                    _: MouseEvent | TouchEvent | PointerEvent,
+                    drag: PanInfo
+                  ) => {
                     if (props.drag === false) return;
                     const pageHeight = document.documentElement.scrollHeight;
                     const yCoord = drag.point.y; // where on the y axis the drag is released
@@ -277,7 +287,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
                   ref={dragHandleRef}
                 />
               )}
-              {props.children as React.ReactNode}
+              {props.children}
             </MotionDiv>
           </MotionDiv>
         </Backdrop>
@@ -287,9 +297,12 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   );
 }
 
-const DrawerContext = React.createContext({
+const DrawerContext = React.createContext<{
+  open: boolean;
+  setOpen: (value: boolean) => void;
+}>({
   open: false,
-  setOpen: (_value: boolean) => {
+  setOpen: () => {
     return;
   },
 });
@@ -330,7 +343,7 @@ export function BtnGroup(props: React.ComponentProps<typeof MotionDiv>) {
   if (isDesktop) {
     return (
       <MotionDiv flex alignI gap={4} {...rest}>
-        {React.Children.toArray(children as any).toReversed()}
+        {React.Children.toArray(children as React.ReactNode).toReversed()}
       </MotionDiv>
     );
   } else {
@@ -380,7 +393,7 @@ export function CloseBtn(props: React.ComponentProps<typeof MotionBtn>) {
           h={16}
           w={16}
           fontSize={16}
-          color={{ base: "neutral.400", _dark: "neutral.300" }}
+          color="currentColor"
         />
       </MotionBtn>
     );
@@ -441,10 +454,10 @@ function Backdrop(props: BackdropProps) {
       left={0}
       height="100%"
       width="100%"
-      placeI={isDesktop}
+      {...(isDesktop ? { placeI: true } : {})}
       onClick={() => (allowOutsideClick ? props.onClick() : undefined)}
     >
-      {props.children as React.ReactElement}
+      {props.children}
     </MotionDiv>
   );
 }

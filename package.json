@@ -55,7 +55,7 @@
     "typecheck:perf": "tsc --noEmit --extendedDiagnostics",
     "typecheck:trace": "tsc --noEmit --generateTrace ./performance/ts-trace",
     "analyze:tsserver": "bash performance/analyze-tsserver.sh",
-    "lint": "eslint src --ext ts,tsx"
+    "lint": "eslint ."
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
@@ -79,18 +79,21 @@
     "use-immer": "^0.11.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@eslint/json": "^0.13.2",
     "@pandacss/dev": "^1.2.0",
+    "@pandacss/eslint-plugin": "^0.2.14",
     "@types/node": "^22.10.5",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.8",
-    "@typescript-eslint/eslint-plugin": "^8.41.0",
-    "@typescript-eslint/parser": "^8.41.0",
-    "eslint": "^9.28.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^16.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tsup": "^8.0.0",
     "typescript": "^5.9.2",
+    "typescript-eslint": "^8.46.4",
     "vitest": "^3.1.4"
   },
   "keywords": [

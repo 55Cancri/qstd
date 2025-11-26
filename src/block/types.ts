@@ -2,10 +2,15 @@
  * Export file types for consumers
  * Import these in your project if you need ImageFile, AudioFile, VideoFile types
  */
-import { type Transition, type VariantLabels } from "framer-motion";
+import {
+  type Transition,
+  type VariantLabels,
+  type Variants,
+  type Target,
+  type TargetAndTransition,
+} from "framer-motion";
 import { IconName, SizeProp } from "@fortawesome/fontawesome-svg-core";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
-import type { TargetAndTransition } from "motion-dom";
 import { Placement } from "@floating-ui/react";
 import { IconType } from "react-icons/lib";
 import * as React from "react";
@@ -107,21 +112,21 @@ export type LoadingProps = {
 
 // framer motion
 type BlockMotionProps = {
-  initial?: any;
-  animate?: any;
-  exit?: any;
-  variants?: any;
-  whileHover?: any;
-  whileTap?: any;
-  whileFocus?: any;
-  layout?: any;
-  _motion?: any; // Custom transition prop for global motion config
+  initial?: Target | VariantLabels | boolean;
+  animate?: TargetAndTransition | VariantLabels | boolean;
+  exit?: TargetAndTransition | VariantLabels;
+  variants?: Variants;
+  whileHover?: TargetAndTransition | VariantLabels;
+  whileTap?: TargetAndTransition | VariantLabels;
+  whileFocus?: TargetAndTransition | VariantLabels;
+  layout?: boolean | "position" | "size" | "preserve-aspect";
+  _motion?: Transition; // Custom transition prop for global motion config
 };
 
 // Shared props interface to reduce intersection complexity
 // We use an interface to encourage TS to cache this type
 export interface SharedBlockProps extends JsxStyleProps, BlockMotionProps, IconProps {
-  tooltip?: boolean | React.ReactNode | string;
+  tooltip?: React.ReactNode | string;
   portalContainer?: Element | DocumentFragment;
   filepicker?: boolean;
   portal?: boolean;
