@@ -55,7 +55,7 @@ export const countChar = (str: string, ch: string) => {
  * @param opts
  * @returns
  */
-export const toCase = <T extends string>(text: string, opts: CaseOpts) => {
+export const changeCase = <T extends string>(text: string, opts: CaseOpts) => {
   switch (opts.to) {
     case "title":
       return (text.charAt(0).toUpperCase() + text.slice(1)) as T;
@@ -75,4 +75,3 @@ export const toCase = <T extends string>(text: string, opts: CaseOpts) => {
       return text as T;
   }
 };
-

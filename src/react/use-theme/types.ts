@@ -4,3 +4,7 @@ export type ThemeStore = {
   value: Theme;
   isManual: boolean;
 };
+
+
+
+
