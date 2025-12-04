@@ -50,7 +50,7 @@ type DurationOptions = {
  * formatDuration(64400, { format: "fractional" }) // "1m 4.4s"
  */
 export const formatDuration = (
-  ms: number | null,
+  ms: number | null | undefined,
   options: DurationOptions = {}
 ) => {
   if (ms === null || ms === undefined) return "--:--";

@@ -1,3 +1,74 @@
+type ParseJsonResult<T> = { ok: true; data: T } | { ok: false; error: Error };
+
+/**
+ * Parse a JSON string into an object
+ * - Safe by default: returns { ok, data/error }
+ * - Strict mode: throws on error, returns data directly
+ * - If input is already an object, returns it as-is
+ * - If input is null/undefined/empty string, returns error (or throws if strict)
+ * - Optional generic for typed output (no runtime validation)
+ *
+ * @example
+ * // Safe mode (default)
+ * const result = parseJson(event.body);
+ * if (result.ok) console.log(result.data);
+ *
+ * @example
+ * // Safe mode with type
+ * const result = parseJson<{ name: string }>(event.body);
+ * if (result.ok) console.log(result.data.name);
+ *
+ * @example
+ * // Strict mode - throws on error
+ * const data = parseJson<MyType>(event.body, { strict: true });
+ */
+export function parseJson<T = Record<string, unknown>>(
+  input: string | object | null | undefined,
+  opts: { strict: true }
+): T;
+export function parseJson<T = Record<string, unknown>>(
+  input: string | object | null | undefined,
+  opts?: { strict?: false }
+): ParseJsonResult<T>;
+export function parseJson<T = Record<string, unknown>>(
+  input: string | object | null | undefined,
+  opts?: { strict?: boolean }
+) {
+  const strict = opts?.strict ?? false;
+
+  // Handle null/undefined
+  if (input === null || input === undefined) {
+    const error = new Error("[parseJson] input is null or undefined");
+    if (strict) throw error;
+    return { ok: false, error };
+  }
+
+  // Handle empty string
+  if (input === "") {
+    const error = new Error("[parseJson] input is empty string");
+    if (strict) throw error;
+    return { ok: false, error };
+  }
+
+  // Already an object - return as-is
+  if (typeof input === "object") {
+    if (strict) return input;
+    return { ok: true, data: input };
+  }
+
+  // Parse string
+  try {
+    const data = JSON.parse(input) as T;
+    if (strict) return data;
+    return { ok: true, data };
+  } catch (e) {
+    const error =
+      e instanceof Error ? e : new Error("[parseJson] failed to parse JSON");
+    if (strict) throw error;
+    return { ok: false, error };
+  }
+}
+
 type CaseOpts = {
   to: "title" | "snake" | "kebab";
   clean?: boolean;

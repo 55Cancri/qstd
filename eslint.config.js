@@ -74,9 +74,7 @@ export default defineConfig([
         ...globals.es2021,
       },
     },
-    rules: {
-      ...reactHooks.configs.recommended.rules,
-    },
+    rules: reactHooks.configs["recommended-latest"].rules,
   },
 
   // ========================================
