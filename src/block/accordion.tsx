@@ -51,12 +51,14 @@ function AccordionComponent(props: _t.AccordionBlockProps) {
   const accordion = useAccordion();
   const accordionState = accordion.state;
 
+  /* eslint-disable react-hooks/exhaustive-deps -- setState is stable, but context object recreates each render */
   React.useEffect(() => {
     accordion.setState((draft) => {
       draft.allowMultiple = !!props.allowMultiple;
       draft.allowToggle = !!props.allowToggle;
     });
   }, [props.allowMultiple, props.allowToggle]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // validate only accordionItems are children
   React.Children.forEach(props.children, (x) => {
@@ -76,21 +78,23 @@ function AccordionComponent(props: _t.AccordionBlockProps) {
     return React.cloneElement(child, { idx: i } as { idx: number });
   });
 
-  React.useEffect(() => {
-    if (accordionState.open.length === children.length) return;
-    const defaultOpenIdx = props.defaultOpenIdx;
-    const items = new Array(children.length).fill(null).map((x, i) => {
-      if (defaultOpenIdx) return defaultOpenIdx.includes(i);
-      else return false;
-    });
-    accordion.setState((draft) => {
-      draft.open = items;
-    });
-  }, [
-    accordionState.open.length,
-    children.length,
-    props.defaultOpenIdx?.length,
-  ]);
+  const defaultOpenIdxList = JSON.stringify(props.defaultOpenIdx ?? []);
+
+  React.useEffect(
+    () => {
+      if (accordionState.open.length === children.length) return;
+      const defaultOpenIdx = props.defaultOpenIdx;
+      const items = new Array(children.length).fill(null).map((x, i) => {
+        if (defaultOpenIdx) return defaultOpenIdx.includes(i);
+        else return false;
+      });
+      accordion.setState((draft) => {
+        draft.open = items;
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [accordionState.open.length, children.length, defaultOpenIdxList]
+  );
 
   return <MotionDiv grid>{children}</MotionDiv>;
 }
@@ -141,14 +145,15 @@ export function Item(props: AccordionItemProps) {
       style={{
         borderBottom: isLastItem
           ? `1px solid ${
-              props.borderBottomColor ??
-              props.borderColor ??
+              (typeof props.borderBottomColor === "string" &&
+                props.borderBottomColor) ||
+              (typeof props.borderColor === "string" && props.borderColor) ||
               "var(--colors-neutral-300)!"
             }`
           : undefined,
         borderTop: `1px solid ${
-          props.borderTopColor ??
-          props.borderColor ??
+          (typeof props.borderTopColor === "string" && props.borderTopColor) ||
+          (typeof props.borderColor === "string" && props.borderColor) ||
           "var(--colors-neutral-300)!"
         }`,
       }}

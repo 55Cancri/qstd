@@ -26,6 +26,7 @@ export const writeBufferToFile = async (
   filepath: string,
   buffer: Readable | undefined
 ) => {
+  if (!buffer) return;
   const chunks: Buffer[] = [];
   for await (const chunk of buffer as AsyncIterable<Buffer>) {
     chunks.push(chunk);

@@ -4,12 +4,27 @@ import type {
   IconDefinition,
   IconName,
 } from "@fortawesome/free-solid-svg-icons";
+import type { SizeProp } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { RotatingLines } from "react-loader-spinner";
 import { css } from "panda/css";
 
 import * as _l from "./literals";
 import * as _t from "./types";
+
+// Internal types for fns.tsx - avoid exposing any
+type InternalBlockProps = _t.SharedBlockProps &
+  _t.LoadingProps &
+  Record<string, unknown>;
+
+type GetIconProps = _t.IconProps &
+  _t.LoadingProps & {
+    className?: string;
+    _loading?: { strokeWidth?: number | string; strokeColor?: unknown };
+    strokeColor?: unknown;
+    strokeWidth?: number;
+    size?: SizeProp; // FA size prop (separate from PandaCSS size)
+  };
 
 /**
  * Get preview, height, and width of image.
@@ -18,7 +33,7 @@ import * as _t from "./types";
  */
 export const extractImageMetadata = (f: File) => {
   return new Promise<ImageFile>((res, rej) => {
-    if (!f) rej("No image file provided.");
+    if (!f) rej(new Error("No image file provided."));
 
     const ext = f.type.split("/").pop();
     const id = `${ext}_${nanoid()}.${ext}`;
@@ -35,7 +50,7 @@ export const extractImageMetadata = (f: File) => {
       res({ id, preview, orientation, height, width } as ImageFile);
     };
 
-    image.onerror = (e, x, y, z, a) => {
+    image.onerror = () => {
       if (ext?.includes("tif")) {
         const { height, width } = image;
 
@@ -47,7 +62,7 @@ export const extractImageMetadata = (f: File) => {
         res({ id, preview, orientation, height, width } as ImageFile);
       } else {
         console.log("image error");
-        rej("Image failed to load.");
+        rej(new Error("Image failed to load."));
       }
     };
 
@@ -62,7 +77,7 @@ export const extractAudioMetadata = async (f: File) => {
   const meta = await mmb.parseBlob(f, { duration: true });
 
   return new Promise<AudioFile>((res, rej) => {
-    if (!f) rej("No audio file provided.");
+    if (!f) rej(new Error("No audio file provided."));
 
     // use extension to create an id
     const ext = f.name.split(".").pop();
@@ -94,7 +109,7 @@ export const extractAudioMetadata = async (f: File) => {
  */
 export const extractVideoMetadata = (f: File) => {
   return new Promise<File>((res, rej) => {
-    if (!f) rej("No video file provided.");
+    if (!f) rej(new Error("No video file provided."));
 
     const ext = f.type.split("/").pop();
     const id = `${ext}_${nanoid()}.${ext}`;
@@ -152,7 +167,7 @@ export const prepareFiles = async <T extends File>(acceptedFiles: File[]) => {
   ) as Promise<T[]>;
 };
 
-export const findChildrenByDisplayName = <P extends {}>(
+export const findChildrenByDisplayName = <P extends object>(
   children: React.ReactNode,
   displayName: string
 ): React.ReactElement<P> | undefined => {
@@ -236,7 +251,7 @@ export const extractElType = (is: _t.Is, props: { filepicker?: boolean }) => {
 
 export const extractElAndStyles = (
   extract: ReturnType<typeof extractElType>,
-  anyProps: any
+  anyProps: InternalBlockProps
 ) => {
   const {
     _motion,
@@ -256,6 +271,7 @@ export const extractElAndStyles = (
   const MotionComp = _l.motionTags[extract.el] || _l.motionTags.div;
 
   const hasMotionProps =
+    _motion !== undefined ||
     layout !== undefined ||
     initial !== undefined ||
     animate !== undefined ||
@@ -266,7 +282,7 @@ export const extractElAndStyles = (
     variants !== undefined ||
     transition !== undefined;
 
-  const comp: any = hasMotionProps ? MotionComp : StdComp;
+  const comp: React.ElementType = hasMotionProps ? MotionComp : StdComp;
   const motionProps = hasMotionProps
     ? {
         layout,
@@ -277,7 +293,7 @@ export const extractElAndStyles = (
         whileTap,
         whileFocus,
         variants,
-        transition,
+        transition: _motion ?? transition,
       }
     : undefined;
 
@@ -317,8 +333,8 @@ export const extractElAndStyles = (
 
 function getIcon(
   position: _t.LoadingProps["loadingPosition"],
-  Icon: _t.Icons | IconDefinition | (() => React.ReactElement),
-  props: any
+  Icon: _t.Icons | IconDefinition | (() => React.ReactElement) | null,
+  props: GetIconProps
 ) {
   const {
     loadingIcon,
@@ -353,7 +369,11 @@ function getIcon(
       }
 
       // FontAwesome IconDefinition passed via loadingIcon
-      else if (chosen?.iconName) {
+      else if (
+        typeof chosen === "object" &&
+        chosen !== null &&
+        "iconName" in chosen
+      ) {
         return (
           <FontAwesomeIcon
             icon={chosen}
@@ -412,7 +432,7 @@ function getIcon(
 
 export const getIcons = (
   extract: ReturnType<typeof extractElType>,
-  anyProps: any
+  anyProps: InternalBlockProps
 ) => {
   const { icon, startIcon, endIcon } = anyProps;
 
@@ -432,35 +452,39 @@ export const getIcons = (
   const leftArg =
     isLoading && loadingPosition === "start"
       ? loadingIcon ?? null
-      : icon ?? startIcon;
+      : icon ?? startIcon ?? null;
 
   const rightArg =
     isLoading && loadingPosition === "end"
       ? loadingIcon ?? null
       : endIcon ?? null;
 
-  const leftIcon = getIcon("start", leftArg, anyProps);
-  const rightIcon = getIcon("end", rightArg, anyProps);
+  const iconProps = anyProps as GetIconProps;
+  const leftIcon = getIcon("start", leftArg, iconProps);
+  const rightIcon = getIcon("end", rightArg, iconProps);
 
   return { leftIcon, rightIcon };
 };
 
-export const omit = (obj: any, keys: readonly string[]) => {
-  const result = {};
+export const omit = <T extends Record<string, unknown>>(
+  obj: T,
+  keys: readonly string[]
+): Partial<T> => {
+  const result: Record<string, unknown> = {};
   if (keys.length === 0) {
     for (const k in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, k)) {
-        (result as any)[k] = (obj as any)[k];
+        result[k] = obj[k];
       }
     }
-    return result;
+    return result as Partial<T>;
   }
   const skip = new Set<PropertyKey>(keys as readonly PropertyKey[]);
   for (const k in obj) {
     if (!Object.prototype.hasOwnProperty.call(obj, k)) continue;
     if (!skip.has(k)) {
-      (result as any)[k] = (obj as any)[k];
+      result[k] = obj[k];
     }
   }
-  return result;
+  return result as Partial<T>;
 };
