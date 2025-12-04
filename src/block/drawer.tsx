@@ -37,7 +37,10 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
     // animate(y, 0)
     setOpen(true);
   };
-  const closeDrawer = () => setOpen(false);
+  const closeDrawer = () => {
+    y.stop(); // Stop any ongoing y animation immediately
+    setOpen(false);
+  };
 
   // Update ref in an effect to avoid mutating during render
   React.useEffect(() => {
@@ -70,8 +73,11 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   };
 
   // Sync internal open state with props.open
-  // IMPORTANT: Only call onClose when TRANSITIONING from open→closed, not on initial mount
-  React.useEffect(() => {
+  // IMPORTANT: Use useLayoutEffect to sync BEFORE paint, preventing the visual
+  // "two-phase open" where the drawer briefly doesn't exist then appears.
+  // This ensures AnimatePresence sees the correct state on the first paint.
+  // Also: Only call onClose when TRANSITIONING from open→closed, not on initial mount
+  React.useLayoutEffect(() => {
     const wasOpen = prevOpenRef.current;
     const isOpen = props.open;
 
@@ -114,8 +120,11 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
     };
   }, [open, props.closeOnEsc]);
 
-  // observe changes in y values
+  // observe changes in y values - only when drawer is open
   React.useEffect(() => {
+    // Don't subscribe if drawer is closed
+    if (!props.open) return;
+
     const unsubscribeY = y.on("change", (latestY) => {
       // threshold for y px below bottom to automatically close drawer
       if (latestY > 150) {
@@ -124,11 +133,12 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
       }
     });
 
-    // Cleanup function to unsubscribe from the motion values
+    // Cleanup: unsubscribe and stop motion when drawer closes
     return () => {
       unsubscribeY();
+      y.stop();
     };
-  }, [y]);
+  }, [y, props.open]);
 
   const onBackdropClick = () => {
     const outsideClickClose = props.outsideClickClose ?? true;
@@ -202,15 +212,33 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
                   bottom: 0,
                   borderTopLeftRadius: 12,
                   borderTopRightRadius: 12,
+                  overflow: "hidden",
+                  // Note: Can't use framer-motion's `y` prop because it conflicts
+                  // with the drag motion value. Use CSS transform instead.
                   variants: {
-                    initial: { height: 0, opacity: 0 },
-                    animate: {
-                      height: "auto",
-                      opacity: 1,
-                      // transition: { type: "spring", damping: 26, stiffness: 300 },
-                      transition: { type: "spring", duration: 0.3 },
+                    initial: {
+                      transform: "translateY(100%)",
+                      opacity: 0.5,
                     },
-                    exit: { height: 0, opacity: 0 },
+                    animate: {
+                      transform: "translateY(0%)",
+                      opacity: 1,
+                      transition: {
+                        type: "spring",
+                        damping: 22,
+                        stiffness: 400,
+                        mass: 0.7,
+                      },
+                    },
+                    exit: {
+                      transform: "translateY(100%)",
+                      opacity: 0,
+                      transition: {
+                        type: "tween",
+                        duration: 0.2,
+                        ease: [0.4, 0, 1, 1], // ease-in for quick exit
+                      },
+                    },
                   },
                   drag: "y",
                   style: { y },
@@ -392,6 +420,8 @@ export function CloseBtn(props: React.ComponentProps<typeof MotionBtn>) {
           bg: { base: "neutral.200", _dark: "neutral.800" },
         }}
         position="absolute"
+        flex
+        center
         h={32}
         w={32}
         top={-2}
@@ -400,14 +430,7 @@ export function CloseBtn(props: React.ComponentProps<typeof MotionBtn>) {
         cursor="pointer"
         {...rest}
       >
-        <Icon
-          icon="times"
-          placeC
-          h={16}
-          w={16}
-          fontSize={16}
-          color="currentColor"
-        />
+        <Icon icon="times" fontSize={16} lineHeight={1} color="currentColor" />
       </MotionBtn>
     );
   } else if (children) {
@@ -439,7 +462,11 @@ function Backdrop(props: BackdropProps) {
   // animation completion, outside-click would get stuck off. To avoid
   // duration coupling and remain HMR-safe, we default to "allowed" and only
   // block when an actual enter animation starts.
-  const [allowOutsideClick, setAllowOutsideClick] = React.useState(true);
+  //
+  // IMPORTANT: We use a ref instead of state to avoid re-rendering the Backdrop
+  // during animation, which would cause child animations (like the drawer's
+  // height animation) to get interrupted and jitter.
+  const allowOutsideClickRef = React.useRef(true);
   const [isDesktop] = useMatchMedia(breakpoint);
 
   return (
@@ -453,13 +480,14 @@ function Backdrop(props: BackdropProps) {
       exit={{ opacity: 0, transition: { duration: 0.3 } }}
       onAnimationStart={() => {
         // Entering: prevent outside-close during the fade-in.
-        setAllowOutsideClick(false);
+        // Use ref mutation to avoid re-render that would interrupt drawer animation
+        allowOutsideClickRef.current = false;
       }}
       onAnimationComplete={() => {
         // Enter finished; re-enable outside-close. If HMR skipped animations,
         // neither start nor complete will fire and the default (allowed)
         // remains in effect.
-        setAllowOutsideClick(true);
+        allowOutsideClickRef.current = true;
       }}
       //   {...props._backdrop}
       position="fixed"
@@ -468,7 +496,9 @@ function Backdrop(props: BackdropProps) {
       height="100%"
       width="100%"
       {...(isDesktop ? { placeI: true } : {})}
-      onClick={() => (allowOutsideClick ? props.onClick() : undefined)}
+      onClick={() =>
+        allowOutsideClickRef.current ? props.onClick() : undefined
+      }
     >
       {props.children}
     </MotionDiv>
