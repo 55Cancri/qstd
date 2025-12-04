@@ -105,14 +105,15 @@ function useResizeObserver<T extends Element>(
             round,
             instance: new ResizeObserver((entries) => {
               const entry = entries[0];
+              if (!entry) return;
 
               // Map requested `box` to the corresponding entry property.
               const boxProp =
                 opts.box === "border-box"
                   ? "borderBoxSize"
                   : opts.box === "device-pixel-content-box"
-                    ? "devicePixelContentBoxSize"
-                    : "contentBoxSize";
+                  ? "devicePixelContentBoxSize"
+                  : "contentBoxSize";
 
               // Extract logical inline/block sizes (handles writing modes);
               // see `extractSize` for cross-browser details and fallbacks.
@@ -208,10 +209,10 @@ function useResolvedElement<T extends Element>(
     const element: T | null = cbElement
       ? cbElement
       : refOrElement
-        ? refOrElement instanceof Element
-          ? refOrElement
-          : refOrElement.current
-        : null;
+      ? refOrElement instanceof Element
+        ? refOrElement
+        : refOrElement.current
+      : null;
 
     if (
       lastReportRef.current &&

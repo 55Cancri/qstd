@@ -44,7 +44,7 @@ function useAccordion() {
   if (context === undefined) {
     throw new Error("useAccordion must be used within a AccordionProvider");
   }
-  return context as AccordionState;
+  return context;
 }
 
 function AccordionComponent(props: _t.AccordionBlockProps) {
@@ -73,7 +73,7 @@ function AccordionComponent(props: _t.AccordionBlockProps) {
   // add child idx to props
   const children = React.Children.map(props.children, (child, i) => {
     if (!React.isValidElement(child)) return child;
-    return React.cloneElement(child as any, { idx: i });
+    return React.cloneElement(child, { idx: i } as { idx: number });
   });
 
   React.useEffect(() => {
@@ -109,7 +109,7 @@ type AccordionItemProps = Omit<_t.BtnBlockProps, "is" | "title"> & {
   /** icon to indicate if open or closed */
   rightIndicator?: (open: boolean) => React.ReactNode;
   rightStatusIcon?: React.ReactNode;
-  onClick?: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   className?: string;
 };
 export function Item(props: AccordionItemProps) {
@@ -190,7 +190,7 @@ export function Item(props: AccordionItemProps) {
       <MotionDiv grid overflowY="auto" maxH="100%">
         <MotionDiv
           grid
-          animate={{ height: isOpen ? (height ?? 0) : 0 }}
+          animate={{ height: isOpen ? height ?? 0 : 0 }}
           overflowY="hidden"
         >
           <MotionDiv grid ref={ref}>

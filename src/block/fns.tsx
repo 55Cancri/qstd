@@ -1,6 +1,9 @@
 import React from "react";
 import { nanoid } from "nanoid";
-import { IconDefinition, IconName } from "@fortawesome/free-solid-svg-icons";
+import type {
+  IconDefinition,
+  IconName,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { RotatingLines } from "react-loader-spinner";
 import { css } from "panda/css";
@@ -67,9 +70,11 @@ export const extractAudioMetadata = async (f: File) => {
 
     // create the cover url
     const [cover] = meta.common.picture ?? [];
-    const preview = URL.createObjectURL(
-      new Blob([cover.data as BlobPart], { type: cover.format })
-    );
+    const preview = cover
+      ? URL.createObjectURL(
+          new Blob([cover.data as BlobPart], { type: cover.format })
+        )
+      : "";
 
     // serialize and return the metadata
     const audioMetadata = {
@@ -78,7 +83,7 @@ export const extractAudioMetadata = async (f: File) => {
       source: { ...meta.format, ...meta.common },
     };
 
-    res(audioMetadata as AudioFile);
+    res(audioMetadata as unknown as AudioFile);
   });
 };
 
