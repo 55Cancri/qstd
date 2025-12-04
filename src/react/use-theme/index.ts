@@ -6,7 +6,7 @@ import * as _f from "./fns";
 export type { Theme, ThemeStore } from "./types";
 
 /**
- * Hook to manage light/dark theme
+ * Hook to manage light/dark theme only using localStorage and no global store
  * Syncs with localStorage and across components using events
  */
 export function useTheme() {

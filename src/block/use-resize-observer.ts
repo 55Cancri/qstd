@@ -44,7 +44,9 @@ function useResizeObserver<T extends Element>(
   // will not reinstantiate the hook's ResizeObserver.
   const onResize = opts.onResize;
   const onResizeRef = React.useRef<ResizeHandler | undefined>(undefined);
-  onResizeRef.current = onResize;
+  React.useLayoutEffect(() => {
+    onResizeRef.current = onResize;
+  }, [onResize]);
   // Consumers can customize rounding; note that changing the `round` identity
   // will recreate the ResizeObserver (see dependency below).
   const round = opts.round || Math.round;
@@ -174,7 +176,7 @@ function useResizeObserver<T extends Element>(
 }
 
 type SubscriberCleanupFunction = () => void;
-type SubscriberResponse = SubscriberCleanupFunction | void;
+type SubscriberResponse = SubscriberCleanupFunction | undefined;
 
 // This could've been more streamlined with internal state instead of abusing
 // refs to such extent, but then composing hooks and components could not opt out of unnecessary renders.
@@ -191,16 +193,12 @@ function useResolvedElement<T extends Element>(
     cleanup?: SubscriberResponse;
   } | null>(null);
   const refOrElementRef = React.useRef<typeof refOrElement>(null);
-  refOrElementRef.current = refOrElement;
+  React.useLayoutEffect(() => {
+    refOrElementRef.current = refOrElement;
+  }, [refOrElement]);
   const cbElementRef = React.useRef<T | null>(null);
 
-  // Calling re-evaluation after each render without using a dep array,
-  // as the ref object's current value could've changed since the last render.
-  React.useEffect(() => {
-    evaluateSubscription();
-  });
-
-  const evaluateSubscription = React.useCallback(() => {
+  const evaluateSubscription = () => {
     // Resolve the current element preference order:
     // callback-ref element > direct element > refObject.current
     const cbElement = cbElementRef.current;
@@ -233,7 +231,13 @@ function useResolvedElement<T extends Element>(
       // Setting cleanup to undefined unless a subscriber returns one, as an existing cleanup function would've been just called.
       cleanup: element ? subscriber(element) : undefined,
     };
-  }, [subscriber]);
+  };
+
+  // Calling re-evaluation after each render without using a dep array,
+  // as the ref object's current value could've changed since the last render.
+  React.useEffect(() => {
+    evaluateSubscription();
+  });
 
   // making sure we call the cleanup function on unmount
   React.useEffect(() => {
@@ -245,14 +249,11 @@ function useResolvedElement<T extends Element>(
     };
   }, []);
 
-  return React.useCallback(
-    (element) => {
-      cbElementRef.current = element;
-      // Re-evaluate the effective element and (re)subscribe if needed.
-      evaluateSubscription();
-    },
-    [evaluateSubscription]
-  );
+  return (element: T | null) => {
+    cbElementRef.current = element;
+    // Re-evaluate the effective element and (re)subscribe if needed.
+    evaluateSubscription();
+  };
 }
 
 // We're only using the first element of the size sequences, until future versions of the spec solidify on how
@@ -299,12 +300,11 @@ function extractSize(
   }
 
   // A couple bytes smaller than calling Array.isArray() and just as effective here.
+  // Firefox returns an object instead of array for borderBoxSize/contentBoxSize,
+  // so we cast to ResizeObserverSize when the first element doesn't exist.
   return entry[boxProp][0]
     ? entry[boxProp][0][sizeType]
-    : // TS complains about this, because the RO entry type follows the spec and does not reflect Firefox's current
-      // behaviour of returning objects instead of arrays for `borderBoxSize` and `contentBoxSize`.
-      // @ts-ignore
-      entry[boxProp][sizeType];
+    : (entry[boxProp] as ResizeObserverSize)[sizeType];
 }
 
 export default useResizeObserver;
