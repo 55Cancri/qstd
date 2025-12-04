@@ -21,6 +21,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   const dragHandleRef = React.useRef<HTMLDivElement | null>(null);
   const [isDesktop] = useMatchMedia(breakpoint);
   const closeFnRef = React.useRef<(() => void) | null>(null);
+  const prevOpenRef = React.useRef<boolean | null>(null); // Track previous open state
   const dragControls = useDragControls();
   const { open, setOpen } = useDrawer();
   const { onClose, ...rest } = props;
@@ -68,9 +69,21 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
     }
   };
 
+  // Sync internal open state with props.open
+  // IMPORTANT: Only call onClose when TRANSITIONING from open→closed, not on initial mount
   React.useEffect(() => {
-    if (props.open) openDrawer();
-    else closeFnRef.current?.();
+    const wasOpen = prevOpenRef.current;
+    const isOpen = props.open;
+
+    if (isOpen) {
+      openDrawer();
+    } else if (wasOpen === true) {
+      // Only close if we were previously open (transition from open→closed)
+      // This prevents firing onClose when mounting with open={false}
+      closeFnRef.current?.();
+    }
+    // Update previous state for next render
+    prevOpenRef.current = isOpen;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- React 19 compiler handles deps
   }, [props.open]);
 
@@ -495,33 +508,31 @@ function useMatchMedia(
     ? defaultValues
     : Array(queries.length).fill(false);
 
-  const mediaQueryLists = queries.map((q) => window.matchMedia(q));
-
-  const getValue = () => {
-    // Return the value for the given queries
-    const matchedQueries = mediaQueryLists.map((mql) => mql.matches);
-
-    return matchedQueries;
-  };
-
-  // State and setter for matched value
-  const [value, setValue] = React.useState(getValue);
+  const [value, setValue] = React.useState<MatchedMedia>(() => {
+    return queries.map((q) => window.matchMedia(q).matches);
+  });
 
   React.useLayoutEffect(() => {
-    // Event listener callback
-    // Note: By defining getValue outside of useEffect we ensure that it has ...
-    // ... current values of hook args (as this hook only runs on mount/dismount).
-    const handler = () => setValue(getValue);
+    // No-op for SSR
 
-    // Set a listener for each media query with above handler as callback.
-    mediaQueryLists.forEach((mql) => mql.addListener(handler));
+    const mediaQueryLists = queries.map((q) => window.matchMedia(q));
+
+    const handler = () => {
+      setValue(mediaQueryLists.map((mql) => mql.matches));
+    };
+
+    // Sync state if queries changed
+    handler();
+
+    // Set a listener for each media query
+    mediaQueryLists.forEach((mql) => mql.addEventListener("change", handler));
 
     // Remove listeners on cleanup
-    return () => mediaQueryLists.forEach((mql) => mql.removeListener(handler));
-  }, []);
-
-  // nextjs
-  if (typeof window === "undefined") return initialValues;
+    return () =>
+      mediaQueryLists.forEach((mql) =>
+        mql.removeEventListener("change", handler)
+      );
+  }, [queries]);
 
   return value;
 }
