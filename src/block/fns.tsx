@@ -328,7 +328,7 @@ export const extractElAndStyles = (
       ...remaining,
       className: mergedClassName,
     },
-  ];
+  ] as const;
 };
 
 function getIcon(
@@ -466,7 +466,7 @@ export const getIcons = (
   return { leftIcon, rightIcon };
 };
 
-export const omit = <T extends Record<string, unknown>>(
+export const omit = <T extends object>(
   obj: T,
   keys: readonly string[]
 ): Partial<T> => {
