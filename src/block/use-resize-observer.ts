@@ -304,7 +304,7 @@ function extractSize(
   // so we cast to ResizeObserverSize when the first element doesn't exist.
   return entry[boxProp][0]
     ? entry[boxProp][0][sizeType]
-    : (entry[boxProp] as ResizeObserverSize)[sizeType];
+    : (entry[boxProp] as unknown as ResizeObserverSize)[sizeType];
 }
 
 export default useResizeObserver;
