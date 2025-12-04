@@ -525,19 +525,9 @@ type MatchedMedia = boolean[];
  * @param defaultValues
  * @returns
  */
-function useMatchMedia(
-  queries: MediaQuery,
-  defaults?: MatchedMedia
-): MatchedMedia;
+function useMatchMedia(queries: MediaQuery): MatchedMedia;
 
-function useMatchMedia(
-  queries: MediaQuery,
-  defaultValues: MatchedMedia = []
-): MatchedMedia {
-  const initialValues = defaultValues.length
-    ? defaultValues
-    : Array(queries.length).fill(false);
-
+function useMatchMedia(queries: MediaQuery): MatchedMedia {
   const [value, setValue] = React.useState<MatchedMedia>(() => {
     return queries.map((q) => window.matchMedia(q).matches);
   });
