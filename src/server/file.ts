@@ -33,3 +33,12 @@ export const writeBufferToFile = async (
   }
   await fs.writeFile(filepath, Buffer.concat(chunks));
 };
+
+/**
+ * Write string content to a file
+ * @param filepath - Path to write the file to
+ * @param content - String content to write
+ */
+export const writeFile = async (filepath: string, content: string) => {
+  return fs.writeFile(filepath, content);
+};
