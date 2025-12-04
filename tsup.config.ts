@@ -66,19 +66,47 @@ export default defineConfig({
   format: ["esm", "cjs"],
 
   /**
-   * DTS - Generate TypeScript declaration files
+   * DTS - TypeScript declaration file generation
    *
-   * WHAT IT DOES:
-   * - Creates .d.ts files with all your types
-   * - Consumers get full TypeScript autocomplete
-   * - Global declarations (ImageFile, etc.) are preserved
+   * ⚠️ IMPORTANT: We use `tsc` for declaration generation, NOT tsup's built-in DTS.
    *
-   * WITHOUT IT:
-   * - No TypeScript support for consumers
-   * - No autocomplete in VSCode
-   * - No type safety when using your package
+   * WHY NOT tsup's DTS?
+   * tsup uses rollup-plugin-dts to bundle .d.ts files. This works for simple cases,
+   * but has a critical bug: function overloads are lost when re-exported through
+   * namespaces via `export * as Namespace from "./module"`.
+   *
+   * EXAMPLE OF THE BUG:
+   * ```ts
+   * // src/shared/str.ts - has overloaded parseJson
+   * export function parseJson<T>(input: string, opts: { strict: true }): T;
+   * export function parseJson<T>(input: string, opts?: { strict?: false }): Result<T>;
+   *
+   * // src/server/index.ts
+   * export * as Str from "../shared/str";
+   *
+   * // Consumer code - TypeScript can't resolve the overload!
+   * Str.parseJson(data, { strict: true }); // ❌ Returns `error` type instead of `T`
+   * ```
+   *
+   * THE FIX:
+   * Use `tsc --emitDeclarationOnly` which correctly preserves ALL TypeScript features:
+   * - Function overloads ✅
+   * - Conditional types ✅
+   * - Mapped types ✅
+   * - Generic constraints ✅
+   *
+   * The build script runs: `tsup && tsc -p tsconfig.build.json`
+   * - tsup: bundles JavaScript (fast, tree-shakes, outputs ESM + CJS)
+   * - tsc: generates .d.ts files (correct, handles all TS features)
+   *
+   * TRADE-OFF:
+   * - dist/ has more .d.ts files (mirrors src/ structure)
+   * - But consumers don't see this - they import from package.json exports
+   * - Types are guaranteed correct because tsc IS TypeScript
+   *
+   * See: DEVELOPMENT.md "Build System" section for full explanation.
    */
-  dts: true,
+  dts: false,
 
   /**
    * CLEAN - Delete dist/ before each build

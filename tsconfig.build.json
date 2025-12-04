@@ -1,0 +1,53 @@
+{
+  /**
+   * TypeScript Build Configuration - Declaration Files Only
+   *
+   * PURPOSE:
+   * This config generates .d.ts files for the npm package.
+   * It extends the main tsconfig but enables emit (the main one has noEmit: true).
+   *
+   * WHY SEPARATE CONFIG?
+   * - tsconfig.json: Used by IDE, linting, type-checking (noEmit: true)
+   * - tsconfig.build.json: Used by build script to emit .d.ts files
+   *
+   * WHY NOT tsup's DTS?
+   * tsup's DTS bundler (rollup-plugin-dts) has bugs with function overloads
+   * when using `export * as Namespace` pattern. Using tsc directly guarantees
+   * correct types because tsc IS TypeScript.
+   *
+   * See: tsup.config.ts and DEVELOPMENT.md for full explanation.
+   */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Override noEmit from base config
+    "noEmit": false,
+
+    // Emit only declaration files, not JavaScript (tsup handles JS)
+    "emitDeclarationOnly": true,
+
+    // Generate .d.ts files
+    "declaration": true,
+
+    // Generate .d.ts.map files for "Go to Definition" in consumers
+    "declarationMap": true,
+
+    // Output to dist/ to match tsup's output
+    "outDir": "./dist",
+
+    // Source files are in src/
+    "rootDir": "./src",
+
+    // Must disable this for emit to work with bundler moduleResolution
+    "allowImportingTsExtensions": false
+  },
+  // Only include source files, not tests or config files
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "playground",
+    "tests"
+  ]
+}

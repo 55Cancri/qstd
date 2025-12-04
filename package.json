@@ -1,6 +1,6 @@
 {
   "name": "qstd",
-  "version": "0.2.10",
+  "version": "0.2.8",
   "description": "Standard Block component and utilities library with Panda CSS",
   "author": "malin1",
   "license": "MIT",
@@ -42,7 +42,9 @@
     "dist/react/index.css"
   ],
   "scripts": {
-    "build": "panda codegen && panda cssgen && tsup && node scripts/inject-css-import.js",
+    "build": "panda codegen && panda cssgen && tsup && tsc -p tsconfig.build.json && node scripts/inject-css-import.js",
+    "build:js": "tsup",
+    "build:types": "tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
     "prepublishOnly": "pnpm build",
     "prepare:local": "pnpm build && cd playground && pnpm prepare",
