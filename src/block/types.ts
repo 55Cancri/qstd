@@ -125,7 +125,10 @@ type BlockMotionProps = {
 
 // Shared props interface to reduce intersection complexity
 // We use an interface to encourage TS to cache this type
-export interface SharedBlockProps extends JsxStyleProps, BlockMotionProps, IconProps {
+export interface SharedBlockProps
+  extends JsxStyleProps,
+    BlockMotionProps,
+    IconProps {
   tooltip?: React.ReactNode | string;
   portalContainer?: Element | DocumentFragment;
   filepicker?: boolean;
@@ -158,33 +161,38 @@ type HTMLProps<T extends React.ElementType> = Omit<
   OmittedHTMLProps
 >;
 
-export type BaseBlockProps = SharedBlockProps & HTMLProps<"div"> & { is?: undefined };
+export type BaseBlockProps = SharedBlockProps &
+  HTMLProps<"div"> & { is?: undefined };
 
 // simplified variants with motion support
-type TxtBlockProps = SharedBlockProps & HTMLProps<"div"> & {
+type TxtBlockProps = SharedBlockProps &
+  HTMLProps<"div"> & {
     is: "txt";
     as?: "p" | "span" | "h1" | "h2" | "h3" | "em" | "strong"; // defaults to p
   };
 
 export type HrBlockProps = SharedBlockProps & HTMLProps<"hr"> & { is: "hr" };
 
-export type SkeletonBlockProps = SharedBlockProps & HTMLProps<"div"> & {
-  is: "skeleton";
-  as: "block";
-  // Custom skeleton props
-  size?: any;
-  br?: any;
-};
+export type SkeletonBlockProps = SharedBlockProps &
+  HTMLProps<"div"> & {
+    is: "skeleton";
+    as: "block";
+    // Custom skeleton props
+    size?: any;
+    br?: any;
+  };
 
-export type SkeletonCircleProps = SharedBlockProps & HTMLProps<"div"> & {
-  is: "skeleton";
-  as: "circle";
-  size?: any;
-  br?: any;
-};
+export type SkeletonCircleProps = SharedBlockProps &
+  HTMLProps<"div"> & {
+    is: "skeleton";
+    as: "circle";
+    size?: any;
+    br?: any;
+  };
 
 // Base button props without onChange
-type BtnBlockPropsBase = SharedBlockProps & Omit<HTMLProps<"button">, "onChange"> &
+type BtnBlockPropsBase = SharedBlockProps &
+  Omit<HTMLProps<"button">, "onChange"> &
   LoadingProps & {
     is: "btn";
     disabled?: boolean;
@@ -214,13 +222,15 @@ export type BtnBlockProps = BtnBlockPropsBase & {
   onChange?: any; // Kept as any to avoid union complexity
 };
 
-export type InputBlockProps = SharedBlockProps & Omit<HTMLProps<"input">, "children"> & {
+export type InputBlockProps = SharedBlockProps &
+  Omit<HTMLProps<"input">, "children"> & {
     is: "input";
     error?: string;
     children?: React.ReactNode;
   };
 
-export type TextareaBlockProps = SharedBlockProps & Omit<HTMLProps<"textarea">, "children"> & {
+export type TextareaBlockProps = SharedBlockProps &
+  Omit<HTMLProps<"textarea">, "children"> & {
     is: "textarea";
     error?: string;
     /** Maximum number of rows the textarea can expand to */
@@ -232,21 +242,24 @@ export type TextareaBlockProps = SharedBlockProps & Omit<HTMLProps<"textarea">, 
     children?: React.ReactNode;
   };
 
-export type CheckboxBlockProps = SharedBlockProps & HTMLProps<"div"> & {
+export type CheckboxBlockProps = SharedBlockProps &
+  HTMLProps<"div"> & {
     is: "checkbox";
     onChecked?: (value: boolean) => void;
     indeterminate?: boolean;
     checked?: boolean;
   };
 
-export type ProgressBlockProps = SharedBlockProps & HTMLProps<"progress"> & {
+export type ProgressBlockProps = SharedBlockProps &
+  HTMLProps<"progress"> & {
     is: "progress";
     value: number;
     max?: number;
     steps?: number;
   };
 
-export type SwitchBlockProps = SharedBlockProps & Omit<HTMLProps<"button">, "onChange"> & {
+export type SwitchBlockProps = SharedBlockProps &
+  Omit<HTMLProps<"button">, "onChange"> & {
     is: "switch";
     thumbSize?: number;
     onChange?: (checked: boolean) => void;
@@ -262,7 +275,8 @@ export type AccordionBlockProps = {
   children: React.ReactElement | React.ReactElement[];
 };
 
-export type DrawerBlockProps = SharedBlockProps & HTMLProps<"div"> & {
+export type DrawerBlockProps = SharedBlockProps &
+  HTMLProps<"div"> & {
     is: "drawer";
     open: boolean;
     hideHandle?: boolean;
@@ -280,7 +294,8 @@ export type RadioOption = {
   disabled?: boolean;
 };
 
-export type RadioBlockProps = SharedBlockProps & Omit<HTMLProps<"div">, "onChange" | "children"> & {
+export type RadioBlockProps = SharedBlockProps &
+  Omit<HTMLProps<"div">, "onChange" | "children"> & {
     is: "radio";
     /** Controlled value for single-select radio group */
     value?: string | null;
@@ -300,7 +315,8 @@ export type RadioBlockProps = SharedBlockProps & Omit<HTMLProps<"div">, "onChang
     children?: never;
   };
 
-export type MenuBlockProps = SharedBlockProps & HTMLProps<"div"> & {
+export type MenuBlockProps = SharedBlockProps &
+  HTMLProps<"div"> & {
     is: "menu";
     trigger?: React.ReactNode;
     variant: "click" | "hover";
@@ -313,7 +329,8 @@ export type MenuBlockProps = SharedBlockProps & HTMLProps<"div"> & {
     width?: string | number;
   };
 
-type LinkBlockProps = SharedBlockProps & HTMLProps<"div"> & {
+type LinkBlockProps = SharedBlockProps &
+  HTMLProps<"div"> & {
     is: "link";
     href?: string;
     to?: string;
@@ -321,36 +338,42 @@ type LinkBlockProps = SharedBlockProps & HTMLProps<"div"> & {
     rel?: string;
   };
 
-type ImgBlockProps = SharedBlockProps & HTMLProps<"img"> & {
+type ImgBlockProps = SharedBlockProps &
+  HTMLProps<"img"> & {
     is: "img";
     src: string;
     alt: string;
   };
 
-type SelectBlockProps = SharedBlockProps & HTMLProps<"select"> & {
+type SelectBlockProps = SharedBlockProps &
+  HTMLProps<"select"> & {
     is: "select";
   };
 
-type BlockquoteBlockProps = SharedBlockProps & HTMLProps<"blockquote"> & {
+type BlockquoteBlockProps = SharedBlockProps &
+  HTMLProps<"blockquote"> & {
     is: "blockquote";
   };
 
-type PreBlockProps = SharedBlockProps & HTMLProps<"pre"> & {
+type PreBlockProps = SharedBlockProps &
+  HTMLProps<"pre"> & {
     is: "pre";
   };
 
 // Form variants with as constraints
-type FormBlockProps = SharedBlockProps & HTMLProps<"form"> &
+type FormBlockProps = SharedBlockProps &
+  HTMLProps<"form"> &
   (
-    | ({ is: "form"; as?: undefined })
+    | { is: "form"; as?: undefined }
     | ({ is: "form"; as: "label" } & HTMLProps<"label">)
     | ({ is: "form"; as: "legend" } & HTMLProps<"legend">)
   );
 
 // Table variants with as constraints
-type TableBlockProps = SharedBlockProps & HTMLProps<"table"> &
+type TableBlockProps = SharedBlockProps &
+  HTMLProps<"table"> &
   (
-    | ({ is: "table"; as?: undefined })
+    | { is: "table"; as?: undefined }
     | ({ is: "table"; as: "tr" } & HTMLProps<"tr">)
     | ({ is: "table"; as: "td" } & HTMLProps<"td">)
     | ({ is: "table"; as: "th" } & HTMLProps<"th">)
@@ -360,7 +383,8 @@ type TableBlockProps = SharedBlockProps & HTMLProps<"table"> &
   );
 
 // List variants with required as
-type ListBlockProps = SharedBlockProps & HTMLProps<"div"> &
+type ListBlockProps = SharedBlockProps &
+  HTMLProps<"div"> &
   (
     | ({ is: "list"; as: "ul" } & HTMLProps<"ul">)
     | ({ is: "list"; as: "ol" } & HTMLProps<"ol">)
@@ -368,7 +392,8 @@ type ListBlockProps = SharedBlockProps & HTMLProps<"div"> &
   );
 
 // SEO variants with required as
-type SeoBlockProps = SharedBlockProps & HTMLProps<"div"> &
+type SeoBlockProps = SharedBlockProps &
+  HTMLProps<"div"> &
   (
     | ({ is: "seo"; as: "nav" } & HTMLProps<"nav">)
     | ({ is: "seo"; as: "main" } & HTMLProps<"main">)

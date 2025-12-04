@@ -1,6 +1,7 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { library, IconName } from "@fortawesome/fontawesome-svg-core";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import type { IconName } from "@fortawesome/fontawesome-svg-core";
 import { far } from "@fortawesome/free-regular-svg-icons";
 import { fab } from "@fortawesome/free-brands-svg-icons";
 import { fas } from "@fortawesome/free-solid-svg-icons";
@@ -8,6 +9,7 @@ import { fas } from "@fortawesome/free-solid-svg-icons";
 library.add(fas, far, fab);
 
 import * as _t from "./types";
+import type { IconBaseProps } from "react-icons/lib";
 
 export default function Icon(props: _t.BaseBlockProps) {
   const { className, iconPrefix, pulse, spin } = props;
@@ -19,8 +21,8 @@ export default function Icon(props: _t.BaseBlockProps) {
     !iconPrefix || iconPrefix === "solid"
       ? "fas"
       : iconPrefix === "regular"
-        ? "far"
-        : "fab";
+      ? "far"
+      : "fab";
 
   // Normal icon rendering (non-loading or other position)
   if (!IconComp) return null;
@@ -45,6 +47,6 @@ export default function Icon(props: _t.BaseBlockProps) {
       />
     );
   } else if (typeof IconComp === "function") {
-    return IconComp(props as any);
+    return IconComp(props as IconBaseProps);
   } else return IconComp;
 }

@@ -4,6 +4,120 @@
 
 ---
 
+## 🏗️ Build System Architecture
+
+> **READ THIS FIRST** if you're confused about why the build is set up this way
+
+### The Problem We Solved
+
+The build uses **two tools** for a specific reason:
+
+```
+Source Code (.ts) ──┬──▶ tsup ──▶ JavaScript (.js, .cjs)
+                    │
+                    └──▶ tsc  ──▶ Type Definitions (.d.ts)
+```
+
+**Why not let tsup do both?**
+
+tsup uses `rollup-plugin-dts` to bundle TypeScript declaration files. This works for simple packages, but has a **critical bug**: function overloads are lost when re-exported through namespaces.
+
+### The Bug (Real Example)
+
+```ts
+// src/shared/str.ts - parseJson has two overloaded signatures
+export function parseJson<T>(input: string, opts: { strict: true }): T;
+export function parseJson<T>(
+  input: string,
+  opts?: { strict?: false }
+): ParseJsonResult<T>;
+
+// src/server/index.ts - re-exports as namespace
+export * as Str from "../shared/str";
+
+// Consumer code
+import { Str } from "qstd/server";
+const data = Str.parseJson<MyType>(json, { strict: true });
+//    ^^^^ TypeScript shows `error` type instead of `MyType`!
+```
+
+When tsup bundles the .d.ts files, it transforms the namespace export in a way that loses the overload information. The consumer gets broken types.
+
+### The Solution
+
+**Use `tsc` for type generation.** The TypeScript compiler will ALWAYS generate correct types because it IS TypeScript. No third-party bundler bugs.
+
+```bash
+# What the build script does:
+panda codegen      # Generate Panda CSS utilities
+panda cssgen       # Generate CSS file
+tsup               # Bundle JavaScript (fast, tree-shakes, ESM + CJS)
+tsc -p tsconfig.build.json  # Generate .d.ts files (correct overloads)
+node scripts/inject-css-import.js  # Post-processing
+```
+
+### Why tsup At All?
+
+tsup (powered by esbuild) is still essential for JavaScript:
+
+| Feature               | tsc             | tsup           |
+| --------------------- | --------------- | -------------- |
+| Compile TS → JS       | ✅              | ✅             |
+| Bundle files together | ❌              | ✅             |
+| Output ESM + CJS      | ❌ (one format) | ✅             |
+| Tree-shaking          | ❌              | ✅             |
+| Speed                 | Slow            | 10-100x faster |
+| Handle externals      | ❌              | ✅             |
+
+**Bottom line:** tsup for fast JS bundling, tsc for correct types.
+
+### File Structure After Build
+
+```
+dist/
+├── server/
+│   ├── index.js          # tsup output (bundled JS)
+│   ├── index.cjs         # tsup output (CommonJS)
+│   ├── index.d.ts        # tsc output (imports from ../shared/str)
+│   └── file.d.ts         # tsc output
+├── shared/
+│   ├── str.d.ts          # tsc output (has correct overloads!)
+│   ├── list.d.ts         # tsc output
+│   └── ...
+├── client/
+│   └── ...
+└── react/
+    └── ...
+```
+
+**Note:** There are more .d.ts files than before (they mirror src/ structure). But:
+
+- Consumers don't see them (package.json exports control what's importable)
+- Types are guaranteed correct
+- No maintenance burden - just write TypeScript normally
+
+### Key Files
+
+| File                  | Purpose                                                       |
+| --------------------- | ------------------------------------------------------------- |
+| `tsup.config.ts`      | JavaScript bundling config. **dts: false** because we use tsc |
+| `tsconfig.json`       | IDE/linting config. Has `noEmit: true`                        |
+| `tsconfig.build.json` | Build config. Extends base, enables `emitDeclarationOnly`     |
+
+### When Adding New Features
+
+**Just write TypeScript normally.** The build handles everything:
+
+- Function overloads ✅ work
+- Generic constraints ✅ work
+- Conditional types ✅ work
+- Mapped types ✅ work
+- `export * as Namespace` ✅ work
+
+No special rules to remember. If TypeScript compiles it, the types will be correct.
+
+---
+
 ## 🚀 Quick Start: I Want to Add Something
 
 ### 1. Get Re-oriented (30 seconds)
@@ -316,7 +430,7 @@ pnpx vite build test-tree.js
 
 ```bash
 # Check TypeScript errors
-pnpx tsc --noEmit
+pnpm typecheck
 
 # Check if styled-system needs regeneration
 rm -rf styled-system
@@ -325,7 +439,33 @@ pnpm panda codegen
 # Clean rebuild
 rm -rf dist
 pnpm build
+
+# If types are broken, rebuild just types:
+pnpm build:types
 ```
+
+### Q: Why are there so many .d.ts files in dist/?
+
+**A:** We use `tsc` (not tsup) to generate declaration files. This creates a .d.ts file for each source file instead of bundling them. This is intentional - it guarantees correct types for complex TypeScript features like function overloads.
+
+Consumers don't see these files - they import from `qstd/server`, `qstd/client`, etc. which are controlled by package.json exports.
+
+See the "Build System Architecture" section at the top of this file for the full explanation.
+
+### Q: Can I use function overloads in qstd?
+
+**A:** Yes! Just write them normally. The build system handles them correctly.
+
+```ts
+// This works perfectly:
+export function myFunc(x: string): string;
+export function myFunc(x: number): number;
+export function myFunc(x: string | number) {
+  return x;
+}
+```
+
+We specifically set up the build to use `tsc` for types because tsup's DTS bundler had bugs with overloads.
 
 ### Q: How do I add a dependency?
 
@@ -417,9 +557,31 @@ pnpm build
 # Verify .d.ts files exist
 ls -lh dist/react/index.d.ts
 ls -lh dist/client/index.d.ts
+ls -lh dist/shared/str.d.ts  # Should exist (tsc generates per-file)
 
 # Check if global types are in react types
 grep "declare global" dist/react/index.d.ts
+
+# Rebuild types only
+pnpm build:types
+
+# Full clean rebuild
+rm -rf dist && pnpm build
+```
+
+### Function overloads not resolving in consumer
+
+This should NOT happen anymore. We use `tsc` for declaration generation specifically to fix this. If you see this:
+
+```bash
+# 1. Make sure you're on latest qstd version
+pnpm view qstd version
+
+# 2. Verify dist/shared/ has individual .d.ts files (not bundled)
+ls dist/shared/
+
+# 3. If bundled (single chunk file like log-xxx.d.ts), rebuild:
+rm -rf dist && pnpm build
 ```
 
 ### Panda CSS not working
