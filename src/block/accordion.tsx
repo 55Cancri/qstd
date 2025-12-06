@@ -107,7 +107,7 @@ function Accordion(props: _t.AccordionBlockProps) {
   );
 }
 
-type AccordionItemProps = Omit<_t.BtnBlockProps, "is" | "title"> & {
+type AccordionItemProps = Omit<_t.BtnBlockProps, "is" | "title" | "onChange"> & {
   title: React.ReactNode;
   children: React.ReactNode;
   /** icon to indicate if open or closed */
