@@ -271,9 +271,7 @@ export default function Slider(props: _t.SliderBlockProps) {
           cols="1"
           rows="1"
           alignItems="center"
-          position="relative"
           w
-          h={height}
           cursor={disabled ? "not-allowed" : "pointer"}
           opacity={disabled ? 0.5 : 1}
           onPointerDown={handleTrackPointerDown}
@@ -281,6 +279,9 @@ export default function Slider(props: _t.SliderBlockProps) {
           userSelect="none"
           touchAction="none"
           {...(rest as MotionDivProps)}
+          // Critical: position and height must come AFTER rest spread
+          position="relative"
+          h={height}
         >
           {trackEl}
           {fillEl}
@@ -359,27 +360,30 @@ export function SliderThumb(props: SliderChildProps) {
 
   const left = `${sliderPercent ?? percent}%`;
 
+  // Spread rest first, then apply critical props that must not be overridden
   return (
     <MotionDiv
       data-slider-thumb
-      position="absolute"
-      size={24}
       rounded
       bg="white"
       boxShadow="0 2px 8px rgba(0,0,0,0.25)"
       cursor={disabled ? "not-allowed" : "grab"}
       pointerEvents="none"
-      style={{
-        ...style,
-        left,
-        top: "50%",
-        transform: "translate(-50%, -50%)",
-      }}
       initial={false}
       animate={{
         scale: isDragging ? 1.1 : 1,
       }}
       {...(rest as MotionDivProps)}
+      // These must come AFTER rest to ensure proper positioning
+      position="absolute"
+      size={24}
+      style={{
+        ...((rest as MotionDivProps).style || {}),
+        ...style,
+        left,
+        top: "50%",
+        transform: "translate(-50%, -50%)",
+      }}
     />
   );
 }
