@@ -77,7 +77,10 @@ export default function Slider(props: _t.SliderBlockProps) {
   const trackRef = React.useRef<HTMLDivElement>(null);
 
   // Calculate percentage for positioning
-  const percent = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+  const percent = Math.min(
+    100,
+    Math.max(0, ((value - min) / (max - min)) * 100)
+  );
 
   // Clamp and optionally step a raw value
   const clampValue = React.useCallback(
@@ -144,15 +147,11 @@ export default function Slider(props: _t.SliderBlockProps) {
       setIsDragging(false);
     };
 
-    window.addEventListener("pointermove", handleMove, {
-      signal: controller.signal,
-    });
-    window.addEventListener("pointerup", handleUp, {
-      signal: controller.signal,
-    });
-    window.addEventListener("pointercancel", handleUp, {
-      signal: controller.signal,
-    });
+    const signal = controller.signal;
+
+    window.addEventListener("pointermove", handleMove, { signal });
+    window.addEventListener("pointerup", handleUp, { signal });
+    window.addEventListener("pointercancel", handleUp, { signal });
 
     return () => controller.abort();
   }, [isDragging, getValueFromClientX, updateValue]);
@@ -197,15 +196,15 @@ export default function Slider(props: _t.SliderBlockProps) {
 
   // Find custom child components
   const trackChild = _f.findChildrenByDisplayName<SliderChildProps>(
-    children as React.ReactNode,
+    children,
     TrackNameKey
   );
   const fillChild = _f.findChildrenByDisplayName<SliderChildProps>(
-    children as React.ReactNode,
+    children,
     FillNameKey
   );
   const thumbChild = _f.findChildrenByDisplayName<SliderChildProps>(
-    children as React.ReactNode,
+    children,
     ThumbNameKey
   );
 
@@ -297,7 +296,13 @@ export default function Slider(props: _t.SliderBlockProps) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function SliderTrack(props: SliderChildProps) {
-  const { sliderPercent, sliderValue, sliderMin, sliderMax, ...rest } = props;
+  const {
+    sliderPercent: _,
+    sliderValue: _v,
+    sliderMin: _min,
+    sliderMax: _max,
+    ...rest
+  } = props;
 
   return (
     <MotionDiv
@@ -314,8 +319,14 @@ export function SliderTrack(props: SliderChildProps) {
 SliderTrack.displayName = TrackNameKey;
 
 export function SliderFill(props: SliderChildProps) {
-  const { sliderPercent, sliderValue, sliderMin, sliderMax, style, ...rest } =
-    props;
+  const {
+    sliderPercent,
+    sliderValue: _v,
+    sliderMin: _min,
+    sliderMax: _max,
+    style,
+    ...rest
+  } = props;
   const { percent } = useSliderContext();
 
   const width = `${sliderPercent ?? percent}%`;
@@ -336,8 +347,14 @@ export function SliderFill(props: SliderChildProps) {
 SliderFill.displayName = FillNameKey;
 
 export function SliderThumb(props: SliderChildProps) {
-  const { sliderPercent, sliderValue, sliderMin, sliderMax, style, ...rest } =
-    props;
+  const {
+    sliderPercent,
+    sliderValue: _v,
+    sliderMin: _min,
+    sliderMax: _max,
+    style,
+    ...rest
+  } = props;
   const { percent, isDragging, disabled } = useSliderContext();
 
   const left = `${sliderPercent ?? percent}%`;
@@ -368,4 +385,3 @@ export function SliderThumb(props: SliderChildProps) {
   );
 }
 SliderThumb.displayName = ThumbNameKey;
-

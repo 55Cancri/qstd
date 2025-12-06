@@ -148,7 +148,11 @@ export default defineConfig([
       // ──────────────────────────────────────
       // VARIABLE USAGE
       // ──────────────────────────────────────
-      "@typescript-eslint/no-unused-vars": "warn",
+      // Allow underscore-prefixed vars for intentionally unused destructured props
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
       "@typescript-eslint/no-explicit-any": "error",
     },
   },
@@ -193,4 +197,3 @@ export default defineConfig([
     ],
   },
 ]);
-
