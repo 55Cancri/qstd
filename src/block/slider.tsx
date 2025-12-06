@@ -362,9 +362,7 @@ export function SliderThumb(props: SliderChildProps) {
   return (
     <MotionDiv
       data-slider-thumb
-      gridArea="1 / 1"
       position="absolute"
-      top="50%"
       size={24}
       rounded
       bg="white"
@@ -374,6 +372,7 @@ export function SliderThumb(props: SliderChildProps) {
       style={{
         ...style,
         left,
+        top: "50%",
         transform: "translate(-50%, -50%)",
       }}
       initial={false}
