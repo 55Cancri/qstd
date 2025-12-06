@@ -267,6 +267,7 @@ export const extractElAndStyles = (
     whileFocus,
     transition,
     variants,
+    custom,
     ...rest
   } = anyProps;
 
@@ -283,7 +284,8 @@ export const extractElAndStyles = (
     whileTap !== undefined ||
     whileFocus !== undefined ||
     variants !== undefined ||
-    transition !== undefined;
+    transition !== undefined ||
+    custom !== undefined;
 
   const comp: React.ElementType = hasMotionProps ? MotionComp : StdComp;
   const motionProps = hasMotionProps
@@ -296,6 +298,7 @@ export const extractElAndStyles = (
         whileTap,
         whileFocus,
         variants,
+        custom,
         transition: _motion ?? transition,
       }
     : undefined;

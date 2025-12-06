@@ -116,6 +116,7 @@ type BlockMotionProps = {
   animate?: TargetAndTransition | VariantLabels | boolean;
   exit?: TargetAndTransition | VariantLabels;
   variants?: Variants;
+  custom?: any; // Dynamic value passed to variant functions
   whileHover?: TargetAndTransition | VariantLabels;
   whileTap?: TargetAndTransition | VariantLabels;
   whileFocus?: TargetAndTransition | VariantLabels;
