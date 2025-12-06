@@ -361,6 +361,7 @@ export function SliderThumb(props: SliderChildProps) {
   const left = `${sliderPercent ?? percent}%`;
 
   // Spread rest first, then apply critical props that must not be overridden
+  // Use x/y in both initial and animate so framer-motion always includes the centering offset
   return (
     <MotionDiv
       data-slider-thumb
@@ -379,8 +380,7 @@ export function SliderThumb(props: SliderChildProps) {
         left,
         top: "50%",
       }}
-      // Transform must be in animate so framer-motion includes the centering
-      initial={false}
+      initial={{ scale: 1, x: "-50%", y: "-50%" }}
       animate={{
         scale: isDragging ? 1.1 : 1,
         x: "-50%",
