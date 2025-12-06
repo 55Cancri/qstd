@@ -201,6 +201,7 @@ export const extractElType = (is: _t.Is, props: { filepicker?: boolean }) => {
   else if (is === "blockquote") el = "blockquote";
   else if (is === "pre") el = "pre";
   else if (is === "progress") el = "progress";
+  else if (is === "slider") el = "div";
   else if (is === "drawer") el = "div";
   else if (is === "menu") el = "div";
   else if (is === "form") el = "form";
@@ -216,6 +217,7 @@ export const extractElType = (is: _t.Is, props: { filepicker?: boolean }) => {
   const isRadio = is === "radio";
   const isDrawer = is === "drawer";
   const isSwitch = is === "switch";
+  const isSlider = is === "slider";
   const isSkeleton = is === "skeleton";
   const isCheckbox = is === "checkbox";
   const isTextarea = is === "textarea";
@@ -239,6 +241,7 @@ export const extractElType = (is: _t.Is, props: { filepicker?: boolean }) => {
     isInput,
     isRadio,
     isSwitch,
+    isSlider,
     isBtnLike,
     isAccordion,
     filepickerAllowed,

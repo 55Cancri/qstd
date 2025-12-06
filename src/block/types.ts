@@ -257,6 +257,25 @@ export type ProgressBlockProps = SharedBlockProps &
     steps?: number;
   };
 
+export type SliderBlockProps = SharedBlockProps &
+  Omit<HTMLProps<"div">, "onChange"> & {
+    is: "slider";
+    /** Current value (controlled mode) */
+    value?: number;
+    /** Initial value (uncontrolled mode) */
+    defaultValue?: number;
+    /** Minimum value (default: 0) */
+    min?: number;
+    /** Maximum value (default: 100) */
+    max?: number;
+    /** Step increment for snapping */
+    step?: number;
+    /** Callback when value changes */
+    onChange?: (value: number) => void;
+    /** Disable interaction */
+    disabled?: boolean;
+  };
+
 export type SwitchBlockProps = SharedBlockProps &
   Omit<HTMLProps<"button">, "onChange"> & {
     is: "switch";
@@ -415,6 +434,7 @@ export type BlockPropsMap = {
   checkbox: CheckboxBlockProps;
   accordion: AccordionBlockProps;
   progress: ProgressBlockProps;
+  slider: SliderBlockProps;
   switch: SwitchBlockProps;
   drawer: DrawerBlockProps;
   radio: RadioBlockProps;

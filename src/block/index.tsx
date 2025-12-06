@@ -10,6 +10,7 @@ import Input, { LeftIcon, RightSide, Label as InputLabel } from "./input";
 import Accordion, { Item as AccordionItem } from "./accordion";
 import Drawer, { BtnGroup, CloseBtn } from "./drawer";
 import Progress, { TrackBg, TrackFill } from "./progress";
+import Slider, { SliderTrack, SliderFill, SliderThumb } from "./slider";
 import Tooltip, { TooltipContainer } from "./tooltip";
 import Checkbox from "./checkbox";
 import * as _l from "./literals";
@@ -47,6 +48,8 @@ function Block(props: any) {
         <Hr w py={2} color="neutral.300" {...anyProps} />
       ) : extract.isProgress ? (
         <Progress {...anyProps} />
+      ) : extract.isSlider ? (
+        <Slider {...anyProps} />
       ) : extract.isDrawer ? (
         <Drawer {...anyProps} />
       ) : extract.isAccordion ? (
@@ -226,6 +229,13 @@ const ProgressNamespace = {
   TrackBg,
 } as const;
 
+// Block.Slider namespace
+const SliderNamespace = {
+  Track: SliderTrack,
+  Fill: SliderFill,
+  Thumb: SliderThumb,
+} as const;
+
 /** Compound component with proper typing
  * - x Block.Tooltip is not callable, ✔ Block.Tooltip.Container is
  * - x Block.Btn is not callable, ✔ Block.Btn.RightSide, Block.Btn.LeftIcon, Block.Btn.Label is
@@ -235,6 +245,7 @@ type BlockComponent = typeof Block & {
   readonly Drawer: typeof DrawerNamespace;
   readonly Tooltip: typeof TooltipNamespace;
   readonly Progress: typeof ProgressNamespace;
+  readonly Slider: typeof SliderNamespace;
   readonly Accordion: typeof AccordionNamespace;
   readonly Textarea: typeof TextareaNamespace;
   readonly Input: typeof InputNamespace;
@@ -245,6 +256,7 @@ type BlockComponent = typeof Block & {
 const CompoundBlock: BlockComponent = Object.assign(Block, {
   Accordion: AccordionNamespace,
   Progress: ProgressNamespace,
+  Slider: SliderNamespace,
   Textarea: TextareaNamespace,
   Tooltip: TooltipNamespace,
   Switch: SwitchNamespace,
