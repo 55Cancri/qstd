@@ -24,7 +24,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   const prevOpenRef = React.useRef<boolean | null>(null); // Track previous open state
   const dragControls = useDragControls();
   const { open, setOpen } = useDrawer();
-  const { onClose, ...rest } = props;
+  const { onClose, onExitComplete, ...rest } = props;
 
   // Create motion values for y
   const y = useMotionValue(0);
@@ -148,7 +148,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   };
 
   return createPortal(
-    <AnimatePresence initial={false} mode="wait">
+    <AnimatePresence initial={false} mode="wait" onExitComplete={onExitComplete}>
       {open && (
         <Backdrop
           onClick={() => onBackdropClick()}

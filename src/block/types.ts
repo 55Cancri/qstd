@@ -75,10 +75,6 @@ declare global {
   type MediaFile = File | ImageFile | AudioFile;
 }
 
-type PropsFor<K extends keyof typeof _l.tags> = React.ComponentProps<
-  (typeof _l.tags)[K]
->;
-
 // icons
 export type Icon =
   | null
@@ -116,7 +112,7 @@ type BlockMotionProps = {
   animate?: TargetAndTransition | VariantLabels | boolean;
   exit?: TargetAndTransition | VariantLabels;
   variants?: Variants;
-  custom?: any; // Dynamic value passed to variant functions
+  custom?: unknown; // Dynamic value passed to variant functions
   whileHover?: TargetAndTransition | VariantLabels;
   whileTap?: TargetAndTransition | VariantLabels;
   whileFocus?: TargetAndTransition | VariantLabels;
@@ -179,16 +175,16 @@ export type SkeletonBlockProps = SharedBlockProps &
     is: "skeleton";
     as: "block";
     // Custom skeleton props
-    size?: any;
-    br?: any;
+    size?: string | number;
+    br?: string | number;
   };
 
 export type SkeletonCircleProps = SharedBlockProps &
   HTMLProps<"div"> & {
     is: "skeleton";
     as: "circle";
-    size?: any;
-    br?: any;
+    size?: string | number;
+    br?: string | number;
   };
 
 // Base button props without onChange
@@ -220,7 +216,9 @@ export type BtnBlockProps = BtnBlockPropsBase & {
   filepicker?: boolean;
   multiple?: boolean;
   accept?: string;
-  onChange?: any; // Kept as any to avoid union complexity
+  onChange?:
+    | ((files: File[]) => void)
+    | React.FormEventHandler<HTMLButtonElement>;
 };
 
 export type InputBlockProps = SharedBlockProps &
@@ -287,6 +285,8 @@ export type DrawerBlockProps = SharedBlockProps &
     outsideClickClose?: boolean;
     closeOnEsc?: boolean;
     onClose?: () => void;
+    /** Called when exit animation completes (useful for state machine cleanup) */
+    onExitComplete?: () => void;
   };
 
 export type RadioOption = {
