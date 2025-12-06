@@ -369,10 +369,6 @@ export function SliderThumb(props: SliderChildProps) {
       boxShadow="0 2px 8px rgba(0,0,0,0.25)"
       cursor={disabled ? "not-allowed" : "grab"}
       pointerEvents="none"
-      initial={false}
-      animate={{
-        scale: isDragging ? 1.1 : 1,
-      }}
       {...(rest as MotionDivProps)}
       // These must come AFTER rest to ensure proper positioning
       position="absolute"
@@ -382,7 +378,13 @@ export function SliderThumb(props: SliderChildProps) {
         ...style,
         left,
         top: "50%",
-        transform: "translate(-50%, -50%)",
+      }}
+      // Transform must be in animate so framer-motion includes the centering
+      initial={false}
+      animate={{
+        scale: isDragging ? 1.1 : 1,
+        x: "-50%",
+        y: "-50%",
       }}
     />
   );
