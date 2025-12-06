@@ -1,6 +1,6 @@
 {
   "name": "qstd",
-  "version": "0.2.17",
+  "version": "0.2.19",
   "description": "Standard Block component and utilities library with Panda CSS",
   "author": "malin1",
   "license": "MIT",
@@ -34,6 +34,7 @@
   },
   "files": [
     "dist",
+    "styled-system",
     "panda.config.ts",
     "README.md",
     "CHANGELOG.md"

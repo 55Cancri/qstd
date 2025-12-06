@@ -229,6 +229,8 @@ export const extractElType = (is: _t.Is, props: { filepicker?: boolean }) => {
       (is === "txt" || is === "btn" || is === "link" || is === "img") &&
       props.filepicker);
 
+  const isVoidElement = el === "img" || el === "input" || el === "hr";
+
   return {
     el,
     is,
@@ -240,6 +242,7 @@ export const extractElType = (is: _t.Is, props: { filepicker?: boolean }) => {
     isBtnLike,
     isAccordion,
     filepickerAllowed,
+    isVoidElement,
     isTextarea,
     isCheckbox,
     isSkeleton,
@@ -297,7 +300,12 @@ export const extractElAndStyles = (
       }
     : undefined;
 
-  const remaining = omit(rest, ["loadingPosition", "loadingIcon", "isLoading"]);
+  const remaining = omit(rest, [
+    "loadingPosition",
+    "loadingIcon",
+    "isLoading",
+    "children",
+  ]);
 
   const cursor = anyProps.isLoading ? "not-allowed" : "pointer";
 

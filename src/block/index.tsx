@@ -21,8 +21,9 @@ const Skeleton = _l.motionTags.div;
 
 function Block<T extends _t.Is>(props: _t.BlockProps<T>): React.ReactElement;
 function Block(props: _t.BaseBlockProps): React.ReactElement;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Implementation signature for polymorphic overloads
 function Block(props: any) {
-  const anyProps = props as any; // prevent type evaluation explosion
+  const anyProps = props;
   const {
     _motion,
     sheenInterval = "1.4s",
@@ -35,6 +36,7 @@ function Block(props: any) {
   const multiple = anyProps.multiple;
   const is = anyProps.is;
 
+  /* eslint-disable @typescript-eslint/no-unsafe-argument -- Props are dynamically typed based on 'is' discriminator */
   const extract = _f.extractElType(is, anyProps);
   const [Comp, initialStyles] = _f.extractElAndStyles(extract, props);
   const icons = _f.getIcons(extract, props);
@@ -112,19 +114,29 @@ function Block(props: any) {
             multiple={multiple}
             accept={anyProps.accept}
             style={{ display: "none" }}
-            onChange={async (e) => {
-              const files = Array.from(e.target.files ?? []) as File[];
-              const selectedFiles = files.length
-                ? await _f.prepareFiles(files)
-                : [];
-              // When filepicker is true, onChange expects File[], not FormEvent
-              if (anyProps.onChange) {
-                (anyProps.onChange as (files: File[]) => void)(selectedFiles);
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? []);
+              if (files.length) {
+                void _f.prepareFiles(files).then((selectedFiles) => {
+                  // When filepicker is true, onChange expects File[], not FormEvent
+                  if (anyProps.onChange) {
+                    anyProps.onChange(selectedFiles);
+                  }
+                });
+              } else if (anyProps.onChange) {
+                anyProps.onChange([]);
               }
             }}
             value=""
           />
         </div>
+      ) : extract.isVoidElement ? (
+        React.createElement(Comp, {
+          ...(isLoading && { "data-loading": isLoading }),
+          onContextMenu: (e: React.MouseEvent<HTMLElement>) =>
+            e.preventDefault(),
+          ...initialStyles,
+        })
       ) : (
         React.createElement(
           Comp,
@@ -156,27 +168,26 @@ function Block(props: any) {
       | DocumentFragment
       | undefined;
     const fallback = document.getElementById("portal") || document.body;
-    const container = (portalContainer ?? fallback) as
-      | Element
-      | DocumentFragment;
-    return createPortal(
-      component as React.ReactNode,
-      container as Element | DocumentFragment
-    );
+    const container = portalContainer ?? fallback;
+    return createPortal(component, container);
   } else {
     return component;
   }
 }
 
 // Tag the factory for robust detection (survives HMR component identity swaps)
-(TooltipContainer as any).isBlockTooltipContainer = true;
-(MenuContainer as any).isBlockMenuContainer = true;
+const TaggedTooltipContainer = Object.assign(TooltipContainer, {
+  isBlockTooltipContainer: true as const,
+});
+const TaggedMenuContainer = Object.assign(MenuContainer, {
+  isBlockMenuContainer: true as const,
+});
 
 // Block.Tooltip namespace
-const TooltipNamespace = { Container: TooltipContainer } as const;
+const TooltipNamespace = { Container: TaggedTooltipContainer } as const;
 
 // Block.Menu namespace
-const MenuNamespace = { Container: MenuContainer } as const;
+const MenuNamespace = { Container: TaggedMenuContainer } as const;
 
 // Block.Input namespace
 const InputNamespace = {
