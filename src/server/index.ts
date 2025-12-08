@@ -11,5 +11,4 @@ export * as Log from "../shared/log";
 
 // Server-specific utilities
 export * as File from "./file";
-
-// todo export most aws and module functions
+export * as DDB from "./aws/ddb";

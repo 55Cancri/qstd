@@ -20,6 +20,58 @@ A single npm package providing:
 pnpm add qstd
 ```
 
+## Prerequisites
+
+### TypeScript Configuration (Required)
+
+To use subpath imports like `qstd/server`, `qstd/client`, or `qstd/react`, your `tsconfig.json` **must** use a modern module resolution strategy:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler"
+  }
+}
+```
+
+**Valid options:** `"bundler"`, `"node16"`, or `"nodenext"`
+
+#### Why is this required?
+
+This package uses the **`exports`** field in `package.json` to define subpath exports:
+
+```json
+{
+  "exports": {
+    "./react": { "types": "...", "import": "..." },
+    "./client": { "types": "...", "import": "..." },
+    "./server": { "types": "...", "import": "..." },
+    "./preset": { "types": "...", "import": "..." }
+  }
+}
+```
+
+The `exports` field is the modern Node.js way to define multiple entry points for a package. It allows a single package to expose different modules at different paths (e.g., `qstd/server` vs `qstd/client`) with proper type definitions for each.
+
+**The problem:** The older `"moduleResolution": "node"` (also called "node10") setting predates the `exports` field and does not understand it. TypeScript will fail to resolve the types:
+
+```
+Cannot find module 'qstd/server' or its corresponding type declarations.
+  There are types at '.../node_modules/qstd/dist/server/index.d.ts', but this result 
+  could not be resolved under your current 'moduleResolution' setting.
+```
+
+**The fix:** Use `"moduleResolution": "bundler"` which understands the `exports` field. This is the recommended setting for projects using modern bundlers like Vite, esbuild, or webpack 5+.
+
+#### Quick Reference
+
+| moduleResolution | Supports `exports` | Use Case |
+|-----------------|-------------------|----------|
+| `"node"` / `"node10"` | ❌ No | Legacy projects |
+| `"node16"` | ✅ Yes | Node.js 16+ with ESM |
+| `"nodenext"` | ✅ Yes | Latest Node.js features |
+| `"bundler"` | ✅ Yes | **Recommended** for bundled apps |
+
 ## Usage
 
 ### React (Block + Hooks)

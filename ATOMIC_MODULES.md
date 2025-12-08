@@ -4,6 +4,8 @@ A compact module structure that keeps concerns clear and greppable. Each module 
 
 **Core principle:** Simplicity through consistency. Complexity is managed by predictable patterns, not eliminated by clever abstractions.
 
+> **Updating this document:** Blend new guidance into existing sections when possible. Only create new sections when content truly doesn't fit elsewhere. Enhance rather than expand.
+
 ## Module anatomy
 
 **Only `index.ts` is required.** All other files are optional and added as needed:
@@ -26,6 +28,37 @@ A compact module structure that keeps concerns clear and greppable. Each module 
 
 **When to use fns.ts:** Only when you have a moderate amount of logic (< 500 lines) that fits in one file. If your logic is complex enough to need multiple specialized modules, skip `fns.ts` and use `domain.ts` or `index.ts` as the orchestrator.
 
+### Keep things where they belong
+
+**If a file already exists, use it.** Don't define types in `fns.ts` if `types.ts` exists. Don't put constants in `domain.ts` if `literals.ts` exists.
+
+```typescript
+// ❌ BAD: Defining types in fns.ts when types.ts exists
+// fns.ts
+export interface InsertionPoint { ... }  // Why is this here?
+export function insertMediaBlock(...) { ... }
+
+// ✅ GOOD: Types in types.ts, functions in fns.ts
+// types.ts
+export interface InsertionPoint { ... }
+
+// fns.ts
+import * as _t from "./types";
+export function insertMediaBlock(content: _t.ContentBlock[], point: _t.InsertionPoint, ...) { ... }
+```
+
+**The rule:** Once you've split a module into separate files, respect that structure. Each file has a purpose:
+
+- Types/interfaces → `types.ts`
+- Constants/config → `literals.ts`
+- Pure functions → `fns.ts`
+- Business logic → `domain.ts`
+
+**Exceptions:**
+
+- Small modules can keep everything in `index.ts` until they grow
+- Inline function argument types are fine (see Function arguments section)
+
 ### Component & Hook Exports
 
 - **Components:** Export as default function statements.
@@ -36,12 +69,12 @@ A compact module structure that keeps concerns clear and greppable. Each module 
   ```ts
   export default function useAudioRecorder() { ... }
   ```
-- **Filenames:** Always keep filenames lowercase (kebab-case or simple lowercase), matching the export where possible but lowercased.
+- **Filenames:** Always lowercase kebab-case, matching the export where possible.
   - Import example: `import Recorder from "components/molecules/recorder"`
 
-### Import pattern inside `index.ts` and between internal modules
+### Internal module imports
 
-**Use namespace imports with underscore prefixes** for all internal modules to avoid naming conflicts and enable better refactoring:
+**Use namespace imports with underscore prefixes** for internal modules:
 
 ```ts
 // Standard module imports (always these prefixes)
@@ -53,13 +86,6 @@ import * as _f from "./fns";
 // Specialized module imports (use descriptive underscore prefix)
 import * as _ast from "./ast";
 import * as _parser from "./parser";
-import * as _compiler from "./compiler";
-import * as _tokenize from "./tokenize";
-
-// Re-export only the types/functions that consumers need
-export const { parse, compile } = _d;
-export const { formatText } = _f;
-export type { ASTNode, Token } = _t; // Only public types
 ```
 
 **Why namespace imports with underscores:**
@@ -67,7 +93,6 @@ export type { ASTNode, Token } = _t; // Only public types
 - **Greppable**: Easy to find all uses of a module (search for `_ast.`)
 - **Refactor-safe**: Change internal structure without breaking imports
 - **No naming conflicts**: `_ast` never conflicts with other imports
-- **Consistent**: Same pattern everywhere in the codebase
 - **Clear boundaries**: Easy to see what's from which module
 
 **Rules:**
@@ -75,156 +100,441 @@ export type { ASTNode, Token } = _t; // Only public types
 - ❌ **NEVER destructure imports from internal modules**: `import { parse } from "./parser"`
 - ✅ **ALWAYS use namespace imports**: `import * as _parser from "./parser"`
 - Standard prefixes: `_t` (types), `_l` (literals), `_f` (fns), `_d` (domain)
-- Descriptive prefixes for specialized modules: `_ast`, `_parser`, `_tokenize`, etc.
 
-- Keep `index.ts` readable and declarative; push details into specialized modules.
-- **Only re-export what consumers need access to**—internal types and helpers should stay private to the module.
+### Re-exports in index.ts
 
-### Consuming Atomic Modules
+**Default to bulk exports.** Use `export * from` unless you need to hide internals:
 
-When importing atomic modules from other parts of the application, prefer **namespace imports** over destructuring. This makes the origin of functions and types explicit and avoids naming collisions.
+```ts
+// ✅ GOOD: Bulk exports (default for most modules)
+export type * from "./types";
+export * from "./literals";
+export * from "./fns";
+
+// ✅ GOOD: Selective exports (when some things are private)
+export type { Token, AST } from "./types"; // Only public types
+export { parse, compile } from "./fns"; // Only public functions
+```
+
+**When to use selective exports:**
+
+- Module has internal-only types/functions not meant for consumers
+- You're intentionally limiting the public API surface
+- Performance concerns (tree-shaking complex modules)
+
+**When to use bulk exports:**
+
+- All types/functions are meant for public consumption
+- You want flexibility to add exports without updating index.ts
+- Early development when the API is still evolving
+
+## Path aliases: Always use them
+
+**Never use relative paths with `../`.** Always use path aliases configured in tsconfig.json.
 
 ```typescript
-// ✅ GOOD: Namespace import
-import * as Sync from "lib/sync";
+// ✅ GOOD: Path aliases
+import * as Entry from "entities/entry";
+import useMediaUpload from "hooks/use-media-upload";
+import * as Recording from "storage/recording";
 
-// Usage
-Sync.syncRecordings();
+// ❌ AVOID: Relative paths
+import * as Entry from "../../entities/entry";
+import useMediaUpload from "../use-media-upload";
+import * as Recording from "../../../storage/recording";
 ```
 
-```typescript
-// ❌ AVOID: Destructuring
-import { syncRecordings } from "lib/sync";
-```
+**Why path aliases?**
 
-This pattern applies to all modules except components and hooks (which usually export defaults).
+- **Refactor-safe**: Move files without updating imports
+- **Readable**: Clear where things come from
+- **Consistent**: Same import path from anywhere in the codebase
+- **Shorter**: No counting `../` levels
 
-### Consuming Hooks: Namespace over Destructuring
+### Two-segment import rule
 
-When consuming custom hooks, avoid destructuring the return value. Instead, assign it to a descriptive namespace variable (usually the "noun" of the hook).
-
-```typescript
-// ✅ GOOD: Namespace variable
-const recorder = useAudioRecorder();
-
-// Usage
-if (recorder.isRecording) { ... }
-recorder.startRecording();
-```
-
-```typescript
-// ❌ AVOID: Destructuring
-const { isRecording, startRecording } = useAudioRecorder();
-```
-
-**Why?**
-
-- **Clarity at call site**: `recorder.startRecording()` is more explicit than just `startRecording()`.
-- **Avoids naming conflicts**: You can have multiple "recorders" or similar concepts without renaming variables.
-- **Grouping**: Keeps related functionality visibly grouped together.
-- **Discovery**: Typing `recorder.` triggers autocomplete for available methods.
-
-**Naming:** Keep the namespace variable short (one word) but clear. If the function name is long (`useAudioRecorder`), try to find the core noun (`recorder`).
-
-## Path aliases: The two-segment import rule
-
-**Constraint breeds creativity.** By limiting imports to two segments, we're forced to design cleaner, more thoughtful APIs.
-
-### Setup
-
-```json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "paths": {
-      "features/*": ["./src/features/*"],
-      "components/*": ["./src/components/*"],
-      "hooks/*": ["./src/hooks/*"],
-      "store/*": ["./src/store/*"],
-      "modules/*": ["./src/modules/*"]
-    }
-  }
-}
-```
-
-### The rule: Two segments max for imports, express complexity through dot notation
+Keep imports to two segments max. Express complexity through dot notation, not deeper paths.
 
 ```typescript
 // ✅ GOOD: Two-segment imports
 import * as md from "features/markdown";
-import * as user from "features/user";
-import * as Button from "components/button";
+import * as Entry from "entities/entry";
 
 // ❌ AVOID: Three+ segment imports
 import * as compilers from "features/markdown/compilers";
-import * as Outline from "components/button/outline";
 ```
 
-**Why?** Import paths are **structural addresses**. They tell you _where_ something lives in the filesystem. Dot notation is **semantic access**. It tells you _what_ you're doing with the module.
+## Consuming modules
 
-By keeping imports short, we:
+### Entities and features: Namespace imports
 
-- Reduce coupling to file structure
-- Make refactoring easier (fewer import path updates)
-- Force better API design at the module boundary
-
-### Express organization through dot notation
+Always use `* as` namespace imports for entities and feature modules:
 
 ```typescript
-import * as md from "features/markdown";
+// ✅ GOOD: Namespace imports
+import * as Entry from "entities/entry";
+import * as User from "entities/user";
+import * as Recording from "storage/recording";
 
-// Three-dot notation (preferred)
-md.ast.parse(markdown);
-md.compilers.compile(ast);
-md.tts.findTokenByTime(tokens, time);
-
-// Four-dot notation (acceptable when needed)
-md.renderers.components.Table({ node });
-
-// But avoid getting too deep - this suggests poor API design
-md.foo.bar.baz.qux.doThing(); // ❌ Time to refactor
+// Usage
+Entry.insertMediaBlock(content, point, galleryId, mediaIds);
+User.getCurrentUser();
+Recording.save(data);
 ```
 
-**The art of the dot:** Each dot is a cognitive step. Three dots feels natural (subject → category → action). Four dots is acceptable for complex features. Five+ dots means you're exposing too much internal structure.
+```typescript
+// ❌ AVOID: Destructuring
+import { insertMediaBlock } from "entities/entry";
+import { getCurrentUser } from "entities/user";
+```
 
-## The art of API design: Elegance under constraints
+**Why?**
 
-Good API design is like good graphic design—it follows principles that create clarity, consistency, and delight.
+- **Origin is clear**: `Entry.insertMediaBlock()` vs orphaned `insertMediaBlock()`
+- **No naming conflicts**: Multiple modules can have similar function names
+- **Discoverable**: Type `Entry.` to see all available functions
 
-### Design principles (API's version of CRAP)
+### Hooks: Namespace the return value
+
+When consuming hooks, assign to a namespace variable (the "noun" of the hook). **Never destructure.**
+
+```typescript
+// ✅ GOOD: Namespace variable
+const recorder = useAudioRecorder();
+const uploader = useMediaUpload();
+
+// Usage
+if (recorder.isRecording) { ... }
+recorder.start();
+uploader.uploadFiles(files, params);
+```
+
+```typescript
+// ❌ AVOID: Destructuring
+const { isRecording, start } = useAudioRecorder();
+const { uploadFiles, status } = useMediaUpload();
+```
+
+**Why?**
+
+- **Clarity at call site**: `recorder.start()` is more explicit than `start()`
+- **Avoids naming conflicts**: Multiple hooks with similar methods
+- **Grouping**: Related functionality stays visibly grouped
+- **Discovery**: Typing `recorder.` triggers autocomplete
+
+## Writing hooks
+
+### Event listener cleanup: Use AbortController
+
+**Always use `AbortController` for event listener cleanup in effects.** It's cleaner than manual `removeEventListener` and handles multiple listeners automatically.
+
+```typescript
+// ✅ GOOD: AbortController for clean cleanup
+React.useEffect(() => {
+  const container = containerRef.current;
+  if (!container) return;
+
+  const controller = new AbortController();
+  const signal = controller.signal;
+
+  const handleScroll = () => { ... };
+  const handleResize = () => { ... };
+
+  container.addEventListener("scroll", handleScroll, { passive: true, signal });
+  window.addEventListener("resize", handleResize, { signal });
+
+  return () => controller.abort();
+}, [deps]);
+```
+
+```typescript
+// ❌ AVOID: Manual removeEventListener
+React.useEffect(() => {
+  const container = containerRef.current;
+  if (!container) return;
+
+  const handleScroll = () => { ... };
+  const handleResize = () => { ... };
+
+  container.addEventListener("scroll", handleScroll, { passive: true });
+  window.addEventListener("resize", handleResize);
+
+  return () => {
+    container.removeEventListener("scroll", handleScroll);
+    window.removeEventListener("resize", handleResize);
+  };
+}, [deps]);
+```
+
+**Why AbortController?**
+
+- **Single cleanup call**: `controller.abort()` removes all listeners at once
+- **Less error-prone**: Can't forget to remove a listener or mismatch handler references
+- **Works everywhere**: Same pattern for window, document, elements, and even fetch requests
+- **Composable**: Pass the signal to multiple listeners or async operations
+
+**With timeouts:** AbortController handles listeners, but timeouts still need manual cleanup:
+
+```typescript
+React.useEffect(() => {
+  const controller = new AbortController();
+  const signal = controller.signal;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(handleSnapDecision, 150);
+    },
+    { signal }
+  );
+
+  return () => {
+    controller.abort();
+    if (timeout) clearTimeout(timeout);
+  };
+}, [deps]);
+```
+
+### React state naming
+
+Prefer `store`/`setStore` over `state`/`setState` for local React state:
+
+```typescript
+// ✅ GOOD: Clear naming
+const [store, setStore] = React.useState<_t.Upload>({ ... });
+
+// ❌ AVOID: Generic "state"
+const [state, setState] = React.useState<_t.Upload>({ ... });
+```
+
+### Hook return values: Spread state
+
+**Spread state properties directly** in the return. Don't wrap in a `state` object—consumers shouldn't need `hook.state.isLoading`.
+
+```typescript
+// ✅ GOOD: Spread state for flat access
+export default function useMediaUpload() {
+  const [store, setStore] = React.useState<_t.Upload>({
+    status: "idle",
+    progress: { loaded: 0, total: 0, percent: 0 },
+    uploadedMedia: [],
+  });
+
+  const uploadFiles = async (...) => { ... };
+  const reset = () => { ... };
+
+  return { ...store, uploadFiles, reset };
+}
+
+// Consumer gets flat access:
+const uploader = useMediaUpload();
+uploader.status;        // ✅ Direct
+uploader.progress;      // ✅ Direct
+uploader.uploadFiles(); // ✅ Direct
+```
+
+```typescript
+// ❌ AVOID: Nested state object
+return { state, uploadFiles, reset };
+
+// Consumer needs extra nesting:
+uploader.state.status; // ❌ Extra layer
+uploader.state.progress; // ❌ Extra layer
+```
+
+**Why spread?**
+
+- **Simpler consumer API**: `uploader.status` not `uploader.state.status`
+- **Consistent access pattern**: All properties at same level
+- **Better autocomplete**: Flat object shows all options immediately
+
+## Naming conventions
+
+### Clarity over brevity
+
+Choose names that reveal intent:
+
+```typescript
+// ❌ Too generic
+md.process(data);
+md.handle(thing);
+
+// ✅ Clear intent
+md.ast.parse(markdown);
+md.compilers.compile(ast);
+```
+
+### Avoid redundant suffixes
+
+**Don't use "State", "Type", "Data", "Info", "Object"** when avoidable:
+
+```typescript
+// ❌ AVOID: Redundant suffixes
+interface PlayerState { ... }
+type RecordingType = "audio" | "video";
+const configObject = { ... };
+
+// ✅ PREFER: Clean names
+interface Player { ... }
+type Recording = "audio" | "video";
+const config = { ... };
+```
+
+**When suffixes ARE appropriate:**
+
+```typescript
+// ✅ OK: Distinguishing related concepts
+interface PlayerConfig { ... }    // Configuration
+interface PlayerControls { ... }  // Control methods
+
+// ✅ OK: Unit disambiguation
+type DurationMs = number;
+type TokenId = string;
+```
+
+### File naming: Lowercase kebab-case
+
+```
+✅ GOOD
+use-audio-player.tsx
+audio-recorder.tsx
+sync-recordings.ts
+
+❌ AVOID
+useAudioPlayer.tsx      # camelCase
+AudioRecorder.tsx       # PascalCase
+```
+
+## Component props: Pass the object, not its fields
+
+**When multiple props come from the same object, pass the object directly.**
+
+```tsx
+// ❌ BAD: Prop explosion - extracting fields from the same object
+<DrawerForMediaPicker
+  open={showMediaPicker}
+  onClose={handleClose}
+  entryId={entry.id}
+  entryCreatedAt={entry.createdAt}
+  currentContent={entry.content || []}
+  currentRevisedContent={entry.revisedContent}
+  insertionPoint={insertionPoint}
+/>
+
+// ✅ GOOD: Pass the object directly
+<DrawerForMediaPicker
+  open={showMediaPicker}
+  onClose={handleClose}
+  entry={entry}
+  insertionPoint={insertionPoint}
+/>
+```
+
+**Why this is better:**
+
+- **Cleaner call sites** - Less visual noise, easier to read
+- **Flexible** - Need another field later? No prop changes needed
+- **Less maintenance** - One prop instead of many to thread through
+- **Type-safe** - TypeScript still catches misuse inside the component
+
+**"But what about re-renders when unrelated fields change?"**
+
+With React 19 compiler, this is handled automatically. Even without it, the re-render cost is negligible compared to the cognitive overhead of managing many props. Don't optimize for imaginary performance problems.
+
+**The rule:** If you're passing 3+ props from the same object, just pass the object.
+
+## Function arguments: The 1-2-3 Rule
+
+**Self-documenting arguments eliminate inline comments.**
+
+```typescript
+// ❌ BAD: Requires comments
+findActiveToken(ttsTokens, audio.currentTime, 0.12); // 0.12 = tolerance
+
+// ✅ GOOD: Self-documenting
+findActiveToken(audio.currentTime, {
+  tokens: ttsTokens,
+  toleranceInSecs: 0.12,
+});
+```
+
+**The pattern:**
+
+1. **First arg** = Primary value (id, time, insertionPoint, etc.)
+2. **Second arg** = Named `props` object (self-documenting)
+3. **Third arg** = Optional config (rarely needed)
+
+**Naming:** Always use `props` for the named object argument.
+
+**Inline types:** For simple, one-off argument types, define them inline:
+
+```typescript
+// ✅ GOOD: Simple props, inline type
+export function insertMediaBlock(
+  insertionPoint: _t.InsertionPoint,
+  props: {
+    content: _t.ContentBlock[];
+    galleryId: string;
+    mediaIds: string[];
+  }
+): _t.ContentBlock[] { ... }
+```
+
+**When to extract to a separate type instead:**
+
+- Type is reused by multiple functions
+- Complex types (unions, generics, conditional types)
+- Function overloads that share a type
+- Type needs JSDoc documentation
+
+**Exceptions:**
+
+- Universal patterns: `map(array, fn)`, `filter(array, predicate)`
+- Math operations: `clamp(value, min, max)`
+- Single argument: `parseId(id)`, `normalize(text)`
+- Two clear arguments: `compileNode(type, node)`
+
+## Module organization: Flat > Nested
+
+**Prefer flat structure.** Avoid nested sub-modules unless absolutely necessary.
+
+```
+✅ GOOD: Flat structure
+tts/
+  types.ts
+  literals.ts
+  fns.ts
+  domain.ts
+  index.ts
+
+⚠️ RARELY needed: Nested only when truly independent
+payments/
+  stripe/
+    index.ts
+  paypal/
+    index.ts
+  index.ts
+```
+
+**Rule of thumb:** If you're questioning whether to nest, flatten instead.
+
+## API design principles
 
 **Consistency** - Predictable patterns reduce cognitive load
-
-- All modules have `index.ts`
-- Namespace imports with `* as`
-- Public API through selective re-exports
-
-**Clarity** - The purpose should be obvious from the path
-
-- `md.ast.parse()` - clearly parsing
-- `md.compilers.compile()` - clearly compiling
-- Not `md.processor.process()` - too generic
-
+**Clarity** - Purpose obvious from the path
 **Reduction** - Simplify without dumbing down
-
-- Prefer `compileNode("table", node)` over `table.compile(node)` when you have many element types
-- Use data (string discriminators) over structure (nested modules) when appropriate
-- Don't expose internal complexity in the public API
-
 **Accessibility** - Common things easy, complex things possible
 
-- Main APIs flat: `md.compile(ast)`
-- Specialized APIs namespaced: `md.compilers.compileNode("table", node)`
-- Advanced features tucked away but discoverable
-
-### Case study: From nested modules to elegant functions
+### Case study: Data over structure
 
 **The problem:** We have table, code, list compilers. How do we expose them?
 
 **Attempt 1: Deep nesting**
 
 ```typescript
-// ❌ Four dots, verbose, harder to refactor
+// ❌ Four dots, verbose, hard to refactor
 md.compilers.table.compile(node);
 md.compilers.code.compile(node);
 md.compilers.list.compile(node);
@@ -239,435 +549,53 @@ md.compileCode(node);
 md.compileList(node);
 ```
 
-**The insight:** We're repeating "compile" with different data. Use **data over structure**.
+**The insight:** We're repeating "compile" with different data. The node type should be a parameter, not a namespace.
 
 **Solution: Discriminated dispatch**
 
 ```typescript
-// ✅ Elegant: Three dots, type-safe, extensible
+// ✅ Three dots, type-safe, extensible
 md.compilers.compileNode("table", node);
 md.compilers.compileNode("code", node);
 md.compilers.compileNode("list", node);
-
-// TypeScript ensures "table" | "code" | "list" are the only options
 ```
 
 **Why this works:**
 
-- Respects the two-segment import constraint
-- Stays at three-dot notation
 - Unified API surface (one function instead of many)
 - Type-safe through string literal unions
-- Extensible (add new types without changing API)
-- Data-driven (easy to loop over, test, or dynamically dispatch)
+- Data-driven (easy to loop over, test, dynamically dispatch)
+- Stays at three-dot notation
 
-### When to break the pattern
+### Getting unstuck: The creative process
 
-**Know when to nest deeper.** If each element has multiple distinct operations:
+When you hit a constraint that feels wrong:
 
-```typescript
-// If you need multiple operations per element
-md.compilers.table.compile(node);
-md.compilers.table.validate(node);
-md.compilers.table.optimize(node);
-md.compilers.table.analyze(node);
-```
+1. **Identify the pattern** — What's being repeated? (Same operation on different data)
+2. **Question the structure** — Am I organizing by _what it does_ or _what it operates on_?
+3. **Try data over structure** — Can the variant become a parameter instead of a namespace?
+4. **Validate the feel** — Does `compileNode("table", node)` read naturally? Does it autocomplete well?
 
-Then four-dot notation is fine. The complexity is real, not artificial.
+**Signals you need to rethink:**
 
-But if it's mostly a single operation with variants, use discriminated dispatch:
+- Four+ dot notation feels awkward
+- Many similar functions with slight variations
+- Nested namespaces that mirror each other
+- Comments needed to explain what's what
 
-```typescript
-// Better
-md.compilers.compileNode("table", node);
-md.compilers.validateNode("table", node);
-```
+**The unlock:** Constraints breed creativity. The two-segment import rule _forces_ better API design. When you can't nest deeper, you're pushed to find more elegant patterns.
 
-### The creative process: Getting unstuck
+## Alternative names for domain.ts
 
-**How we arrived at `compileNode`:**
+If `domain` doesn't fit your use case:
 
-1. **Hit the constraint** - Four-dot notation felt wrong
-2. **Identify the pattern** - We're doing the same operation (compile) on different data (node types)
-3. **Abstract the repetition** - What if the node type is a parameter, not a namespace?
-4. **Validate with types** - TypeScript string literals make it type-safe
-5. **Test the feel** - Does `compileNode("table", node)` read naturally? Yes!
+- `services.ts` (\_s): orchestrates flows across helpers/IO
+- `business.ts` (\_b): explicit business label
+- `routines.ts` (\_r): stepwise procedures
+- `operations.ts` (\_o): imperative operations
+- `engine.ts` (\_e): core driving module
 
-**When you're stuck:**
-
-- Look for repetition in structure → candidate for data
-- Look for nested namespaces → candidate for discriminated dispatch
-- Look for many similar functions → candidate for unified API with parameters
-- Ask: "Am I organizing by _what it does_ or _what it operates on_?" (Sometimes the answer reveals the better path)
-
-## Module organization: Flat > Nested
-
-**Prefer flat structure.** Avoid nested sub-modules unless absolutely necessary.
-
-### When to flatten (default)
-
-```typescript
-// ✅ GOOD: Flat structure
-tts/
-  types.ts
-  literals.ts
-  fns.ts            // includes debugger fns
-  domain.ts
-  debugger.ts       // debugger-specific implementation as a single file
-  index.ts
-
-import * as tts from "features/tts";
-tts.captureSnapshot();
-tts.findTokenByTime();
-```
-
-Merge related functionality into the parent module:
-
-- Debugger types → merge into main `types.ts`
-- Debugger functions → merge into `fns.ts` or add `debugger.ts` as a single implementation file
-- Debugger constants → merge into `literals.ts`
-
-### When nested sub-modules might be acceptable
-
-Only create nested sub-modules when the feature is truly independent AND complex enough to warrant its own multi-file atomic structure:
-
-```typescript
-// ⚠️ RARELY needed: Nested sub-module
-features /
-  payments /
-  stripe / // Separate payment provider implementation
-  types.ts,
-  fns.ts,
-  domain.ts,
-  index.ts;
-paypal / // Another separate provider
-  types.ts,
-  fns.ts,
-  domain.ts,
-  index.ts;
-index.ts;
-```
-
-**Rule of thumb:** If you're questioning whether to nest, flatten instead. Nested modules add cognitive overhead and import complexity.
-
-## Function argument guidelines: The 1-2-3 Rule
-
-**Core Principle:** Self-documenting arguments eliminate the need for inline comments.
-
-### The Problem
-
-```typescript
-// ❌ BAD: Requires comments to understand
-const activeToken = findActiveToken(ttsTokens, audio.currentTime, 0.12); // 0.12 = tolerance
-detector.recordSample(expectedToken, actualToken, currentTime);
-createToken(id, text, speech, role, visual, audio); // What order? What's optional?
-```
-
-**Why it's bad:**
-
-- Mental overhead remembering argument positions
-- Comments needed to explain what values mean
-- Easy to swap arguments accidentally
-- Hard to tell what's required vs optional
-
-### The Solution: 1-2-3 Pattern
-
-**1. First argument = Primary simple value**
-
-- The "subject" of the operation
-- Usually: `id`, `time`, `index`, `text`, `value`, `key`
-- Should be a string, number, or boolean
-- This is what the function is "about"
-
-**2. Second argument = Named parameters object**
-
-- The "details" or "context"
-- Always use descriptive keys (no abbreviations)
-- Self-documenting at call site
-- Easy to add new params without breaking changes
-
-**3. Third argument = Optional config/options**
-
-- Settings with sensible defaults
-- Feature flags
-- Optional behavior modifications
-- Rarely needed if defaults are good
-
-### Examples: Before & After
-
-```typescript
-// ❌ BEFORE: Positional arguments
-fn: findActiveToken(tokens, currentTime, tolerance) => Token | null
-fn: recordSample(expectedToken, actualToken, currentTime) => void
-fn: createToken(id, text, speech, role, visual, audio) => Token
-fn: applyChunkTiming(tokens, timings, chunkOffset) => Token[]
-
-// Usage requires mental mapping:
-findActiveToken(ttsTokens, audio.currentTime, 0.12)
-recordSample(expectedToken, actualToken, 1.5)
-createToken("p-0-word-1", "hello", "hello", "content", {...}, {...})
-
-// ✅ AFTER: Self-documenting
-fn: findActiveToken(currentTime, config) => Token | null
-fn: recordSample(currentTime, tokens) => void
-fn: createToken(id, params) => Token
-fn: applyChunkTiming(chunkOffset, data) => Token[]
-
-// Usage is self-explanatory:
-findActiveToken(audio.currentTime, {
-  tokens: ttsTokens,
-  toleranceInSecs: 0.12
-})
-
-recordSample(currentTime, {
-  expected: expectedToken,
-  actual: actualToken
-})
-
-createToken(id, {
-  text: "hello",
-  speech: "hello",
-  role: "content",
-  visual: {...},
-  audio: {...}
-})
-
-applyChunkTiming(chunkOffset, {
-  tokens,
-  timings
-})
-```
-
-### Why This Works
-
-**Readability at call site:**
-
-```typescript
-// ❌ What does this mean?
-findActiveToken(tokens, 1.5, 0.12);
-
-// ✅ Crystal clear
-findActiveToken(1.5, { tokens, toleranceInSecs: 0.12 });
-```
-
-**Easy to extend:**
-
-```typescript
-// Adding a new param doesn't break anything
-findActiveToken(1.5, {
-  tokens,
-  toleranceInSecs: 0.12,
-  context: { isFirstInElement: true }, // New param added seamlessly
-});
-```
-
-**TypeScript helps:**
-
-```typescript
-type FindActiveTokenConfig = {
-  tokens: Token[];
-  toleranceInSecs?: number; // Optional with default
-  context?: ToleranceContext; // Optional advanced feature
-};
-
-// IDE autocompletes the config object keys
-// Type errors if you misspell or use wrong type
-```
-
-### When to Break the Rule
-
-**Exception 1: Universal patterns (2-3 args is fine)**
-
-```typescript
-// OK: Follows common conventions
-fn: map(array, fn) => Array
-fn: filter(array, predicate) => Array
-fn: find(array, predicate) => Item | null
-fn: reduce(array, reducer, initialValue) => Value
-```
-
-**Exception 2: Math operations**
-
-```typescript
-// OK: Mathematical conventions
-fn: add(a, b) => number
-fn: clamp(value, min, max) => number
-fn: lerp(start, end, t) => number
-```
-
-**Exception 3: Single argument**
-
-```typescript
-// OK: No ambiguity possible
-fn: parseId(id) => ParsedId
-fn: normalize(text) => string
-fn: hash(input) => string
-```
-
-**Exception 4: Two clearly named arguments**
-
-```typescript
-// OK: Both arguments are clear from context
-fn: compileNode(type, node) => CompiledNode
-// type: "table" | "code" | "list" (discriminator)
-// node: ASTNode (the thing to compile)
-
-fn: getElementById(id, document) => Element | null
-fn: addEventListener(type, handler) => void
-```
-
-### Real-World Application
-
-```typescript
-// TTS module following the pattern
-import * as md from "features/markdown";
-
-// ✅ Primary value first, config second
-const active = md.tts.findActiveToken(audio.currentTime, {
-  tokens: ttsTokens,
-  toleranceInSecs: 0.12,
-});
-
-// ✅ Simple value first, details second
-md.tts.recordSample(currentTime, {
-  expected: expectedToken,
-  actual: actualToken,
-});
-
-// ✅ ID first (string), params second (object)
-const token = md.compilers.createToken(id, {
-  text: "hello",
-  speech: "hello",
-  role: "content",
-  visual: { format: ["bold"], sourceStart: 0, sourceEnd: 5 },
-  audio: null,
-});
-
-// ✅ Primary offset first, data second
-const adjusted = md.tts.applyChunkTiming(chunkOffset, {
-  tokens,
-  timings,
-});
-```
-
-### Naming Convention for Config Objects
-
-Use descriptive suffixes:
-
-- `config` - General configuration (settings, options)
-- `params` - Required parameters (data needed for operation)
-- `options` - Optional settings (has defaults)
-- `data` - Raw data being processed
-- `context` - Contextual information
-
-```typescript
-// Clear intent from parameter names
-fn: findActiveToken(currentTime, config) => Token | null
-fn: createToken(id, params) => Token
-fn: render(ast, options?) => string
-fn: process(text, data) => Result
-fn: validate(mapping, context) => ValidationResult
-```
-
-### Summary
-
-**The 1-2-3 rule:**
-
-1. **First arg** = simple primary value (id, time, index)
-2. **Second arg** = named params object (self-documenting)
-3. **Third arg** = optional config (rarely needed)
-
-**Benefits:**
-
-- No comments needed at call sites
-- Clear intent from reading the code
-- Easy to extend without breaking changes
-- TypeScript provides excellent autocomplete
-- Less prone to argument order mistakes
-
-**Remember:** If you need a comment to explain an argument, that argument should be in a named object instead.
-
-## Example: Full feature API
-
-Here's how a complex feature (markdown with TTS) looks with these principles:
-
-```typescript
-// Setup (once in tsconfig.json)
-{
-  "paths": {
-    "features/*": ["./src/features/*"]
-  }
-}
-
-// Usage throughout codebase
-import * as md from "features/markdown";
-
-// AST operations
-const ast = md.ast.parse(markdown);
-md.ast.assignIds(ast);
-md.ast.walkTree(ast, visitor);
-
-// Compilation
-const compiled = md.compilers.compile(ast);
-const tableCompiled = md.compilers.compileNode("table", tableNode);
-const codeCompiled = md.compilers.compileNode("code", codeNode);
-
-// Rendering (components stay direct - JSX idioms)
-<md.renderers.MarkdownRenderer ast={ast} activeTokenId={id} />
-<md.renderers.Table node={tableNode} />
-<md.renderers.Code node={codeNode} />
-
-// TTS synchronization
-const { activeTokenId } = md.tts.useTTSSync(compiled);
-const token = md.tts.findTokenByTime(tokens, currentTime);
-md.tts.captureSnapshot(); // Debugger functions at same level
-```
-
-**Notice:**
-
-- All imports: two segments (`features/markdown`)
-- All access: three dots (`md.compilers.compile`)
-- Element-specific: discriminated dispatch (`compileNode("table", node)`)
-- Type-safe: TypeScript literal unions ensure correctness
-- Consistent: Same pattern across the entire feature
-
-## On naming: Clarity over brevity
-
-Choose names that reveal intent:
-
-```typescript
-// ❌ Too generic
-md.process(data);
-md.transform(input);
-md.handle(thing);
-
-// ✅ Clear intent
-md.ast.parse(markdown);
-md.compilers.compile(ast);
-md.tts.findTokenByTime(tokens, time);
-
-// ✅ Even verbose is okay if it's clear
-md.compilers.compileNode("table", node); // Better than md.cn("table", node)
-```
-
-**The principle:** Code is read 10x more than written. Optimize for the reader.
-
-## Alternative names considered for `domain.ts`
-
-When you have lots of business logic that needs its own helpers, `domain.ts` is a good default. But here are alternatives if `domain` feels wrong for your use case:
-
-- `services.ts` (\_s): orchestrates flows across helpers/IO; clear, action-oriented
-- `domain.ts` (\_d): DDD-standard; broad but accepted **[chosen default]**
-- `business.ts` (\_b): explicit business label; slightly corporate tone
-- `routines.ts` (\_r): emphasizes ordered, stepwise procedures
-- `operations.ts` (\_o): action/ops tone; reads as imperative operations
-- `rules.ts` (\_r): decision/invariant emphasis; alias conflicts with `routines`
-- `managers.ts` (\_m): OOP-ish; implies stateful coordination
-- `engine.ts` (\_e): core driving module; focused connotation
-
-Choose based on your domain. A payment system might use `business.ts`. A parser might use `engine.ts`. A workflow system might use `routines.ts`.
-
-## Summary: The atomic modules philosophy
+## Summary
 
 **Simplicity is not the absence of complexity—it's the management of it.**
 
@@ -676,16 +604,12 @@ Atomic modules provide:
 - **Predictability** - You always know where to look
 - **Greppability** - Namespace imports make refactoring safer
 - **Scalability** - Pattern works for small and large modules
-- **Creativity within constraints** - Two-segment imports force better API design
 - **Elegance** - Consistency creates a sense of rightness
 
-The best APIs feel inevitable. By following these patterns and principles, you're not just organizing code—you're crafting an interface that feels natural to use, easy to understand, and pleasant to work with.
-
-**Remember:** When you hit complexity, don't immediately add nesting. Ask:
+**Remember:** When you hit complexity, ask:
 
 - Can I use data instead of structure?
 - Can I unify similar operations?
-- Am I exposing internal organization externally?
 - Does this feel natural to type and read?
 
 The answer often reveals a more elegant path.
