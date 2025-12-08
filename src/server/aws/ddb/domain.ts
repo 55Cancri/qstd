@@ -24,7 +24,7 @@ export type Client = ReturnType<typeof create>;
 
 export const create = (props?: {
   credentials?: _t.Credentials;
-  tableName: string;
+  tableName?: string;
 }) => {
   const tableName = props?.tableName;
   const credentials = props?.credentials;
@@ -459,7 +459,7 @@ export async function batchGet<T extends Record<string, unknown>>(
 export function batchWrite<T extends Record<string, unknown>>(
   ddb: Client,
   props: {
-    tableName: string;
+    tableName?: string;
     items: { item: T; cond?: string }[];
     maxRetries?: number;
   }
@@ -467,7 +467,7 @@ export function batchWrite<T extends Record<string, unknown>>(
 export function batchWrite<T extends Record<string, unknown>, I>(
   ddb: Client,
   props: {
-    tableName: string;
+    tableName?: string;
     items: I[];
     transform: (item: I) => { item: T; cond?: string };
     maxRetries?: number;
@@ -479,14 +479,14 @@ export async function batchWrite<
 >(
   ddb: Client,
   props: {
-    tableName: string;
+    tableName?: string;
     items: (I | { item: T; cond?: string })[];
     transform?: (item: I) => { item: T; cond?: string };
     maxRetries?: number;
   }
 ): Promise<_t.BatchWriteResult> {
   const { maxRetries = 3 } = props;
-  const TableName = props.tableName ?? ddb.tableName;
+  const TableName = props.tableName ?? ddb.tableName!;
 
   // Transform items if needed
   const items = props.transform
@@ -640,7 +640,7 @@ export async function batchWrite<
 export function batchDelete(
   ddb: Client,
   props: {
-    tableName: string;
+    tableName?: string;
     keys: Array<{ key: _t.Key; cond?: string }>;
     maxRetries?: number;
   }
@@ -648,7 +648,7 @@ export function batchDelete(
 export function batchDelete<I>(
   ddb: Client,
   props: {
-    tableName: string;
+    tableName?: string;
     keys: I[];
     transform: (item: I) => { key: _t.Key; cond?: string };
     maxRetries?: number;
@@ -657,14 +657,14 @@ export function batchDelete<I>(
 export async function batchDelete<I = { key: _t.Key; cond?: string }>(
   ddb: Client,
   props: {
-    tableName: string;
+    tableName?: string;
     keys: (I | { key: _t.Key; cond?: string })[];
     transform?: (item: I) => { key: _t.Key; cond?: string };
     maxRetries?: number;
   }
 ): Promise<_t.BatchDeleteResult> {
   const { maxRetries = 3 } = props;
-  const TableName = props.tableName ?? ddb.tableName;
+  const TableName = props.tableName ?? ddb.tableName!;
 
   // Transform keys if needed
   const keys = props.transform
