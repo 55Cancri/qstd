@@ -27,6 +27,10 @@ type DurationOptions = {
   format?: DurationFormat;
   /** Show zero values for intermediate units (e.g., "1h 0m 30s" vs "1h 30s") */
   showZero?: boolean;
+  /** Include milliseconds in compact format (e.g., "1s 200ms") */
+  showMs?: boolean;
+  /** Use spaces between units (default: true). e.g., "1s 200ms" vs "1s200ms" */
+  spaces?: boolean;
 };
 
 /**
@@ -36,6 +40,8 @@ type DurationOptions = {
  * @param {Object} [options={}] - Configuration options
  * @param {string} [options.format="clock"] - format
  * @param {boolean} [options.showZero=false] - show zero prefix
+ * @param {boolean} [options.showMs=false] - include milliseconds (compact format only)
+ * @param {boolean} [options.spaces=true] - use spaces between units (compact format only)
  *
  * @example
  * formatDuration(90000) // "1:30"
@@ -48,6 +54,8 @@ type DurationOptions = {
  * formatDuration(1400, { format: "fractional" }) // "1.4s"
  * formatDuration(45300, { format: "fractional" }) // "45.3s"
  * formatDuration(64400, { format: "fractional" }) // "1m 4.4s"
+ * formatDuration(1234, { format: "compact", showMs: true }) // "1s 234ms"
+ * formatDuration(1234, { format: "compact", showMs: true, spaces: false }) // "1s234ms"
  */
 export const formatDuration = (
   ms: number | null | undefined,
@@ -55,12 +63,19 @@ export const formatDuration = (
 ) => {
   if (ms === null || ms === undefined) return "--:--";
 
-  const { format: fmt = "clock", showZero = false } = options;
+  const {
+    format: fmt = "clock",
+    showZero = false,
+    showMs = false,
+    spaces = true,
+  } = options;
 
-  const totalSeconds = Math.floor(Math.abs(ms) / 1000);
+  const absMs = Math.abs(ms);
+  const totalSeconds = Math.floor(absMs / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
+  const milliseconds = absMs % 1000;
 
   if (fmt === "clock") {
     if (hours > 0) {
@@ -118,29 +133,39 @@ export const formatDuration = (
   }
 
   // compact format (default fallback)
-  const parts = [];
+  const parts: string[] = [];
+  const separator = spaces ? " " : "";
 
   if (showZero) {
     // When showZero is true, show all units from the highest non-zero unit down
     const hasHours = hours > 0;
     const hasMinutes = minutes > 0;
     const hasSeconds = seconds > 0;
+    const hasMs = milliseconds > 0;
 
-    if (hasHours || hasMinutes || hasSeconds) {
+    if (hasHours || hasMinutes || hasSeconds || (showMs && hasMs)) {
       if (hasHours) parts.push(`${hours}h`);
       if (hasHours || hasMinutes) parts.push(`${minutes}m`);
-      parts.push(`${seconds}s`);
+      if (hasHours || hasMinutes || hasSeconds || !showMs)
+        parts.push(`${seconds}s`);
+      if (showMs) parts.push(`${milliseconds}ms`);
     } else {
-      parts.push("0s");
+      parts.push(showMs ? "0ms" : "0s");
     }
   } else {
     // Normal behavior: only show non-zero units
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
     if (seconds > 0) parts.push(`${seconds}s`);
+    if (showMs && milliseconds > 0) parts.push(`${milliseconds}ms`);
   }
 
-  return parts.join(" ") || "0s";
+  // If nothing was added, show smallest unit
+  if (parts.length === 0) {
+    return showMs ? "0ms" : "0s";
+  }
+
+  return parts.join(separator);
 };
 
 // ============================================================================
@@ -454,7 +479,7 @@ type TimerOptions<T extends TimerFormat = "ms"> = {
 };
 
 type Timer<T extends TimerFormat> = {
-  /** Returns elapsed time since timer started. For "ms" format returns number, for "compact" returns string like "1m3s440ms" */
+  /** Returns elapsed time since timer started. For "ms" format returns number, for "compact" returns string like "1s 234ms" */
   stop: () => T extends "compact" ? string : number;
   /** Returns current elapsed time without stopping (same as stop, but semantically for intermediate checks) */
   elapsed: () => T extends "compact" ? string : number;
@@ -462,7 +487,7 @@ type Timer<T extends TimerFormat> = {
 
 /**
  * Starts a timer and returns an object with stop/elapsed methods.
- * @param options - Optional configuration. `format: "ms"` (default) returns numbers, `format: "compact"` returns strings like "1m3s440ms"
+ * @param options - Optional configuration. `format: "ms"` (default) returns numbers, `format: "compact"` returns strings like "1s 234ms"
  * @returns Timer object with stop() and elapsed() methods
  *
  * @example
@@ -475,7 +500,7 @@ type Timer<T extends TimerFormat> = {
  * // Compact format (returns string)
  * const timer = Time.startTimer({ format: "compact" });
  * // ... do work ...
- * const formatted = timer.stop(); // "1s234ms"
+ * const formatted = timer.stop(); // "1s 234ms"
  *
  * // Check elapsed time without "stopping"
  * const timer = Time.startTimer();
@@ -497,18 +522,7 @@ export function startTimer(
   const getElapsed = () => {
     const elapsed = Date.now() - start;
     if (fmt === "compact") {
-      const hours = Math.floor(elapsed / 3600000);
-      const minutes = Math.floor((elapsed % 3600000) / 60000);
-      const seconds = Math.floor((elapsed % 60000) / 1000);
-      const milliseconds = elapsed % 1000;
-
-      let result = "";
-      if (hours > 0) result += `${hours}h`;
-      if (minutes > 0) result += `${minutes}m`;
-      if (seconds > 0) result += `${seconds}s`;
-      if (milliseconds > 0 || result === "") result += `${milliseconds}ms`;
-
-      return result;
+      return formatDuration(elapsed, { format: "compact", showMs: true });
     }
     return elapsed;
   };
