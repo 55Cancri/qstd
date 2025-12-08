@@ -442,3 +442,76 @@ export const toMs = (
 
   return value * multipliers[unit];
 };
+
+// ============================================================================
+// TIMER
+// ============================================================================
+
+type TimerFormat = "ms" | "compact";
+
+type TimerOptions<T extends TimerFormat = "ms"> = {
+  format?: T;
+};
+
+type Timer<T extends TimerFormat> = {
+  /** Returns elapsed time since timer started. For "ms" format returns number, for "compact" returns string like "1m3s440ms" */
+  stop: () => T extends "compact" ? string : number;
+  /** Returns current elapsed time without stopping (same as stop, but semantically for intermediate checks) */
+  elapsed: () => T extends "compact" ? string : number;
+};
+
+/**
+ * Starts a timer and returns an object with stop/elapsed methods.
+ * @param options - Optional configuration. `format: "ms"` (default) returns numbers, `format: "compact"` returns strings like "1m3s440ms"
+ * @returns Timer object with stop() and elapsed() methods
+ *
+ * @example
+ * ```typescript
+ * // Default (returns milliseconds as number)
+ * const timer = Time.startTimer();
+ * // ... do work ...
+ * const ms = timer.stop(); // 1234
+ *
+ * // Compact format (returns string)
+ * const timer = Time.startTimer({ format: "compact" });
+ * // ... do work ...
+ * const formatted = timer.stop(); // "1s234ms"
+ *
+ * // Check elapsed time without "stopping"
+ * const timer = Time.startTimer();
+ * console.log(timer.elapsed()); // 500
+ * // ... more work ...
+ * console.log(timer.stop()); // 1234
+ * ```
+ */
+export function startTimer(): Timer<"ms">;
+export function startTimer<T extends TimerFormat>(
+  options: TimerOptions<T>
+): Timer<T>;
+export function startTimer(
+  options: TimerOptions<TimerFormat> = {}
+): Timer<TimerFormat> {
+  const start = Date.now();
+  const fmt: TimerFormat = options.format ?? "ms";
+
+  const getElapsed = () => {
+    const elapsed = Date.now() - start;
+    if (fmt === "compact") {
+      const hours = Math.floor(elapsed / 3600000);
+      const minutes = Math.floor((elapsed % 3600000) / 60000);
+      const seconds = Math.floor((elapsed % 60000) / 1000);
+      const milliseconds = elapsed % 1000;
+
+      let result = "";
+      if (hours > 0) result += `${hours}h`;
+      if (minutes > 0) result += `${minutes}m`;
+      if (seconds > 0) result += `${seconds}s`;
+      if (milliseconds > 0 || result === "") result += `${milliseconds}ms`;
+
+      return result;
+    }
+    return elapsed;
+  };
+
+  return { stop: getElapsed, elapsed: getElapsed } as Timer<TimerFormat>;
+}

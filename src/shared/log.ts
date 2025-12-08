@@ -21,28 +21,6 @@
 const stringify = (value: unknown) => JSON.stringify(value, null, 2);
 
 /**
- * Starts a timer and returns a function that returns elapsed milliseconds.
- * @returns A function that returns the elapsed time in ms since the timer started
- * @example
- * ```typescript // Timer
- * const elapsed = Log.startTimer();
- * // ... do work ...
- * log.header(`COMPLETE (${elapsed()}ms)`);  // ========== COMPLETE (123ms) ==========```
- */
-export const startTimer = () => {
-  const start = Date.now();
-  /**
-   * @example
-   * ```typescript
-   * const elapsed = Log.startTimer();
-   *
-   * `${elapsed()}ms` -> 123ms
-   * ```
-   */
-  return () => Date.now() - start;
-};
-
-/**
  * Logs values to the console (no prefix).
  * @param values - Values to log (will be JSON stringified)
  * @example
