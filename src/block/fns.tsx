@@ -335,9 +335,11 @@ export const extractElAndStyles = (
     .join(" ");
 
   // [component, styles]
+  // m: 0 is a sensible default (matching CSS reset) but placed here so user props override it
   return [
     comp,
     {
+      m: 0,
       ...motionProps,
       ...remaining,
       className: mergedClassName,
