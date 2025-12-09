@@ -63,68 +63,72 @@ export const tags = {
   pre: styled("pre"),
 } as const;
 
-// WHY: Delay motion element creation until needed.
-// We intentionally do NOT define StyledByTag as styled(motion.x). Doing so would
-// intersect Panda's large prop surface with motion props for every element,
-// which significantly increases tsserver completion cost during JSX completions.
-// Instead, we derive a MotionByTag map and switch to it at render-time only when
-// motion props are present on <Block ...>. This keeps IntelliSense fast while still
-// providing fully-typed motion when requested.
-// Motion-enabled counterparts derived from StyledByTag keys
+// WHY: We wrap motion AROUND styled (motion(styled("x"))) instead of styled(motion.x).
+// This ensures framer-motion intercepts its props (initial, animate, transition, etc.)
+// BEFORE they reach Panda's styled wrapper. If Panda wraps motion, it may filter/transform
+// motion props before they reach the motion component, breaking animations.
+//
+// TYPE NOTE: We use 'any' because framer-motion's `transition` prop (motion config object)
+// conflicts with Panda's CSS `transition` prop (string like "all 0.2s"). The runtime
+// behavior is correct - motion intercepts its props first. Proper typing would require
+// complex union types and overloads that aren't worth the maintenance cost.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const motionStyled = (tag: string) => motion(styled(tag as any) as any);
+
 export const motionTags = {
-  div: styled(motion.div),
-  a: styled(motion.a),
-  br: styled(motion.br),
-  button: styled(motion.button),
-  canvas: styled(motion.canvas),
-  form: styled(motion.form),
-  h1: styled(motion.h1),
-  h2: styled(motion.h2),
-  h3: styled(motion.h3),
-  hr: styled(motion.hr),
-  nav: styled(motion.nav),
-  main: styled(motion.main),
-  aside: styled(motion.aside),
-  article: styled(motion.article),
-  section: styled(motion.section),
-  details: styled(motion.details),
-  header: styled(motion.header),
-  footer: styled(motion.footer),
-  strong: styled(motion.strong),
-  em: styled(motion.em),
-  img: styled(motion.img),
-  del: styled(motion.del),
-  ins: styled(motion.ins),
-  kbd: styled(motion.kbd),
-  code: styled(motion.code),
-  mark: styled(motion.mark),
-  samp: styled(motion.samp),
-  small: styled(motion.small),
-  sub: styled(motion.sub),
-  sup: styled(motion.sup),
-  u: styled(motion.u),
-  var: styled(motion.var),
-  input: styled(motion.input),
-  label: styled(motion.label),
-  legend: styled(motion.legend),
-  p: styled(motion.p),
-  select: styled(motion.select),
-  span: styled(motion.span),
-  svg: styled(motion.svg),
-  textarea: styled(motion.textarea),
-  table: styled(motion.table),
-  tr: styled(motion.tr),
-  th: styled(motion.th),
-  td: styled(motion.td),
-  tbody: styled(motion.tbody),
-  thead: styled(motion.thead),
-  tfoot: styled(motion.tfoot),
-  progress: styled(motion.progress),
-  ol: styled(motion.ol),
-  ul: styled(motion.ul),
-  li: styled(motion.li),
-  blockquote: styled(motion.blockquote),
-  pre: styled(motion.pre),
+  div: motionStyled("div"),
+  a: motionStyled("a"),
+  br: motionStyled("br"),
+  button: motionStyled("button"),
+  canvas: motionStyled("canvas"),
+  form: motionStyled("form"),
+  h1: motionStyled("h1"),
+  h2: motionStyled("h2"),
+  h3: motionStyled("h3"),
+  hr: motionStyled("hr"),
+  nav: motionStyled("nav"),
+  main: motionStyled("main"),
+  aside: motionStyled("aside"),
+  article: motionStyled("article"),
+  section: motionStyled("section"),
+  details: motionStyled("details"),
+  header: motionStyled("header"),
+  footer: motionStyled("footer"),
+  strong: motionStyled("strong"),
+  em: motionStyled("em"),
+  img: motionStyled("img"),
+  del: motionStyled("del"),
+  ins: motionStyled("ins"),
+  kbd: motionStyled("kbd"),
+  code: motionStyled("code"),
+  mark: motionStyled("mark"),
+  samp: motionStyled("samp"),
+  small: motionStyled("small"),
+  sub: motionStyled("sub"),
+  sup: motionStyled("sup"),
+  u: motionStyled("u"),
+  var: motionStyled("var"),
+  input: motionStyled("input"),
+  label: motionStyled("label"),
+  legend: motionStyled("legend"),
+  p: motionStyled("p"),
+  select: motionStyled("select"),
+  span: motionStyled("span"),
+  svg: motionStyled("svg"),
+  textarea: motionStyled("textarea"),
+  table: motionStyled("table"),
+  tr: motionStyled("tr"),
+  th: motionStyled("th"),
+  td: motionStyled("td"),
+  tbody: motionStyled("tbody"),
+  thead: motionStyled("thead"),
+  tfoot: motionStyled("tfoot"),
+  progress: motionStyled("progress"),
+  ol: motionStyled("ol"),
+  ul: motionStyled("ul"),
+  li: motionStyled("li"),
+  blockquote: motionStyled("blockquote"),
+  pre: motionStyled("pre"),
 } as const satisfies { [K in keyof typeof tags]: unknown };
 
 export const loadingIconsMap = {

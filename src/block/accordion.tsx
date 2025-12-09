@@ -174,7 +174,7 @@ export function Item(props: AccordionItemProps) {
         overflow="auto"
         zIndex={1}
         {...rest}
-        onClick={(e) => {
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           toggle();
           props.onClick?.(e);
         }}
