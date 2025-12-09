@@ -313,7 +313,12 @@ export const extractElAndStyles = (
     : undefined;
 
   // When `as` was used for element selection, omit it from props to avoid redundant passing
-  const propsToOmit = ["loadingPosition", "loadingIcon", "isLoading", "children"];
+  const propsToOmit = [
+    "loadingPosition",
+    "loadingIcon",
+    "isLoading",
+    "children",
+  ];
   if (asTag && asTag in _l.tags) {
     propsToOmit.push("as");
   }
