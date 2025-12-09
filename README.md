@@ -740,11 +740,33 @@ Block includes several compound components accessible via namespace:
   Loading
 </Block>
 
-// Custom loading styles
+// Custom loading icon size
+<Block is="btn" isLoading loadingIconSize={18}>
+  Loading
+</Block>
+
+// Custom loading icon color (theme-aware)
+// Use _loading._svg to target the SVG with PandaCSS conditions
 <Block
   is="btn"
   isLoading
-  _loading={{ strokeColor: "blue.500", opacity: 0.8 }}
+  _loading={{
+    _svg: {
+      strokeColor: { base: "blue.500", _dark: "blue.300" },
+    },
+  }}
+>
+  Processing
+</Block>
+
+// Custom loading icon color (static)
+// For a single color without theme switching, you can use CSS variables directly
+<Block
+  is="btn"
+  isLoading
+  _loading={{
+    _svg: { strokeColor: "blue.500" },
+  }}
 >
   Processing
 </Block>
@@ -817,7 +839,10 @@ Block includes several compound components accessible via namespace:
   isLoading={isProcessing}
   disabled={!isValid}
   loadingIcon="spinner"
-  _loading={{ strokeColor: "white", opacity: 0.6 }}
+  loadingIconSize={16}
+  _loading={{
+    _svg: { strokeColor: { base: "white", _dark: "neutral.100" } },
+  }}
   _hover={{ bg: "blue.600" }}
   onClick={handleSubmit}
   whileTap={{ scale: 0.95 }}

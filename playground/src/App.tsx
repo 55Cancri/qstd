@@ -105,7 +105,9 @@ export default function App() {
             is="btn"
             isLoading
             loadingIcon="oval"
-            _loading={{ strokeColor: "blue.500" }}
+            _loading={{
+              _svg: { strokeColor: { base: "blue.500", _dark: "blue.300" } },
+            }}
           >
             Loading Button
           </Block>
