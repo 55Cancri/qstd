@@ -1,12 +1,28 @@
 import type { NativeAttributeValue } from "@aws-sdk/lib-dynamodb";
 import * as _t from "./types";
 
+/**
+ * Resolve table name from candidates, returning the first truthy value
+ * @throws Error if no table name is found
+ */
+export const getTableNameOrThrow = (
+  ...candidates: (string | undefined)[]
+): string => {
+  for (const name of candidates) {
+    if (name) return name;
+  }
+  throw new Error(
+    `[ddb] "tableName" is required - provide it in props or when creating the client`
+  );
+};
+
 export const validateFindProps = <T extends object = Record<string, unknown>>(
-  props: _t.FindProps<T> & { first?: boolean; raw?: boolean }
+  props: _t.FindProps<T> & { first?: boolean; raw?: boolean },
+  tableName: string
 ) => {
   const isScan = "scan" in props && props.scan === true;
 
-  if (!props.tableName) {
+  if (!tableName) {
     throw new Error(`[ddb] "tableName" is required`);
   }
   if (props.limit && props.recursive) {
@@ -15,9 +31,15 @@ export const validateFindProps = <T extends object = Record<string, unknown>>(
 
   // Query-specific validations
   if (!isScan) {
-    const queryProps = props as { pk?: unknown; sk?: _t.SkCond; indexName?: string };
+    const queryProps = props as {
+      pk?: unknown;
+      sk?: _t.SkCond;
+      indexName?: string;
+    };
     if (!queryProps.pk) {
-      throw new Error(`[ddb] [find] "pk" is required for Query mode. Use scan: true to scan without pk.`);
+      throw new Error(
+        `[ddb] [find] "pk" is required for Query mode. Use scan: true to scan without pk.`
+      );
     }
     if (
       queryProps.sk &&

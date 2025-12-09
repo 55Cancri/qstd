@@ -5,7 +5,7 @@ import { Oval, RotatingLines, TailSpin, ThreeDots } from "react-loader-spinner";
 import { styled } from "panda/jsx";
 import { motion } from "framer-motion";
 
-export const base = styled("div", { base: { m: 0 } });
+export const base = styled("div");
 
 export const tags = {
   div: base,
@@ -72,7 +72,7 @@ export const tags = {
 // providing fully-typed motion when requested.
 // Motion-enabled counterparts derived from StyledByTag keys
 export const motionTags = {
-  div: styled(motion.div, { base: { m: 0 } }),
+  div: styled(motion.div),
   a: styled(motion.a),
   br: styled(motion.br),
   button: styled(motion.button),

@@ -144,11 +144,11 @@ export async function find<T extends object = Record<string, unknown>>(
   | undefined
 > {
   try {
-    const TableName = props.tableName ?? ddb.tableName;
+    const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
     const { filters, projection, debug } = props;
     const isScan = "scan" in props && props.scan === true;
 
-    _f.validateFindProps(props);
+    _f.validateFindProps(props, TableName);
 
     // Build expression attributes
     const names: Record<string, string> = {};
@@ -288,7 +288,7 @@ export const remove = async (
   ddb: Client,
   props: { key: _t.Key; tableName?: string }
 ) => {
-  const TableName = props.tableName ?? ddb.tableName;
+  const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
   const command = new DeleteCommand({ Key: props.key, TableName });
   return ddb.client.send(command);
 };
@@ -302,7 +302,7 @@ export const save = async <T extends object>(
   ddb: Client,
   props: { tableName?: string; item: T }
 ) => {
-  const TableName = props.tableName ?? ddb.tableName;
+  const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
   const command = new PutCommand({
     Item: props.item as Record<string, unknown>,
     TableName,
@@ -333,14 +333,14 @@ export const save = async <T extends object>(
 export async function batchGet<T extends Record<string, unknown>>(
   ddb: Client,
   props: {
-    tableName: string;
+    tableName?: string;
     keys: { pk: string; sk?: string }[];
     maxRetries?: number;
     strong?: boolean;
   }
 ): Promise<_t.BatchGetResult<T>> {
   const { keys, maxRetries = 3, strong = false } = props;
-  const TableName = props.tableName ?? ddb.tableName;
+  const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
   const chunks = _f.chunk(keys, 100);
   const allItems: T[] = [];
   const requestedCount = keys.length;
@@ -486,7 +486,7 @@ export async function batchWrite<
   }
 ): Promise<_t.BatchWriteResult> {
   const { maxRetries = 3 } = props;
-  const TableName = props.tableName ?? ddb.tableName!;
+  const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
 
   // Transform items if needed
   const items = props.transform
@@ -664,7 +664,7 @@ export async function batchDelete<I = { key: _t.Key; cond?: string }>(
   }
 ): Promise<_t.BatchDeleteResult> {
   const { maxRetries = 3 } = props;
-  const TableName = props.tableName ?? ddb.tableName!;
+  const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
 
   // Transform keys if needed
   const keys = props.transform
