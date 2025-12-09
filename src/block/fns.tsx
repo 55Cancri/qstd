@@ -274,8 +274,14 @@ export const extractElAndStyles = (
     ...rest
   } = anyProps;
 
-  const StdComp = _l.tags[extract.el as keyof typeof _l.tags] || _l.tags.div;
-  const MotionComp = _l.motionTags[extract.el] || _l.motionTags.div;
+  // When `as` prop is provided and exists in our tag maps, use it for element selection
+  // This ensures motion props work correctly with polymorphic elements
+  const asTag = anyProps.as as keyof typeof _l.tags | undefined;
+  const effectiveEl =
+    asTag && asTag in _l.tags ? asTag : (extract.el as keyof typeof _l.tags);
+
+  const StdComp = _l.tags[effectiveEl] || _l.tags.div;
+  const MotionComp = _l.motionTags[effectiveEl] || _l.motionTags.div;
 
   const hasMotionProps =
     _motion !== undefined ||
@@ -306,12 +312,12 @@ export const extractElAndStyles = (
       }
     : undefined;
 
-  const remaining = omit(rest, [
-    "loadingPosition",
-    "loadingIcon",
-    "isLoading",
-    "children",
-  ]);
+  // When `as` was used for element selection, omit it from props to avoid redundant passing
+  const propsToOmit = ["loadingPosition", "loadingIcon", "isLoading", "children"];
+  if (asTag && asTag in _l.tags) {
+    propsToOmit.push("as");
+  }
+  const remaining = omit(rest, propsToOmit);
 
   const cursor = anyProps.isLoading ? "not-allowed" : "pointer";
 

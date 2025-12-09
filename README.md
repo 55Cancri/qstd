@@ -20,6 +20,30 @@ A single npm package providing:
 pnpm add qstd
 ```
 
+## ⚠️ Required: Panda CSS Preset Setup
+
+**If you're using the Block component, you MUST configure the qstd preset in your `panda.config.ts`:**
+
+```ts
+// panda.config.ts
+import { defineConfig } from "@pandacss/dev";
+import qstdPreset from "qstd/preset";
+
+export default defineConfig({
+  presets: ["@pandacss/dev/presets", qstdPreset], // ← REQUIRED
+  include: ["./src/**/*.{ts,tsx}"],
+  outdir: "styled-system",
+  jsxFramework: "react", // ← REQUIRED for Block component
+});
+```
+
+**Without this setup:**
+- Props like `grid`, `flex`, `cols`, `rows` will output broken CSS (e.g., `grid_true` instead of `display: grid`)
+- Boolean utilities (`alignI`, `justifyC`, etc.) won't transform correctly
+- You'll see raw prop values in your HTML class names instead of actual styles
+
+After adding the preset, run `pnpm panda codegen` to regenerate your styled-system.
+
 ## Prerequisites
 
 ### TypeScript Configuration (Required)
