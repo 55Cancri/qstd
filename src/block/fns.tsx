@@ -271,6 +271,8 @@ export const extractElAndStyles = (
     transition,
     variants,
     custom,
+    onAnimationStart,
+    onAnimationComplete,
     ...rest
   } = anyProps;
 
@@ -294,7 +296,9 @@ export const extractElAndStyles = (
     whileFocus !== undefined ||
     variants !== undefined ||
     transition !== undefined ||
-    custom !== undefined;
+    custom !== undefined ||
+    onAnimationStart !== undefined ||
+    onAnimationComplete !== undefined;
 
   const comp: React.ElementType = hasMotionProps ? MotionComp : StdComp;
   const motionProps = hasMotionProps
@@ -309,6 +313,8 @@ export const extractElAndStyles = (
         variants,
         custom,
         transition: _motion ?? transition,
+        onAnimationStart,
+        onAnimationComplete,
       }
     : undefined;
 

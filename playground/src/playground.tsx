@@ -466,7 +466,7 @@ export default function Playground() {
             bg={{ base: "neutral.200", _dark: "neutral.700" }}
             br={6}
           >
-            {`const greet = (name: string) => \`Hello, \${name}\`;`}
+            {`const greet = (name: string) => \`Hello, ${"${name}"}\`;`}
           </Block>
           <Block is="link" onClick={() => alert("Clicked link-like Block")}>
             Link-like Block

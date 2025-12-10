@@ -118,6 +118,8 @@ type BlockMotionProps = {
   whileFocus?: TargetAndTransition | VariantLabels;
   layout?: boolean | "position" | "size" | "preserve-aspect";
   _motion?: Transition; // Custom transition prop for global motion config
+  onAnimationStart?: () => void;
+  onAnimationComplete?: () => void;
 };
 
 // Shared props interface to reduce intersection complexity
