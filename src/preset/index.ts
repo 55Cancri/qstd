@@ -158,6 +158,8 @@ const preset: Preset = {
       backdrop: "[data-backdrop]:has(> &)",
       path: "& path",
       svg: "& svg",
+      // Input label lifted state (when input focused OR has value)
+      labelLifted: "&:has(+ input:focus, + input:not(:placeholder-shown))",
     },
   },
 
@@ -180,7 +182,9 @@ const preset: Preset = {
         transform(value) {
           return {
             display: "flex",
-            ...(typeof value === "string" && { flexWrap: value as any }),
+            ...(typeof value === "string" && {
+              flexWrap: value as "wrap" | "nowrap" | "wrap-reverse",
+            }),
           };
         },
       },
@@ -315,7 +319,9 @@ const preset: Preset = {
       cols: {
         transform(value) {
           if (typeof value !== "string") return {};
-          const [templatePart = "", gapPart] = value.split("/").map((s) => s.trim());
+          const [templatePart = "", gapPart] = value
+            .split("/")
+            .map((s) => s.trim());
           const templateWords = templatePart.split(/\s+/);
           let alignContent = "",
             gridTemplate = "",
@@ -341,29 +347,30 @@ const preset: Preset = {
             const gapValue = gapPart.trim();
             columnGap = /^\d+$/.test(gapValue) ? `${gapValue}px` : gapValue;
           }
-          const result = {} as any;
-          if (alignContent) {
-            result.alignContent = alignContent;
-            result.alignItems = alignContent;
-          }
-          if (gridTemplate) result.gridTemplateColumns = gridTemplate;
-          if (columnGap) result.columnGap = columnGap;
-          return result;
+          return {
+            ...(alignContent && {
+              alignContent,
+              alignItems: alignContent,
+            }),
+            ...(gridTemplate && { gridTemplateColumns: gridTemplate }),
+            ...(columnGap && { columnGap }),
+          };
         },
       },
       rows: {
         transform(value) {
           if (typeof value !== "string") return {};
-          const [templatePart = "", gapPart] = value.split("/").map((s) => s.trim());
+          const [templatePart = "", gapPart] = value
+            .split("/")
+            .map((s) => s.trim());
           const templateWords = templatePart.split(/\s+/);
           let justifyContent = "",
             gridTemplate = "",
             rowGap = "";
           const justifyValues = ["start", "end", "between", "center"];
           const firstWord = templateWords[0];
-          const justifyValue = firstWord && justifyValues.includes(firstWord)
-            ? firstWord
-            : "";
+          const justifyValue =
+            firstWord && justifyValues.includes(firstWord) ? firstWord : "";
           if (justifyValue) {
             justifyContent =
               justifyValue === "between" ? "space-between" : justifyValue;
@@ -384,14 +391,14 @@ const preset: Preset = {
             const gapValue = gapPart.trim();
             rowGap = /^\d+$/.test(gapValue) ? `${gapValue}px` : gapValue;
           }
-          const result = {} as any;
-          if (justifyContent) {
-            result.justifyContent = justifyContent;
-            result.justifyItems = justifyContent;
-          }
-          if (gridTemplate) result.gridTemplateRows = gridTemplate;
-          if (rowGap) result.rowGap = rowGap;
-          return result;
+          return {
+            ...(justifyContent && {
+              justifyContent,
+              justifyItems: justifyContent,
+            }),
+            ...(gridTemplate && { gridTemplateRows: gridTemplate }),
+            ...(rowGap && { rowGap }),
+          };
         },
       },
       gridAutoColumns: {

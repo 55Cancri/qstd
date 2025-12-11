@@ -22,23 +22,20 @@ export default function Input(props: _t.InputBlockProps) {
     _motion,
     error,
     children,
-    onAnimationStart,
-    onAnimationComplete,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
     ...rest
   } = props;
 
   const label = _f.findChildrenByDisplayName<_t.InputBlockProps>(
-    children as React.ReactNode,
+    children,
     LabelNameKey
   );
 
-  const leftIcon = _f.findChildrenByDisplayName(
-    children as React.ReactNode,
-    LeftSideNameKey
-  );
+  const leftIcon = _f.findChildrenByDisplayName(children, LeftSideNameKey);
 
   const rightSide = _f.findChildrenByDisplayName<_t.InputBlockProps>(
-    children as React.ReactNode,
+    children,
     RightSideNameKey
   );
 
@@ -104,15 +101,15 @@ export default function Input(props: _t.InputBlockProps) {
 
 export function LeftIcon(props: _t.BaseBlockProps) {
   const {
-    iconPrefix,
-    startIcon,
-    endIcon,
-    icon,
-    spin,
-    size,
-    pulse,
-    onAnimationStart,
-    onAnimationComplete,
+    iconPrefix: _iconPrefix,
+    startIcon: _startIcon,
+    endIcon: _endIcon,
+    icon: _icon,
+    spin: _spin,
+    size: _size,
+    pulse: _pulse,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
     ...remaining
   } = props;
 
@@ -133,7 +130,12 @@ LeftIcon.displayName = LeftSideNameKey;
 export function RightSide(
   props: _t.BaseBlockProps & { value?: string; clearable?: boolean }
 ) {
-  const { clearable, onAnimationStart, onAnimationComplete, ...rest } = props;
+  const {
+    clearable,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
+    ...rest
+  } = props;
   if (clearable && !props.value) return null;
 
   return (
@@ -146,10 +148,9 @@ export function RightSide(
       {...(clearable && {
         cursor: "pointer",
         onClick: (e) => {
-          const clearedValueEvent = {
-            ...e,
-            target: { ...e.target, value: "" },
-          };
+          const clearedValueEvent = Object.assign({}, e, {
+            target: Object.assign({}, e.target, { value: "" }),
+          });
           props.onChange?.(clearedValueEvent);
         },
       })}
@@ -165,8 +166,8 @@ export function Label(props: Omit<_t.InputBlockProps, "is"> & LabelProps) {
     required,
     children,
     hasLeftIcon,
-    onAnimationStart,
-    onAnimationComplete,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
     ...rest
   } = props;
   const ml = hasLeftIcon ? 6 : 1;
@@ -185,24 +186,23 @@ export function Label(props: Omit<_t.InputBlockProps, "is"> & LabelProps) {
       px={2}
       py={0.5}
       br={8}
-      color="input-label-color"
+      color={error ? "text-alert" : "input-label-color"}
       lineHeight={1.1}
-      css={{
-        // lift label when sibling input has focus or blurred but empty
-        "&:has(+ input:focus, + input:not(:placeholder-shown))": {
-          transformOrigin: "top left",
-          transform: "scale(0.8)",
-          top: "-10px",
-          ml,
-          color: value ? "input-label-color-lifted" : "input-label-color",
-          // only when lifted since autocomplete has lightblue background
-          bg: "input-label-bg",
-        },
-        ...(error && { color: "text-alert" }),
+      _labelLifted={{
+        transformOrigin: "top left",
+        transform: "scale(0.8)",
+        top: "-10px",
+        ml,
+        color: error
+          ? "text-alert"
+          : value
+          ? "input-label-color-lifted"
+          : "input-label-color",
+        bg: "input-label-bg",
       }}
       {...rest}
     >
-      {children as React.ReactNode}
+      {children}
       {required && "*"}
     </Base>
   );

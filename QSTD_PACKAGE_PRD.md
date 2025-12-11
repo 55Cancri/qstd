@@ -39,6 +39,7 @@ Create `qstd` - a reusable npm package that provides:
 10. [Versioning Strategy](#versioning-strategy)
 11. [Migration Plan](#migration-plan)
 12. [Testing Strategy](#testing-strategy)
+13. [Future Enhancements / Roadmap](#future-enhancements--roadmap)
 
 ---
 
@@ -1347,6 +1348,100 @@ export default function App() {
 1. Their code is scanned
 2. Preset defines what `text-primary` means
 3. CSS is generated for their usage
+
+---
+
+## Future Enhancements / Roadmap
+
+This section outlines planned features and enhancements for future versions of qstd.
+
+### Autocomplete & Suggestions Textbox
+
+A rich autocomplete component with:
+
+- Inline suggestions (ghost text)
+- Dropdown suggestion list with keyboard navigation
+- Fuzzy matching and ranking algorithms
+- Support for async data fetching with debouncing
+- Customizable rendering for suggestion items
+- Integration with Block component props (`<Block is="autocomplete" />`)
+
+### Enhanced Predictive Text for Textboxes
+
+Improve the input/textarea components with:
+
+- Smart predictive text suggestions
+- Tab-to-complete functionality
+- Context-aware predictions
+- History-based suggestions
+- Potential integration with LLM APIs for intelligent completions
+
+### Audio Visualizer
+
+Port the audio visualizer from gpt-v2:
+
+- Real-time waveform visualization
+- Frequency spectrum display
+- Multiple visualization modes (bars, circular, wave)
+- Customizable colors and styling via Panda CSS
+- Integration with Web Audio API
+- Support for both audio file playback and microphone input
+
+### Custom Animated Icon Set
+
+Build a proprietary icon library that goes beyond static or basic micro-animations:
+
+**Features:**
+
+- **Stateful icons** - Icons that change appearance based on state (loading, success, error, active, disabled)
+- **Polymorphic transitions** - Icons that smoothly morph from one shape to another (e.g., hamburger → X, play → pause, expand → collapse)
+- **Advanced animations** - Bounce, pulse, spin, shake, draw-on, ripple effects with customizable timing
+- **Theme-aware** - Light/dark mode support with Panda CSS tokens
+- **Interactive** - Hover, press, and focus states with configurable feedback
+
+**Technical Requirements:**
+
+- **Tree-shaking must work** - Each icon should be individually importable to prevent bundling unused icons
+- SVG-based for crisp rendering at any size
+- Animation driven by CSS/Framer Motion for performance
+- TypeScript-first with full type safety
+
+**Import Pattern:**
+
+```tsx
+// Individual imports for tree-shaking
+import { AnimatedCheckIcon, AnimatedMenuIcon } from "qstd/icons";
+
+// Usage with state
+<AnimatedCheckIcon state="success" animate="draw" />
+<AnimatedMenuIcon open={isOpen} /> // Morphs hamburger ↔ X
+```
+
+**Architecture for Tree-Shaking:**
+
+```
+src/icons/
+├── index.ts              # Named exports only (no barrel re-exports of all icons)
+├── check.tsx             # export const AnimatedCheckIcon = ...
+├── menu.tsx              # export const AnimatedMenuIcon = ...
+├── play-pause.tsx        # export const AnimatedPlayPauseIcon = ...
+└── shared/               # Shared animation utilities
+    ├── transitions.ts
+    └── states.ts
+```
+
+### Accordion Hardening
+
+Comprehensive testing and refinement of the accordion implementation:
+
+- [ ] Verify smooth expand/collapse animations across browsers
+- [ ] Test keyboard navigation (arrow keys, home, end)
+- [ ] Ensure proper ARIA attributes for accessibility
+- [ ] Test with nested accordions
+- [ ] Verify single vs. multiple expand modes work correctly
+- [ ] Performance testing with large numbers of items
+- [ ] Edge cases: rapid clicking, content height changes, dynamic content
+- [ ] Mobile touch interaction testing
 
 ---
 
