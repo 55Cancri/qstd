@@ -8,6 +8,7 @@ import {
   type Variants,
   type Target,
   type TargetAndTransition,
+  type AnimationDefinition,
 } from "framer-motion";
 import type { IconName, SizeProp } from "@fortawesome/fontawesome-svg-core";
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
@@ -118,8 +119,10 @@ type BlockMotionProps = {
   whileFocus?: TargetAndTransition | VariantLabels;
   layout?: boolean | "position" | "size" | "preserve-aspect";
   _motion?: Transition; // Custom transition prop for global motion config
-  onAnimationStart?: () => void;
-  onAnimationComplete?: () => void;
+  /** Called when animation starts. Receives the animation definition being animated to. */
+  onAnimationStart?: (definition: AnimationDefinition) => void;
+  /** Called when animation completes. Receives the animation definition that just completed. */
+  onAnimationComplete?: (definition: AnimationDefinition) => void;
 };
 
 // Shared props interface to reduce intersection complexity

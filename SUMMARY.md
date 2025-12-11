@@ -227,16 +227,18 @@ export default defineConfig({
 
 ## 🚀 Publishing
 
-### Command
+### First Time / Token Expired
 
 ```bash
-cd qstd
+npm login  # Opens browser, use Touch ID
+```
 
-# Final build
-pnpm build
+### Publish Command
 
-# Publish to npm
-npm publish --access public
+```bash
+# Bump version in package.json, then:
+pnpm publish --access public --no-git-checks --otp=YOUR_CODE
+# Replace YOUR_CODE with 6-digit code from npm email
 ```
 
 ### After Publishing
@@ -263,7 +265,7 @@ import { useDebounce } from "qstd/react";
 
 ---
 
-**Version**: 0.1.0  
-**Status**: ✅ Complete & Ready  
-**Date**: October 2, 2025  
-**Next**: `npm publish --access public` 🚀
+**Version**: 0.3.8  
+**Status**: ✅ Published on npm  
+**Date**: December 10, 2025  
+**Docs**: See [DEVELOPMENT.md](./DEVELOPMENT.md) for full publishing workflow

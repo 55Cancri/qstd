@@ -499,11 +499,18 @@ Before running `pnpm publish`:
 
 ## 🎯 Publishing Workflow
 
-### First Time (Already Done)
+### First Time Setup (or when token expires)
+
+npm requires login and 2FA. Tokens expire after 90 days.
 
 ```bash
-pnpm login
-pnpm whoami
+# 1. Login to npm (opens browser for authentication)
+npm login
+
+# 2. Complete the browser authentication (Touch ID / security key)
+
+# 3. Verify you're logged in
+npm whoami
 ```
 
 ### Every Update
@@ -515,23 +522,35 @@ pnpm whoami
 git add .
 git commit -m "feat: add List.map function"
 
-# 4. Version (auto-updates package.json)
-pnpm version minor
+# 4. Bump version in package.json (choose one)
+#    - patch: 0.3.8 → 0.3.9 (bug fixes)
+#    - minor: 0.3.8 → 0.4.0 (new features)
+#    - major: 0.3.8 → 1.0.0 (breaking changes)
 
-# 5. Build
-pnpm build
+# 5. Publish (requires OTP from email for 2FA)
+pnpm publish --access public --no-git-checks --otp=YOUR_CODE
+#    Replace YOUR_CODE with the 6-digit code npm emails you
 
-# 6. Publish
-pnpm publish --access public
-
-# 7. Push
+# 6. Push
 git push --follow-tags
 ```
+
+### AI-Assisted Publishing
+
+When asking AI to publish, it can:
+
+1. Bump the version in `package.json`
+2. Run the publish command
+
+But **you** need to:
+
+1. Be logged in to npm (`npm login` if token expired)
+2. Provide the 6-digit OTP code from your email when prompted
 
 ### Verify It Worked
 
 ```bash
-pnpm view qstd
+npm view qstd version
 
 # In another project
 pnpm add qstd@latest
@@ -613,12 +632,13 @@ pnpm build
 
 Remember:
 
-- ✅ Build first: `pnpm build`
-- ✅ Version: `pnpm version patch/minor/major`
-- ✅ Publish: `pnpm publish --access public`
-- ✅ Push: `git push --follow-tags`
+- ✅ Bump version in `package.json`
+- ✅ Publish: `pnpm publish --access public --no-git-checks --otp=CODE`
+- ✅ Push: `git push`
 
-That's it! 4 commands and you're done. 🚀
+**First time / token expired?** Run `npm login` first (opens browser, use Touch ID).
+
+That's it! 🚀
 
 ---
 

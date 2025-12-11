@@ -809,18 +809,16 @@ export default defineConfig({
 
 ## Publishing Strategy
 
-### Initial Setup
+### Initial Setup (or when token expires after 90 days)
 
 ```bash
-# 1. Login to npm
+# 1. Login to npm (opens browser for authentication)
 npm login
 
-# 2. Verify login
-npm whoami
+# 2. Complete browser authentication (Touch ID / security key)
 
-# 3. Check package name availability
-npm view qstd
-# Should return 404 if available
+# 3. Verify login
+npm whoami
 ```
 
 ### Publishing Workflow
@@ -830,21 +828,30 @@ npm view qstd
 git add .
 git commit -m "feat: add new utility function"
 
-# 2. Update version (auto-updates package.json)
-npm version patch   # 0.1.0 → 0.1.1 (bug fixes)
-npm version minor   # 0.1.0 → 0.2.0 (new features)
-npm version major   # 0.1.0 → 1.0.0 (breaking changes)
+# 2. Bump version in package.json
+#    - patch: 0.3.8 → 0.3.9 (bug fixes)
+#    - minor: 0.3.8 → 0.4.0 (new features)
+#    - major: 0.3.8 → 1.0.0 (breaking changes)
 
-# 3. Build
-pnpm build
+# 3. Publish (requires OTP from email for 2FA)
+pnpm publish --access public --no-git-checks --otp=YOUR_CODE
+# Replace YOUR_CODE with the 6-digit code npm emails you
 
-# 4. Publish to npm
-pnpm publish --access public
-
-# 5. Push to git (including version tag)
+# 4. Push to git
 git push
-git push --tags
 ```
+
+### AI-Assisted Publishing
+
+When asking AI to publish, it will:
+
+1. Bump the version in `package.json`
+2. Run the publish command
+
+You need to:
+
+1. Be logged in to npm (`npm login` if token expired)
+2. Provide the 6-digit OTP code from your email when prompted
 
 ### Pre-publish Checklist
 
