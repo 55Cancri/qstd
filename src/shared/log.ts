@@ -20,6 +20,8 @@
 
 const stringify = (value: unknown) => JSON.stringify(value, null, 2);
 
+const isBrowser = typeof window !== "undefined";
+
 /**
  * Logs values to the console (no prefix).
  * @param values - Values to log (will be JSON stringified)
@@ -65,7 +67,9 @@ export const warn = (...values: unknown[]) => {
  * ```
  */
 export const error = (...values: unknown[]) => {
-  console.log("[error]", ...values.map(stringify));
+  const stringified = values.map(stringify);
+  console.log("[error]", ...stringified);
+  if (isBrowser) console.error("[error]", ...stringified);
 };
 
 /**
@@ -104,7 +108,9 @@ export const label = (name: string) => ({
   },
   /** Logs values with [label] [error] prefix. Output: `[label] [error] "value"` */
   error: (...values: unknown[]) => {
-    console.log(`[${name}]`, "[error]", ...values.map(stringify));
+    const stringified = values.map(stringify);
+    console.log(`[${name}]`, "[error]", ...stringified);
+    if (isBrowser) console.error(`[${name}]`, "[error]", ...stringified);
   },
   /** Logs a header message with [label] prefix. Output: `[label] ========== MESSAGE ==========` */
   header: (message: string) => {

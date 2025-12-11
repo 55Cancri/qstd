@@ -38,6 +38,7 @@ export default defineConfig({
 ```
 
 **Without this setup:**
+
 - Props like `grid`, `flex`, `cols`, `rows` will output broken CSS (e.g., `grid_true` instead of `display: grid`)
 - Boolean utilities (`alignI`, `justifyC`, etc.) won't transform correctly
 - You'll see raw prop values in your HTML class names instead of actual styles
@@ -81,7 +82,7 @@ The `exports` field is the modern Node.js way to define multiple entry points fo
 
 ```
 Cannot find module 'qstd/server' or its corresponding type declarations.
-  There are types at '.../node_modules/qstd/dist/server/index.d.ts', but this result 
+  There are types at '.../node_modules/qstd/dist/server/index.d.ts', but this result
   could not be resolved under your current 'moduleResolution' setting.
 ```
 
@@ -89,12 +90,12 @@ Cannot find module 'qstd/server' or its corresponding type declarations.
 
 #### Quick Reference
 
-| moduleResolution | Supports `exports` | Use Case |
-|-----------------|-------------------|----------|
-| `"node"` / `"node10"` | ❌ No | Legacy projects |
-| `"node16"` | ✅ Yes | Node.js 16+ with ESM |
-| `"nodenext"` | ✅ Yes | Latest Node.js features |
-| `"bundler"` | ✅ Yes | **Recommended** for bundled apps |
+| moduleResolution      | Supports `exports` | Use Case                         |
+| --------------------- | ------------------ | -------------------------------- |
+| `"node"` / `"node10"` | ❌ No              | Legacy projects                  |
+| `"node16"`            | ✅ Yes             | Node.js 16+ with ESM             |
+| `"nodenext"`          | ✅ Yes             | Latest Node.js features          |
+| `"bundler"`           | ✅ Yes             | **Recommended** for bundled apps |
 
 ## Usage
 
@@ -607,6 +608,37 @@ Block includes several compound components accessible via namespace:
 // Input with label
 <Block is="input" placeholder="Email">
   <Block.Input.Label>Email Address</Block.Input.Label>
+</Block>
+
+// Customizing label styles
+// The `bg` prop cascades to the lifted state automatically
+<Block is="input" placeholder="Title" value={value} onChange={handleChange}>
+  <Block.Input.Label
+    fontWeight={500}
+    bg={{ base: "neutral.100", _dark: "neutral.900" }}
+  >
+    Title
+  </Block.Input.Label>
+</Block>
+
+// Partial override of lifted state (only override what you need)
+<Block is="input" placeholder="Email" value={value} onChange={handleChange}>
+  <Block.Input.Label
+    bg={{ base: "white", _dark: "gray.900" }}
+    _labelLifted={{ top: "-12px" }}  // Only changes top, keeps default bg, color, transform
+  >
+    Email
+  </Block.Input.Label>
+</Block>
+
+// Different bg for lifted state
+<Block is="input" placeholder="Name" value={value} onChange={handleChange}>
+  <Block.Input.Label
+    bg="transparent"
+    _labelLifted={{ bg: "white", top: "-12px" }}  // Different bg when lifted
+  >
+    Name
+  </Block.Input.Label>
 </Block>
 ```
 
