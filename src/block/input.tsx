@@ -159,6 +159,21 @@ export function RightSide(
 }
 RightSide.displayName = RightSideNameKey;
 
+/**
+ * Floating label for Input component.
+ *
+ * Style defaults can be overridden by passing the same props:
+ * - Base styles: gridAutoFlow, position, top, transform, transition, ml, mr, px, py, br, color, lineHeight
+ * - Conditional styles: _labelLifted (bg, top, color, transform, etc.)
+ *
+ * @example
+ * <Block.Input.Label
+ *   bg={{ base: "white", _dark: "gray.900" }}
+ *   _labelLifted={{ top: "-12px", bg: { base: "white", _dark: "gray.900" } }}
+ * >
+ *   Email
+ * </Block.Input.Label>
+ */
 export function Label(props: Omit<_t.InputBlockProps, "is"> & LabelProps) {
   const {
     value,
@@ -168,40 +183,47 @@ export function Label(props: Omit<_t.InputBlockProps, "is"> & LabelProps) {
     hasLeftIcon,
     onAnimationStart: _onAnimationStart,
     onAnimationComplete: _onAnimationComplete,
-    ...rest
+    ...consumerProps
   } = props;
+
   const ml = hasLeftIcon ? 6 : 1;
 
+  // Default styles - consumer can override any of these
+  const styleDefaults = {
+    gridAutoFlow: "column",
+    position: "absolute",
+    pointerEvents: "none",
+    top: "50%",
+    transformOrigin: "top left",
+    transform: "translate(0, -50%) scale(1)",
+    transition:
+      "200ms cubic-bezier(0, 0, 0.2, 1) 0ms, .2s color ease-in-out, .2s background ease-in-out",
+    ml,
+    mr: 1,
+    px: 2,
+    py: 0.5,
+    br: 8,
+    color: error ? "text-alert" : "input-label-color",
+    lineHeight: 1.1,
+    _labelLifted: {
+      transformOrigin: "top left",
+      transform: "scale(0.8)",
+      top: "-10px",
+      ml,
+      color: error
+        ? "text-alert"
+        : value
+        ? "input-label-color-lifted"
+        : "input-label-color",
+      bg: "input-label-bg",
+    },
+  };
+
+  // Merge defaults with consumer props (consumer wins)
+  const mergedStyles = _f.mergeStyleDefaults(styleDefaults, consumerProps, []);
+
   return (
-    <Base
-      gridAutoFlow="column"
-      position="absolute"
-      pointerEvents="none"
-      top="50%"
-      transformOrigin="top left"
-      transform="translate(0, -50%) scale(1)"
-      transition="200ms cubic-bezier(0, 0, 0.2, 1) 0ms, .2s color ease-in-out, .2s background ease-in-out"
-      ml={ml}
-      mr={1}
-      px={2}
-      py={0.5}
-      br={8}
-      color={error ? "text-alert" : "input-label-color"}
-      lineHeight={1.1}
-      _labelLifted={{
-        transformOrigin: "top left",
-        transform: "scale(0.8)",
-        top: "-10px",
-        ml,
-        color: error
-          ? "text-alert"
-          : value
-          ? "input-label-color-lifted"
-          : "input-label-color",
-        bg: "input-label-bg",
-      }}
-      {...rest}
-    >
+    <Base {...mergedStyles}>
       {children}
       {required && "*"}
     </Base>

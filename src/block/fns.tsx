@@ -521,3 +521,91 @@ export const omit = <T extends object>(
   }
   return result as Partial<T>;
 };
+
+/**
+ * Deep merge objects. Later sources override earlier ones.
+ * Used internally by mergeStyleDefaults.
+ */
+function deepMerge(
+  ...sources: Record<string, unknown>[]
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const source of sources) {
+    if (!source) continue;
+
+    for (const [key, value] of Object.entries(source)) {
+      const existing = result[key];
+
+      // Deep merge nested objects (but not arrays or null)
+      if (
+        typeof existing === "object" &&
+        existing !== null &&
+        !Array.isArray(existing) &&
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        result[key] = deepMerge(
+          existing as Record<string, unknown>,
+          value as Record<string, unknown>
+        );
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Merges default style props with consumer props, ensuring consumer values override defaults.
+ *
+ * This solves the PandaCSS atomic class collision problem where both default and consumer
+ * conditional styles (like _hover, _labelLifted) would generate separate classes with
+ * identical specificity, causing unpredictable cascade behavior.
+ *
+ * @param defaults - Default style props for the component
+ * @param props - All props passed to the component
+ * @param nonStyleKeys - Keys that are NOT style props (children, event handlers, etc.)
+ * @returns Merged props with defaults applied, consumer overrides winning
+ *
+ * @example
+ * const defaults = {
+ *   bg: "white",
+ *   _hover: { bg: "gray.100" },
+ *   _labelLifted: { top: "-10px", bg: "input-label-bg" }
+ * };
+ *
+ * const { children, onClick, ...merged } = mergeStyleDefaults(
+ *   defaults,
+ *   props,
+ *   ["children", "onClick", "value"]
+ * );
+ *
+ * return <Base {...merged}>{children}</Base>;
+ */
+export function mergeStyleDefaults<
+  T extends Record<string, unknown>,
+  K extends keyof T
+>(defaults: Record<string, unknown>, props: T, nonStyleKeys: readonly K[]): T {
+  const styleProps: Record<string, unknown> = {};
+  const otherProps: Record<string, unknown> = {};
+  const nonStyleSet = new Set<PropertyKey>(
+    nonStyleKeys as readonly PropertyKey[]
+  );
+
+  for (const [key, value] of Object.entries(props)) {
+    if (nonStyleSet.has(key)) {
+      otherProps[key] = value;
+    } else if (value !== undefined) {
+      styleProps[key] = value;
+    }
+  }
+
+  // Deep merge: defaults first, then consumer styles (consumer wins)
+  const mergedStyles = deepMerge(defaults, styleProps);
+
+  return { ...otherProps, ...mergedStyles } as T;
+}
