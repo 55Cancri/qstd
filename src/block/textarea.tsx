@@ -47,13 +47,10 @@ function pick<Obj extends { [key: string]: any }, Key extends keyof Obj>(
   props: Key[],
   obj: Obj
 ): Pick<Obj, Key> {
-  return props.reduce(
-    (acc, prop) => {
-      acc[prop] = obj[prop];
-      return acc;
-    },
-    {} as Pick<Obj, Key>
-  );
+  return props.reduce((acc, prop) => {
+    acc[prop] = obj[prop];
+    return acc;
+  }, {} as Pick<Obj, Key>);
 }
 
 // Simple helper to merge internal and user refs without extra bookkeeping
@@ -288,6 +285,8 @@ export default function Textarea(props: _t.TextareaBlockProps) {
     children,
     _motion,
     error,
+    onAnimationStart,
+    onAnimationComplete,
     ...rest
   } = props;
 
@@ -451,7 +450,15 @@ export default function Textarea(props: _t.TextareaBlockProps) {
 }
 
 export function Label(props: _t.BaseBlockProps & LabelProps) {
-  const { value, error, required, children, ...rest } = props;
+  const {
+    value,
+    error,
+    required,
+    children,
+    onAnimationStart,
+    onAnimationComplete,
+    ...rest
+  } = props;
 
   return (
     <Base

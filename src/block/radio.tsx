@@ -48,6 +48,8 @@ export default function Radio(props: _t.RadioBlockProps) {
     options,
     renderOption,
     onKeyDown: onKeyDownProp,
+    onAnimationStart,
+    onAnimationComplete,
     ...rest
   } = props;
 
@@ -213,6 +215,8 @@ export function Item(props: RadioItemProps) {
     onClick: onClickProp,
     onFocus: onFocusProp,
     onBlur: onBlurProp,
+    onAnimationStart,
+    onAnimationComplete,
     ...rest
   } = props;
 

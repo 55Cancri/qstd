@@ -9,7 +9,8 @@ const Svg = _l.motionTags.svg;
 const CheckboxBtn = _l.motionTags.button;
 
 export default function Checkbox(props: _t.CheckboxBlockProps) {
-  const { children, onClick, ...rest } = props;
+  const { children, onClick, onAnimationStart, onAnimationComplete, ...rest } =
+    props;
   const [checked, setChecked] = React.useState(false);
   const [indeterminate, setIndeterminate] = React.useState(false);
 

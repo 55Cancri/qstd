@@ -18,7 +18,14 @@ type LabelProps = {
 };
 
 export default function Input(props: _t.InputBlockProps) {
-  const { _motion, error, children, ...rest } = props;
+  const {
+    _motion,
+    error,
+    children,
+    onAnimationStart,
+    onAnimationComplete,
+    ...rest
+  } = props;
 
   const label = _f.findChildrenByDisplayName<_t.InputBlockProps>(
     children as React.ReactNode,
@@ -96,15 +103,18 @@ export default function Input(props: _t.InputBlockProps) {
 }
 
 export function LeftIcon(props: _t.BaseBlockProps) {
-  const remaining = _f.omit(props, [
-    "iconPrefix",
-    "startIcon",
-    "endIcon",
-    "icon",
-    "spin",
-    "size",
-    "pulse",
-  ]);
+  const {
+    iconPrefix,
+    startIcon,
+    endIcon,
+    icon,
+    spin,
+    size,
+    pulse,
+    onAnimationStart,
+    onAnimationComplete,
+    ...remaining
+  } = props;
 
   return (
     <Base
@@ -123,7 +133,7 @@ LeftIcon.displayName = LeftSideNameKey;
 export function RightSide(
   props: _t.BaseBlockProps & { value?: string; clearable?: boolean }
 ) {
-  const { clearable, ...rest } = props;
+  const { clearable, onAnimationStart, onAnimationComplete, ...rest } = props;
   if (clearable && !props.value) return null;
 
   return (
@@ -149,7 +159,16 @@ export function RightSide(
 RightSide.displayName = RightSideNameKey;
 
 export function Label(props: Omit<_t.InputBlockProps, "is"> & LabelProps) {
-  const { value, error, required, children, hasLeftIcon, ...rest } = props;
+  const {
+    value,
+    error,
+    required,
+    children,
+    hasLeftIcon,
+    onAnimationStart,
+    onAnimationComplete,
+    ...rest
+  } = props;
   const ml = hasLeftIcon ? 6 : 1;
 
   return (

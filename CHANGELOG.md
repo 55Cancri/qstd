@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.9] - 2025-12-10
+
+### Added
+
+- Added `Haptics` module to `qstd/client` for tactile feedback
+  - `tap()`, `mediumTap()`, `heavyTap()`, `lightTap()` - Various tap intensities
+  - `success()` - Double pulse for success feedback
+  - `error()` - Longer vibration for error feedback
+  - `tick()` - Subtle tick for slider/dial interactions
+  - `createTickHandler()` - Creates throttled tick function for continuous interactions
+  - `select()` - Selection feedback for toggling views/options
+
+### Changed
+
+- Simplified `copyToClipboard` in Browser module by removing legacy fallback
+
 ## [0.2.8] - 2025-11-26
 
 ### Changed

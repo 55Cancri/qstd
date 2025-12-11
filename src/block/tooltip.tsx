@@ -25,7 +25,14 @@ export const TooltipContainer = React.forwardRef<
   HTMLDivElement,
   _t.BaseBlockProps
 >(function TooltipContainer(props, ref) {
-  const { children, className, style, ...rest } = props;
+  const {
+    children,
+    className,
+    style,
+    onAnimationStart,
+    onAnimationComplete,
+    ...rest
+  } = props;
 
   // Pass through Panda props as-is - consumer's Panda will handle them
   // Use style prop for any inline styling needs
