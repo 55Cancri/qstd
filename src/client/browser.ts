@@ -7,25 +7,8 @@
  * @param text
  * @returns
  */
-export const copyToClipboard = async (text: string): Promise<void> => {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch (error) {
-    // Fallback for older browsers
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand("copy");
-    } finally {
-      document.body.removeChild(textArea);
-    }
-  }
-};
+export const copyToClipboard = (text: string): Promise<void> =>
+  navigator.clipboard.writeText(text);
 
 /**
  * Read text from clipboard

@@ -10,4 +10,5 @@ export * as Random from "../shared/random";
 export * as Log from "../shared/log";
 
 // Client-specific utilities (DOM)
+export * as Haptics from "./haptics";
 export * as Dom from "./dom";
