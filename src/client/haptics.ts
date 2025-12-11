@@ -60,3 +60,4 @@ export const createTickHandler = (interval = 5) => {
  * Selection feedback - for toggling views/options
  */
 export const select = () => navigator.vibrate?.(8);
+

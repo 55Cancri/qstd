@@ -316,3 +316,4 @@ mergeCss(defaults, { onClick: fn, children: ... })
 const { children, onClick, ...styleProps } = props;
 const merged = mergeCss(defaults, styleProps);
 ```
+
