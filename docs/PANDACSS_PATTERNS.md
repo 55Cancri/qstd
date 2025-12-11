@@ -41,23 +41,26 @@ className={css({ _labelLifted: { bg: "default" } }) + " " + css({ _labelLifted: 
 
 ### Solutions
 
-#### Solution 1: Extract & Merge Specific Props
+#### Solution 1: Extract & Merge Specific Props (Recommended)
 
-For components with few conditional defaults, extract and merge just those props:
+For components with few conditional defaults, extract and merge just those props. This allows **partial overrides** - consumers can override just `top` without losing `bg`, `color`, etc.
 
 ```tsx
 export function Label(props: LabelProps) {
   const { _labelLifted: consumerLabelLifted, ...rest } = props;
 
+  const defaultLabelLifted = {
+    bg: "input-label-bg",
+    top: "-10px",
+    color: "input-label-color",
+  };
+
   return (
     <Base
       {...rest}
       _labelLifted={{
-        // Defaults first
-        bg: "input-label-bg",
-        top: "-10px",
-        // Consumer overrides spread AFTER
-        ...consumerLabelLifted,
+        ...defaultLabelLifted, // Defaults first
+        ...consumerLabelLifted, // Consumer overrides spread AFTER
       }}
     >
       {children}
@@ -66,12 +69,21 @@ export function Label(props: LabelProps) {
 }
 ```
 
-**Pros:** Minimal change, targeted  
-**Cons:** Must know which props have defaults, doesn't scale
+**Usage:**
 
-#### Solution 2: Merge All Style Props (Recommended)
+```tsx
+// Only override top, keep default bg and color
+<Block.Input.Label _labelLifted={{ top: "-12px" }}>Email</Block.Input.Label>
+```
 
-Use the `mergeStyleDefaults` helper in `src/block/fns.tsx`. It deep-merges default styles with consumer props—consumer values always win.
+**Pros:** Simple, partial overrides work naturally, predictable  
+**Cons:** Must extract each conditional prop with defaults
+
+#### Solution 2: Merge All Style Props
+
+Use the `mergeStyleDefaults` helper in `src/block/fns.tsx` for components with many conditional defaults. It deep-merges default styles with consumer props.
+
+**Caveat:** Deep merge means passing `_labelLifted={{ top: "-12px" }}` merges with defaults. This can be surprising if consumers expect full replacement. Solution 1 is often clearer.
 
 ```tsx
 import * as _f from "./fns";
@@ -114,6 +126,56 @@ export function Label(props: LabelProps) {
 
 **Pros:** Consumers can override ANY default naturally, scales well  
 **Cons:** Extract non-style props first (children, handlers, etc.)
+
+---
+
+## Prop Cascading Pattern
+
+For better DX, some props can "cascade" to conditional states.
+
+**Example: `bg` in Label**
+
+The `bg` prop cascades to `_labelLifted.bg` automatically:
+
+```tsx
+// bg applies to BOTH default and lifted states
+<Block.Input.Label bg={{ base: "white", _dark: "gray.900" }}>
+  Email
+</Block.Input.Label>
+```
+
+Only specify `_labelLifted.bg` if you want a **different** lifted background:
+
+```tsx
+// Different bg when lifted
+<Block.Input.Label
+  bg="white"
+  _labelLifted={{ bg: "blue.50" }} // Overrides only for lifted state
+>
+  Email
+</Block.Input.Label>
+```
+
+**Implementation pattern:**
+
+```tsx
+const { bg: consumerBg, _labelLifted: consumerLabelLifted, ...rest } = props;
+
+const defaultLabelLifted = {
+  // ...other defaults
+  bg: consumerBg ?? "input-label-bg", // Cascade consumer's bg, fallback to default
+};
+
+return (
+  <Base
+    bg={consumerBg}
+    {...rest}
+    _labelLifted={{ ...defaultLabelLifted, ...consumerLabelLifted }}
+  >
+    {children}
+  </Base>
+);
+```
 
 ---
 

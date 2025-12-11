@@ -162,15 +162,21 @@ RightSide.displayName = RightSideNameKey;
 /**
  * Floating label for Input component.
  *
- * Style defaults can be overridden by passing the same props:
- * - Base styles: gridAutoFlow, position, top, transform, transition, ml, mr, px, py, br, color, lineHeight
- * - Conditional styles: _labelLifted (bg, top, color, transform, etc.)
+ * Style defaults can be overridden by passing the same props.
+ * For `_labelLifted`, partial overrides are merged with defaults.
+ *
+ * **`bg` cascades to lifted state:** If you set `bg`, it applies to both
+ * default and lifted states. Only specify `_labelLifted.bg` if you want
+ * a different background when lifted.
  *
  * @example
- * <Block.Input.Label
- *   bg={{ base: "white", _dark: "gray.900" }}
- *   _labelLifted={{ top: "-12px", bg: { base: "white", _dark: "gray.900" } }}
- * >
+ * // bg applies to both states
+ * <Block.Input.Label bg={{ base: "white", _dark: "gray.900" }}>
+ *   Email
+ * </Block.Input.Label>
+ *
+ * // Different lifted bg
+ * <Block.Input.Label bg="white" _labelLifted={{ bg: "blue.50" }}>
  *   Email
  * </Block.Input.Label>
  */
@@ -181,49 +187,53 @@ export function Label(props: Omit<_t.InputBlockProps, "is"> & LabelProps) {
     required,
     children,
     hasLeftIcon,
+    bg: consumerBg,
+    _labelLifted: consumerLabelLifted,
     onAnimationStart: _onAnimationStart,
     onAnimationComplete: _onAnimationComplete,
-    ...consumerProps
+    ...rest
   } = props;
 
   const ml = hasLeftIcon ? 6 : 1;
 
-  // Default styles - consumer can override any of these
-  const styleDefaults = {
-    gridAutoFlow: "column",
-    position: "absolute",
-    pointerEvents: "none",
-    top: "50%",
+  // Default _labelLifted styles - consumer can partially override
+  // If consumer provides `bg`, it cascades to lifted state unless overridden
+  const defaultLabelLifted = {
     transformOrigin: "top left",
-    transform: "translate(0, -50%) scale(1)",
-    transition:
-      "200ms cubic-bezier(0, 0, 0.2, 1) 0ms, .2s color ease-in-out, .2s background ease-in-out",
+    transform: "scale(0.8)",
+    top: "-10px",
     ml,
-    mr: 1,
-    px: 2,
-    py: 0.5,
-    br: 8,
-    color: error ? "text-alert" : "input-label-color",
-    lineHeight: 1.1,
-    _labelLifted: {
-      transformOrigin: "top left",
-      transform: "scale(0.8)",
-      top: "-10px",
-      ml,
-      color: error
-        ? "text-alert"
-        : value
-        ? "input-label-color-lifted"
-        : "input-label-color",
-      bg: "input-label-bg",
-    },
+    color: error
+      ? "text-alert"
+      : value
+      ? "input-label-color-lifted"
+      : "input-label-color",
+    bg: consumerBg ?? "input-label-bg",
   };
 
-  // Merge defaults with consumer props (consumer wins)
-  const mergedStyles = _f.mergeStyleDefaults(styleDefaults, consumerProps, []);
-
   return (
-    <Base {...mergedStyles}>
+    <Base
+      gridAutoFlow="column"
+      position="absolute"
+      pointerEvents="none"
+      top="50%"
+      transformOrigin="top left"
+      transform="translate(0, -50%) scale(1)"
+      transition="200ms cubic-bezier(0, 0, 0.2, 1) 0ms, .2s color ease-in-out, .2s background ease-in-out"
+      ml={ml}
+      mr={1}
+      px={2}
+      py={0.5}
+      br={8}
+      color={error ? "text-alert" : "input-label-color"}
+      lineHeight={1.1}
+      bg={consumerBg}
+      {...rest}
+      _labelLifted={{
+        ...defaultLabelLifted,
+        ...consumerLabelLifted,
+      }}
+    >
       {children}
       {required && "*"}
     </Base>
