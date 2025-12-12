@@ -10,12 +10,12 @@ export const create = (props?: { topicArn?: string }) => {
 
 export const publish = (
   sns: Client,
-  props: { topicArn: string; message: unknown }
+  props: { topicArn?: string; message: unknown }
 ) => {
-  const { topicArn, message } = props;
+  const topicArn = props.topicArn ?? sns.topicArn;
   return sns.client.send(
     new PublishCommand({
-      Message: JSON.stringify(message),
+      Message: JSON.stringify(props.message),
       TopicArn: topicArn,
     })
   );
