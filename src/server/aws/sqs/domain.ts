@@ -2,6 +2,8 @@ import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 
 import * as _f from "./fns";
 
+export type Client = ReturnType<typeof create>;
+
 export const create = (props?: { queueUrl: string }) => {
   const client = new SQSClient({});
   const queueUrl = props?.queueUrl;
@@ -9,7 +11,7 @@ export const create = (props?: { queueUrl: string }) => {
 };
 
 export const send = (
-  sqs: { client: SQSClient; queueUrl?: string },
+  sqs: Client,
   props: { messageGroupId?: string; body: unknown; queueUrl?: string }
 ) =>
   sqs.client.send(
@@ -19,4 +21,3 @@ export const send = (
       QueueUrl: _f.getQueueUrlOrThrow(props.queueUrl, sqs.queueUrl),
     })
   );
-
