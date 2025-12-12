@@ -1,6 +1,6 @@
 {
   "name": "qstd",
-  "version": "0.3.15",
+  "version": "0.3.16",
   "description": "Standard Block component and utilities library with Panda CSS",
   "author": "malin1",
   "license": "MIT",
@@ -65,9 +65,12 @@
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "latest",
     "@aws-sdk/client-s3": "latest",
     "@aws-sdk/client-sns": "latest",
+    "@aws-sdk/lib-dynamodb": "latest",
     "@aws-sdk/s3-presigned-post": "latest",
+    "@aws-sdk/s3-request-presigner": "latest",
     "@floating-ui/react": "^0.27.12",
     "@fortawesome/fontawesome-svg-core": "^7.0.0",
     "@fortawesome/free-brands-svg-icons": "^7.0.0",
@@ -91,7 +94,7 @@
     "@eslint/json": "^0.13.2",
     "@pandacss/dev": "^1.2.0",
     "@pandacss/eslint-plugin": "^0.2.14",
-    "@types/aws-lambda": "^8.10.159",
+    "@types/aws-lambda": "latest",
     "@types/node": "^22.10.5",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.8",
