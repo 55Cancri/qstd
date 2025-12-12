@@ -1,8 +1,9 @@
 /**
- * dicts are homogeneous- their values must be of the same type
- * records can hold values of different types
+ * Base constraint for dict operations.
+ * Uses `object` instead of `Record<string, unknown>` to support
+ * TypeScript interfaces (which lack index signatures).
  */
-type t = Record<string, unknown>;
+type t = object;
 
 /**
  * Calculate the byte size of an object
@@ -130,7 +131,7 @@ export const pick = <R extends t, U extends keyof R>(
  * @param r
  * @param paths
  */
-export const omit = <R extends Record<string, unknown>, U extends keyof R>(
+export const omit = <R extends object, U extends keyof R>(
   r: R,
   paths: Array<U>
 ): Omit<R, U> => {
