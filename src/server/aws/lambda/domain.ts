@@ -18,8 +18,73 @@ export const createRestHandler = _f.createHandlerFactory<_t.ApigwEvent>();
 export const createWebsocketHandler =
   _f.createHandlerFactory<_t.WebsocketEvent>();
 
+/**
+ * Creates a batch failures tracker for SQS handlers.
+ * Provides a simple `add(id)` method instead of pushing objects.
+ *
+ * @example
+ * ```ts
+ * const failures = Lambda.withBatchFailures();
+ *
+ * for (const record of event.Records) {
+ *   try {
+ *     // process record
+ *   } catch (err) {
+ *     failures.add(record.messageId);
+ *   }
+ * }
+ *
+ * return { batchItemFailures: failures.items };
+ * ```
+ */
+export const withBatchFailures = () => {
+  const items: _t.SqsBatchItemFailure[] = [];
+  return {
+    /** Add a failed message by its ID */
+    add: (itemIdentifier: string) => {
+      items.push({ itemIdentifier });
+    },
+    /** The failures array for the response */
+    items,
+  };
+};
+
+/**
+ * Creates a type-safe SQS handler that enforces returning `{ batchItemFailures }`.
+ *
+ * Provides:
+ * - **Compile-time safety**: TypeScript enforces the return type
+ * - **Runtime safety**: Validates response shape before returning
+ *
+ * @example
+ * ```ts
+ * export const handler = Lambda.createSqsHandler(async (event) => {
+ *   const failures = Lambda.withBatchFailures();
+ *
+ *   for (const record of event.Records) {
+ *     try {
+ *       // process record
+ *     } catch (err) {
+ *       failures.add(record.messageId);
+ *     }
+ *   }
+ *
+ *   return { batchItemFailures: failures.items };
+ * });
+ * ```
+ */
 export const createSqsHandler =
-  (fn: _t.SQSHandler) =>
-  (event: _t.SqsEvent, context: _t.SqsContext, callback: _t.SqsCallback) => {
-    return fn(event, context, callback);
+  (fn: _t.SqsHandlerFn): _t.SqsHandlerFn =>
+  async (event) => {
+    const result = await fn(event);
+
+    // Runtime validation - catch mistakes that bypass TypeScript
+    if (!result || !Array.isArray(result.batchItemFailures)) {
+      throw new Error(
+        "SQS handler must return { batchItemFailures: [] }. " +
+          "Return an empty array for success, or include failed messageIds for partial failures."
+      );
+    }
+
+    return result;
   };

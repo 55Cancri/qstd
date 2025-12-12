@@ -3,11 +3,24 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,
   SQSHandler as AwsSqsHandler,
+  SQSBatchItemFailure,
   SQSBatchResponse,
   Callback,
   Context,
   SQSEvent,
 } from "aws-lambda";
+
+/** SQS batch response - return this from SQS handlers */
+export type SqsBatchResponse = SQSBatchResponse;
+
+/** Individual failure item - add to batchItemFailures array */
+export type SqsBatchItemFailure = SQSBatchItemFailure;
+
+/**
+ * Type-safe SQS handler that enforces returning { batchItemFailures }.
+ * Use with Lambda.createSqsHandler for compile + runtime safety.
+ */
+export type SqsHandlerFn = (event: SQSEvent) => Promise<SQSBatchResponse>;
 
 export type Response = {
   statusCode: number;
