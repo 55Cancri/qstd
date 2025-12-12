@@ -241,3 +241,44 @@ export const migrateBucketContents = async (
   });
   return Promise.all(s3Promises);
 };
+
+/**
+ * Parse and decode S3 records from an SQS message body.
+ *
+ * S3 event notifications delivered via SQS contain URL-encoded object keys.
+ * This function parses the JSON and decodes keys in one step, so consumers
+ * don't need to handle the encoding quirks.
+ *
+ * @returns Decoded records array, or null if parsing fails or no records exist
+ *
+ * @example
+ * ```ts
+ * const records = S3.recordsFromSqs(sqsRecord.body);
+ * if (!records) {
+ *   logger.warn("Invalid S3 event");
+ *   continue;
+ * }
+ *
+ * for (const { bucket, key } of records) {
+ *   // key is already decoded
+ *   await processFile(bucket, key);
+ * }
+ * ```
+ */
+export const recordsFromSqs = (body: string): _t.SqsRecord[] | null => {
+  try {
+    const event = JSON.parse(body) as _t.NotificationEvent;
+    if (!event?.Records?.length) return null;
+
+    return event.Records.map((r) => ({
+      bucket: r.s3.bucket.name,
+      // S3 URL-encodes keys and replaces spaces with '+'
+      key: decodeURIComponent(r.s3.object.key.replace(/\+/g, " ")),
+      size: r.s3.object.size,
+      eventName: r.eventName,
+      eventTime: r.eventTime,
+    }));
+  } catch {
+    return null;
+  }
+};

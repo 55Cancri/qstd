@@ -10,6 +10,16 @@ import type { S3Event } from "aws-lambda";
 
 export type NotificationEvent = S3Event;
 
+/** Decoded S3 record from an SQS-delivered notification */
+export type SqsRecord = {
+  bucket: string;
+  /** Decoded S3 object key (URL-decoded, spaces restored) */
+  key: string;
+  size?: number;
+  eventName: string;
+  eventTime: string;
+};
+
 export type Client = {
   client: S3Client;
   bucketName: string;

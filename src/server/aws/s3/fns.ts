@@ -1,3 +1,5 @@
+import * as _t from "./types";
+
 /**
  * Resolve bucket name from candidates, returning the first truthy value
  * @throws Error if no bucket name is found

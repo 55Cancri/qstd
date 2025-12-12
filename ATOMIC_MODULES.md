@@ -496,6 +496,70 @@ export function insertMediaBlock(
 - Single argument: `parseId(id)`, `normalize(text)`
 - Two clear arguments: `compileNode(type, node)`
 
+## Function documentation: Explain the why
+
+**Every function should have a JSDoc comment that explains the business purpose—not just what it does, but why the app needs it.**
+
+A function name like `contentToText` tells you it converts content to text, but that's obvious from the signature. What's not obvious: _why does the app need to flatten blocks into a string?_
+
+````typescript
+// ❌ BAD: Describes what (redundant with signature)
+/**
+ * Converts content blocks to text.
+ */
+export const contentToText = (blocks: ContentBlock[]): string => { ... }
+
+// ✅ GOOD: Explains why + shows how
+/**
+ * Extracts plain text from content blocks for TTS generation.
+ *
+ * Journal entries are stored as structured blocks (text, diarized-text, media)
+ * to support rich editing and inline media. However, TTS services like
+ * ElevenLabs require plain text input. This function flattens the block
+ * structure into a single string, skipping media blocks since they can't
+ * be narrated.
+ *
+ * @example
+ * ```ts
+ * const blocks: ContentBlock[] = [
+ *   { type: "text", value: "First paragraph." },
+ *   { type: "media", galleryId: "g1", mediaIds: ["m1"] },
+ *   { type: "diarized-text", segments: [
+ *     { speaker: 0, text: "Hello", wordTimings: [] },
+ *     { speaker: 1, text: "Hi there", wordTimings: [] }
+ *   ]}
+ * ];
+ *
+ * contentToText(blocks);
+ * // Returns: "First paragraph.\n\nHello Hi there"
+ * ```
+ */
+export const contentToText = (blocks: ContentBlock[]): string => { ... }
+````
+
+**The pattern:**
+
+1. **First line:** One sentence explaining the business purpose (what problem it solves)
+2. **Context paragraph:** Why this function exists—what system constraint or requirement makes it necessary
+3. **@example block:** Show concrete input/output so readers can verify their understanding
+
+**Keep comments in sync with code.** When you change a function's logic, update the JSDoc. Stale comments are worse than no comments—they actively mislead.
+
+**When to document:**
+
+- ✅ Domain/business functions in `fns.ts`, `domain.ts`
+- ✅ Complex transformations or algorithms
+- ✅ Functions with non-obvious behavior or edge cases
+- ⚠️ Simple utilities can have shorter docs (one-liner is fine)
+- ❌ Skip for trivial getters/setters or obvious wrappers
+
+**Questions good JSDoc answers:**
+
+- Why does this function exist? What problem does it solve?
+- What system or service requires this transformation?
+- What happens to different input types? (shown via example)
+- Are there edge cases or gotchas?
+
 ## Module organization: Flat > Nested
 
 **Prefer flat structure.** Avoid nested sub-modules unless absolutely necessary.
