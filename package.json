@@ -1,6 +1,6 @@
 {
   "name": "qstd",
-  "version": "0.3.19",
+  "version": "0.3.20",
   "description": "Standard Block component and utilities library with Panda CSS",
   "author": "malin1",
   "license": "MIT",
@@ -68,6 +68,7 @@
     "@aws-sdk/client-dynamodb": "latest",
     "@aws-sdk/client-s3": "latest",
     "@aws-sdk/client-sns": "latest",
+    "@aws-sdk/client-sqs": "latest",
     "@aws-sdk/lib-dynamodb": "latest",
     "@aws-sdk/s3-presigned-post": "latest",
     "@aws-sdk/s3-request-presigner": "latest",

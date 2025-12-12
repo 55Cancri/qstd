@@ -14,4 +14,5 @@ export * as File from "./file";
 export * as Lambda from "./aws/lambda";
 export * as DDB from "./aws/ddb";
 export * as SNS from "./aws/sns";
+export * as SQS from "./aws/sqs";
 export * as S3 from "./aws/s3";

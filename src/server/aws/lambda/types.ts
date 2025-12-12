@@ -20,7 +20,9 @@ export type SqsBatchItemFailure = SQSBatchItemFailure;
  * Type-safe SQS handler that enforces returning { batchItemFailures }.
  * Use with Lambda.createSqsHandler for compile + runtime safety.
  */
-export type SqsHandlerFn = (event: SQSEvent) => Promise<SQSBatchResponse>;
+export type SqsHandlerFn = (event: SQSEvent) => Promise<{
+  batchItemFailures: SQSBatchItemFailure[];
+}>;
 
 export type Response = {
   statusCode: number;

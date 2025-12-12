@@ -40,7 +40,7 @@ export const createWebsocketHandler =
 export const withBatchFailures = () => {
   const items: _t.SqsBatchItemFailure[] = [];
   return {
-    /** Add a failed message by its ID */
+    /** Add a failed message by its ID. Stores as `{ itemIdentifier }` for the SQS batch failures response. */
     add: (itemIdentifier: string) => {
       items.push({ itemIdentifier });
     },
