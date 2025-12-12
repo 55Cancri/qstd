@@ -330,7 +330,7 @@ export const save = async <T extends object>(
  * console.log(`Retrieved: ${result.count}, Missing: ${result.missing}`);
  * const users = result.items;
  */
-export async function batchGet<T extends Record<string, unknown>>(
+export async function batchGet<T extends object>(
   ddb: Client,
   props: {
     tableName?: string;
@@ -456,7 +456,7 @@ export async function batchGet<T extends Record<string, unknown>>(
  *   ]
  * });
  */
-export function batchWrite<T extends Record<string, unknown>>(
+export function batchWrite<T extends object>(
   ddb: Client,
   props: {
     tableName?: string;
@@ -464,7 +464,7 @@ export function batchWrite<T extends Record<string, unknown>>(
     maxRetries?: number;
   }
 ): Promise<_t.BatchWriteResult>;
-export function batchWrite<T extends Record<string, unknown>, I>(
+export function batchWrite<T extends object, I>(
   ddb: Client,
   props: {
     tableName?: string;
@@ -473,10 +473,7 @@ export function batchWrite<T extends Record<string, unknown>, I>(
     maxRetries?: number;
   }
 ): Promise<_t.BatchWriteResult>;
-export async function batchWrite<
-  T extends Record<string, unknown>,
-  I = { item: T; cond?: string }
->(
+export async function batchWrite<T extends object, I = { item: T; cond?: string }>(
   ddb: Client,
   props: {
     tableName?: string;
