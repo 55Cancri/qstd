@@ -21,10 +21,13 @@ import type { Locale } from "date-fns";
 // ============================================================================
 
 type DurationFormat = "compact" | "full" | "clock" | "fractional";
+type DurationUnit = "ms" | "ss" | "mm";
 
 type DurationOptions = {
   /** Format style: 'compact' (1h 2m), 'full' (1 hour 2 minutes), 'clock' (01:02:03), 'fractional' (1.4s, 1m4.4s) */
   format?: DurationFormat;
+  /** Input unit: 'ms' (milliseconds, default), 'ss' (seconds), or 'mm' (minutes). Use 'ss' for audio/video currentTime. */
+  unit?: DurationUnit;
   /** Show zero values for intermediate units (e.g., "1h 0m 30s" vs "1h 30s") */
   showZero?: boolean;
   /** Include milliseconds in compact format (e.g., "1s 200ms") */
@@ -34,41 +37,112 @@ type DurationOptions = {
 };
 
 /**
- * Formats milliseconds into human-readable duration strings
- * Supports compact (1h 2m), full (`1 hour 2 minutes`), clock (`01:02:03`), and fractional (1.4s, 1m4.4s) formats
+ * Formats durations into human-readable strings for audio players, timers, and recording UIs.
  *
- * @param {Object} [options={}] - Configuration options
- * @param {string} [options.format="clock"] - format
- * @param {boolean} [options.showZero=false] - show zero prefix
- * @param {boolean} [options.showMs=false] - include milliseconds (compact format only)
- * @param {boolean} [options.spaces=true] - use spaces between units (compact format only)
+ * Audio/video APIs typically provide time in seconds (e.g., `audio.currentTime`), while
+ * JavaScript timers use milliseconds. This function handles both via the `unit` option,
+ * eliminating manual conversion at call sites. Invalid inputs (null, undefined, NaN,
+ * Infinity, negative) return "--:--" for safe display in UIs.
+ *
+ * @param value - Duration value in the specified unit (defaults to milliseconds)
+ * @param options - Configuration options
+ * @param options.format - Output format: 'clock' (default), 'compact', 'full', or 'fractional'
+ * @param options.unit - Input unit: 'ms' (milliseconds, default), 'ss' (seconds), or 'mm' (minutes)
+ * @param options.showZero - Show zero intermediate units (e.g., "1h 0m 0s" vs "1h")
+ * @param options.showMs - Include milliseconds in compact format
+ * @param options.spaces - Use spaces between units in compact format (default: true)
  *
  * @example
- * formatDuration(90000) // "1:30"
- * formatDuration(3661000) // "1:01:01"
- * formatDuration(90000, { format: "compact" }) // "1m 30s"
- * formatDuration(90000, { format: "full" }) // "1 minute 30 seconds"
- * formatDuration(3600000, { format: "compact" }) // "1h"
+ * ```ts
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * // CLOCK FORMAT (default) - "m:ss" or "h:mm:ss"
+ * // Best for: audio players, video players, media timelines
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * formatDuration(90000)                                          // "1:30"
+ * formatDuration(3661000)                                        // "1:01:01"
+ * formatDuration(45, { unit: "ss" })                             // "0:45"
+ * formatDuration(225, { unit: "ss" })                            // "3:45"
+ * formatDuration(3661, { unit: "ss" })                           // "1:01:01"
+ * formatDuration(90, { unit: "mm" })                             // "1:30:00"
+ *
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * // COMPACT FORMAT - "1h 2m 3s" or "1h2m3s"
+ * // Best for: recording timers, duration badges, compact displays
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * formatDuration(90000, { format: "compact" })                   // "1m 30s"
+ * formatDuration(3600000, { format: "compact" })                 // "1h"
+ * formatDuration(3661000, { format: "compact" })                 // "1h 1m 1s"
+ * formatDuration(45, { unit: "ss", format: "compact" })          // "45s"
+ * formatDuration(90, { unit: "ss", format: "compact" })          // "1m 30s"
+ * formatDuration(3661, { unit: "ss", format: "compact" })        // "1h 1m 1s"
+ *
+ * // Without spaces (recording timer style)
+ * formatDuration(3661, { unit: "ss", format: "compact", spaces: false })  // "1h1m1s"
+ * formatDuration(90, { unit: "ss", format: "compact", spaces: false })    // "1m30s"
+ * formatDuration(45, { unit: "ss", format: "compact", spaces: false })    // "45s"
+ *
+ * // With zero intermediate units
  * formatDuration(3600000, { format: "compact", showZero: true }) // "1h 0m 0s"
- * formatDuration(3660000, { format: "full", showZero: true }) // "1 hour 1 minute 0 seconds"
- * formatDuration(1400, { format: "fractional" }) // "1.4s"
- * formatDuration(45300, { format: "fractional" }) // "45.3s"
- * formatDuration(64400, { format: "fractional" }) // "1m 4.4s"
- * formatDuration(1234, { format: "compact", showMs: true }) // "1s 234ms"
+ * formatDuration(3601000, { format: "compact", showZero: true }) // "1h 0m 1s"
+ *
+ * // With milliseconds
+ * formatDuration(1234, { format: "compact", showMs: true })      // "1s 234ms"
  * formatDuration(1234, { format: "compact", showMs: true, spaces: false }) // "1s234ms"
+ *
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * // FULL FORMAT - "1 hour 2 minutes 3 seconds"
+ * // Best for: accessibility, screen readers, verbose displays
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * formatDuration(90000, { format: "full" })                      // "1 minute 30 seconds"
+ * formatDuration(3600000, { format: "full" })                    // "1 hour"
+ * formatDuration(3661000, { format: "full" })                    // "1 hour 1 minute 1 second"
+ * formatDuration(7200000, { format: "full" })                    // "2 hours"
+ * formatDuration(3660000, { format: "full", showZero: true })    // "1 hour 1 minute 0 seconds"
+ *
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * // FRACTIONAL FORMAT - "1.4s" or "1m 4.4s"
+ * // Best for: precise timing, animations, performance metrics
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * formatDuration(1400, { format: "fractional" })                 // "1.4s"
+ * formatDuration(45300, { format: "fractional" })                // "45.3s"
+ * formatDuration(64400, { format: "fractional" })                // "1m 4.4s"
+ *
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * // INVALID/LOADING STATES - Returns "--:--" for safe UI display
+ * // ─────────────────────────────────────────────────────────────────────────────
+ * formatDuration(null)                                           // "--:--"
+ * formatDuration(undefined)                                      // "--:--"
+ * formatDuration(NaN)                                            // "--:--"
+ * formatDuration(Infinity)                                       // "--:--"
+ * formatDuration(-5)                                             // "--:--"
+ * formatDuration(-5, { unit: "ss" })                             // "--:--"
+ * ```
  */
 export const formatDuration = (
-  ms: number | null | undefined,
+  value: number | null | undefined,
   options: DurationOptions = {}
 ) => {
-  if (ms === null || ms === undefined) return "--:--";
+  // Handle invalid inputs - return placeholder for safe UI display
+  if (
+    value === null ||
+    value === undefined ||
+    !Number.isFinite(value) ||
+    value < 0
+  ) {
+    return "--:--";
+  }
 
   const {
     format: fmt = "clock",
+    unit = "ms",
     showZero = false,
     showMs = false,
     spaces = true,
   } = options;
+
+  // Normalize to milliseconds internally
+  const ms =
+    unit === "ss" ? value * 1000 : unit === "mm" ? value * 60 * 1000 : value;
 
   const absMs = Math.abs(ms);
   const totalSeconds = Math.floor(absMs / 1000);
@@ -117,7 +191,7 @@ export const formatDuration = (
 
   if (fmt === "fractional") {
     // Calculate fractional seconds with precision
-    const totalSecondsWithFraction = Math.abs(ms) / 1000;
+    const totalSecondsWithFraction = absMs / 1000;
     const totalMinutes = Math.floor(totalSecondsWithFraction / 60);
 
     if (totalMinutes === 0) {
