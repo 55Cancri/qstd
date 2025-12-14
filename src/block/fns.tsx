@@ -268,7 +268,6 @@ export const extractElAndStyles = (
     whileTap,
     whileHover,
     whileFocus,
-    transition,
     variants,
     custom,
     onAnimationStart,
@@ -286,7 +285,6 @@ export const extractElAndStyles = (
   const MotionComp = _l.motionTags[effectiveEl] || _l.motionTags.div;
 
   const hasMotionProps =
-    _motion !== undefined ||
     layout !== undefined ||
     initial !== undefined ||
     animate !== undefined ||
@@ -295,7 +293,6 @@ export const extractElAndStyles = (
     whileTap !== undefined ||
     whileFocus !== undefined ||
     variants !== undefined ||
-    transition !== undefined ||
     custom !== undefined ||
     onAnimationStart !== undefined ||
     onAnimationComplete !== undefined;
@@ -312,7 +309,6 @@ export const extractElAndStyles = (
         whileFocus,
         variants,
         custom,
-        transition: _motion ?? transition,
         onAnimationStart,
         onAnimationComplete,
       }
@@ -329,6 +325,41 @@ export const extractElAndStyles = (
     propsToOmit.push("as");
   }
   const remaining = omit(rest, propsToOmit);
+
+  // Framer Motion reserves the prop name `transition` for animation config.
+  // Panda also uses `transition` as a CSS style prop. When rendering a motion
+  // component (motion(styled(...))), Framer Motion will swallow `transition`,
+  // so we move it onto the inline style instead to keep CSS transitions working.
+  if (hasMotionProps && "transition" in remaining) {
+    const cssTransition = (remaining as Record<string, unknown>).transition;
+    if (cssTransition !== undefined) {
+      delete (remaining as Record<string, unknown>).transition;
+      if (typeof cssTransition === "string") {
+        const existingStyle = (remaining as Record<string, unknown>).style as
+          | React.CSSProperties
+          | undefined;
+        (remaining as Record<string, unknown>).style = {
+          ...(existingStyle ?? {}),
+          transition: cssTransition,
+        };
+      } else {
+        // If a non-string transition value was provided (e.g. a responsive/conditional
+        // object), preserve it via Panda's `css` prop rather than forcing it into
+        // an inline style string.
+        const existingCss = (remaining as Record<string, unknown>).css;
+        const base =
+          existingCss &&
+          typeof existingCss === "object" &&
+          !Array.isArray(existingCss)
+            ? (existingCss as Record<string, unknown>)
+            : undefined;
+        (remaining as Record<string, unknown>).css = {
+          ...(base ?? {}),
+          transition: cssTransition,
+        };
+      }
+    }
+  }
 
   const cursor = anyProps.isLoading ? "not-allowed" : "pointer";
 

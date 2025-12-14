@@ -1,11 +1,25 @@
-import * as _t from "./types";
+import { RestError } from "./types";
+import type {
+  BodylessOptions,
+  BodyOptions,
+  Config,
+  DataForOutput,
+  HeadersObject,
+  Input,
+  JsonRes,
+  Method,
+  Options,
+  Output,
+  ReqFrom,
+  ResFrom,
+} from "./types";
 import * as _f from "./fns";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Config
 // ─────────────────────────────────────────────────────────────────────────────
 
-let config: _t.Config = { baseUrl: "" };
+let config: Config = { baseUrl: "" };
 
 /**
  * Configure the API client with base URL and default headers.
@@ -31,7 +45,7 @@ let config: _t.Config = { baseUrl: "" };
  * });
  * ```
  */
-export const configure = (c: _t.Config) => {
+export const configure = (c: Config) => {
   config = c;
 };
 
@@ -51,7 +65,7 @@ export const configure = (c: _t.Config) => {
  * Api.configure({ baseUrl: "...", headers: async () => ({ Authorization: "Bearer ..." }) });
  * ```
  */
-const configHeaders = async (): Promise<_t.HeadersObject> => {
+const configHeaders = async (): Promise<HeadersObject> => {
   if (!config.headers) return {};
   return typeof config.headers === "function"
     ? await config.headers()
@@ -71,23 +85,23 @@ const configHeaders = async (): Promise<_t.HeadersObject> => {
  * - Internal paths use `baseUrl`, external URLs do not
  * - Default headers (auth) are included for internal calls, and **never** for external
  * - Bodies are serialized consistently (`json` by default for write methods)
- * - Errors are normalized into `_t.RestError` and can be converted via `onError`
+ * - Errors are normalized into `RestError` and can be converted via `onError`
  * - Responses are parsed via `_f.parseResponse` with optional progress tracking
  *
- * @throws {_t.RestError} When the response is not ok and no `onError` handler is provided.
+ * @throws {RestError} When the response is not ok and no `onError` handler is provided.
  */
 const request = async <
   Req,
   Res,
-  O extends _t.Output | undefined = undefined,
-  Return = _t.DataForOutput<Res, O>,
+  O extends Output | undefined = undefined,
+  Return = DataForOutput<Res, O>,
 >(
-  method: _t.Method,
+  method: Method,
   path: string,
-  options?: _t.BodyOptions<Req, Res, Return, O> | _t.Options<Res, Return, O>,
-  defaultInput?: _t.Input
+  options?: BodyOptions<Req, Res, Return, O> | Options<Res, Return, O>,
+  defaultInput?: Input
 ): Promise<Return> => {
-  const opts = options as _t.BodyOptions<Req, Res, Return, O> | undefined;
+  const opts = options as BodyOptions<Req, Res, Return, O> | undefined;
   const url = _f.prepareUrl(path, {
     baseUrl: config.baseUrl,
     ...(opts?.params ? { params: opts.params } : {}),
@@ -131,7 +145,7 @@ const request = async <
   });
 
   if (!response.ok) {
-    const error = new _t.RestError({
+    const error = new RestError({
       status: response.status,
       body: await response.text(),
     });
@@ -163,7 +177,7 @@ const request = async <
  * - If you try to use a non-JSON decoded response type (like `Blob`) without setting
  *   `output`, TypeScript will raise a helpful error type to prevent mismatches.
  *
- * If the response is not ok, this throws a `_t.RestError` unless you provide
+ * If the response is not ok, this throws a `RestError` unless you provide
  * an `onError` handler to convert the error into a return value.
  *
  * @example
@@ -186,39 +200,39 @@ const request = async <
  * const image = await Api.get("/avatar.png", { output: "blob" });
  * ```
  *
- * @throws {_t.RestError} When the response is not ok and no `onError` handler is provided.
+ * @throws {RestError} When the response is not ok and no `onError` handler is provided.
  */
 export function get<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = unknown,
 >(
   path: string,
-  opts: _t.Options<_t.JsonRes<_t.ResFrom<TTypes>>, Return, O> & {
+  opts: Options<JsonRes<ResFrom<TTypes>>, Return, O> & {
     onSuccess: (
-      data: _t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O>
+      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
     ) => Return;
   }
 ): Promise<Return>;
 export function get<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  opts?: _t.Options<_t.JsonRes<_t.ResFrom<TTypes>>, Return, O> & {
+  opts?: Options<JsonRes<ResFrom<TTypes>>, Return, O> & {
     onSuccess?: undefined;
   }
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return>;
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return>;
 export function get<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  opts?: _t.Options<_t.JsonRes<_t.ResFrom<TTypes>>, Return, O>
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return> {
-  return request<never, _t.JsonRes<_t.ResFrom<TTypes>>, O, Return>(
+  opts?: Options<JsonRes<ResFrom<TTypes>>, Return, O>
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
+  return request<never, JsonRes<ResFrom<TTypes>>, O, Return>(
     "GET",
     path,
     opts
@@ -243,7 +257,7 @@ export function get<
  *   `Api.post<{ Req: CreateReq; Res: CreateRes }>(...)`
  * - `output` controls runtime decoding and therefore the return type.
  *
- * If the response is not ok, this throws a `_t.RestError` unless you provide
+ * If the response is not ok, this throws a `RestError` unless you provide
  * an `onError` handler to convert the error into a return value.
  *
  * @example
@@ -258,55 +272,55 @@ export function get<
  * await Api.post(presignedUrl, formData);
  * ```
  *
- * @throws {_t.RestError} When the response is not ok and no `onError` handler is provided.
+ * @throws {RestError} When the response is not ok and no `onError` handler is provided.
  */
 export function post<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = unknown,
 >(
   path: string,
-  body: _t.ReqFrom<TTypes>,
-  opts: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body: ReqFrom<TTypes>,
+  opts: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   > & {
     onSuccess: (
-      data: _t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O>
+      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
     ) => Return;
   }
 ): Promise<Return>;
 export function post<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  body?: _t.ReqFrom<TTypes>,
-  opts?: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body?: ReqFrom<TTypes>,
+  opts?: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   > & { onSuccess?: undefined }
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return>;
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return>;
 export function post<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  body?: _t.ReqFrom<TTypes>,
-  opts?: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body?: ReqFrom<TTypes>,
+  opts?: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   >
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return> {
-  return request<_t.ReqFrom<TTypes>, _t.JsonRes<_t.ResFrom<TTypes>>, O, Return>(
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
+  return request<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, O, Return>(
     "POST",
     path,
     { ...opts, body },
@@ -323,7 +337,7 @@ export function post<
  *
  * Body is JSON-serialized by default. See `post` for `input` options.
  *
- * If the response is not ok, this throws a `_t.RestError` unless you provide
+ * If the response is not ok, this throws a `RestError` unless you provide
  * an `onError` handler to convert the error into a return value.
  *
  * @example
@@ -334,55 +348,55 @@ export function post<
  * });
  * ```
  *
- * @throws {_t.RestError} When the response is not ok and no `onError` handler is provided.
+ * @throws {RestError} When the response is not ok and no `onError` handler is provided.
  */
 export function put<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = unknown,
 >(
   path: string,
-  body: _t.ReqFrom<TTypes>,
-  opts: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body: ReqFrom<TTypes>,
+  opts: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   > & {
     onSuccess: (
-      data: _t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O>
+      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
     ) => Return;
   }
 ): Promise<Return>;
 export function put<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  body?: _t.ReqFrom<TTypes>,
-  opts?: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body?: ReqFrom<TTypes>,
+  opts?: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   > & { onSuccess?: undefined }
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return>;
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return>;
 export function put<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  body?: _t.ReqFrom<TTypes>,
-  opts?: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body?: ReqFrom<TTypes>,
+  opts?: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   >
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return> {
-  return request<_t.ReqFrom<TTypes>, _t.JsonRes<_t.ResFrom<TTypes>>, O, Return>(
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
+  return request<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, O, Return>(
     "PUT",
     path,
     { ...opts, body },
@@ -399,7 +413,7 @@ export function put<
  *
  * Body is JSON-serialized by default. See `post` for `input` options.
  *
- * If the response is not ok, this throws a `_t.RestError` unless you provide
+ * If the response is not ok, this throws a `RestError` unless you provide
  * an `onError` handler to convert the error into a return value.
  *
  * @example
@@ -407,55 +421,55 @@ export function put<
  * const user = await Api.patch<User>(`/users/${id}`, { name: "New Name" });
  * ```
  *
- * @throws {_t.RestError} When the response is not ok and no `onError` handler is provided.
+ * @throws {RestError} When the response is not ok and no `onError` handler is provided.
  */
 export function patch<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = unknown,
 >(
   path: string,
-  body: _t.ReqFrom<TTypes>,
-  opts: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body: ReqFrom<TTypes>,
+  opts: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   > & {
     onSuccess: (
-      data: _t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O>
+      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
     ) => Return;
   }
 ): Promise<Return>;
 export function patch<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  body?: _t.ReqFrom<TTypes>,
-  opts?: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body?: ReqFrom<TTypes>,
+  opts?: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   > & { onSuccess?: undefined }
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return>;
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return>;
 export function patch<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  body?: _t.ReqFrom<TTypes>,
-  opts?: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body?: ReqFrom<TTypes>,
+  opts?: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   >
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return> {
-  return request<_t.ReqFrom<TTypes>, _t.JsonRes<_t.ResFrom<TTypes>>, O, Return>(
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
+  return request<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, O, Return>(
     "PATCH",
     path,
     { ...opts, body },
@@ -473,7 +487,7 @@ export function patch<
  * Supports an optional body for batch deletes or similar use cases.
  * Body is JSON-serialized by default when provided.
  *
- * If the response is not ok, this throws a `_t.RestError` unless you provide
+ * If the response is not ok, this throws a `RestError` unless you provide
  * an `onError` handler to convert the error into a return value.
  *
  * @example
@@ -488,57 +502,57 @@ export function patch<
  * await Api.remove("/users", { ids: ["1", "2", "3"] });
  * ```
  *
- * @throws {_t.RestError} When the response is not ok and no `onError` handler is provided.
+ * @throws {RestError} When the response is not ok and no `onError` handler is provided.
  */
 export function remove<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = unknown,
 >(
   path: string,
-  body: _t.ReqFrom<TTypes>,
-  opts: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body: ReqFrom<TTypes>,
+  opts: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   > & {
     onSuccess: (
-      data: _t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O>
+      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
     ) => Return;
   }
 ): Promise<Return>;
 export function remove<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  body?: _t.ReqFrom<TTypes>,
-  opts?: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body?: ReqFrom<TTypes>,
+  opts?: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   > & { onSuccess?: undefined }
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return>;
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return>;
 export function remove<
   TTypes = unknown,
-  O extends _t.Output | undefined = undefined,
+  O extends Output | undefined = undefined,
   Return = never,
 >(
   path: string,
-  body?: _t.ReqFrom<TTypes>,
-  opts?: _t.BodylessOptions<
-    _t.ReqFrom<TTypes>,
-    _t.JsonRes<_t.ResFrom<TTypes>>,
+  body?: ReqFrom<TTypes>,
+  opts?: BodylessOptions<
+    ReqFrom<TTypes>,
+    JsonRes<ResFrom<TTypes>>,
     Return,
     O
   >
-): Promise<_t.DataForOutput<_t.JsonRes<_t.ResFrom<TTypes>>, O> | Return> {
+): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
   // Only set default input to "json" if body is provided
   const defaultInput = body !== undefined ? "json" : undefined;
-  return request<_t.ReqFrom<TTypes>, _t.JsonRes<_t.ResFrom<TTypes>>, O, Return>(
+  return request<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, O, Return>(
     "DELETE",
     path,
     { ...opts, body },

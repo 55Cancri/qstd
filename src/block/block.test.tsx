@@ -138,6 +138,20 @@ describe("Block Component", () => {
 
       expect(container.firstChild).toBeTruthy();
     });
+
+    it("keeps CSS transition working even when motion props are present", () => {
+      const { container } = render(
+        <Block whileTap={{ scale: 0.98 }} transition=".14s background ease-out">
+          Tap
+        </Block>
+      );
+
+      const el = container.firstChild as HTMLElement;
+      expect(el).toBeTruthy();
+      // When Block renders as a motion component, `transition` would otherwise be
+      // swallowed by Framer Motion. We move it to inline style to preserve CSS transitions.
+      expect(el.style.transition).toBe(".14s background ease-out");
+    });
   });
 
   describe("Type Safety Demonstrations", () => {
