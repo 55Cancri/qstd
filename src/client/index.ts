@@ -8,6 +8,7 @@ export * as Time from "../shared/time";
 export * as Flow from "../shared/flow";
 export * as Random from "../shared/random";
 export * as Log from "../shared/log";
+export * as Api from "../shared/api";
 
 // Client-specific utilities (DOM)
 export * as Haptics from "./haptics";

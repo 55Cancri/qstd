@@ -8,6 +8,7 @@ export * as Time from "../shared/time";
 export * as Flow from "../shared/flow";
 export * as Random from "../shared/random";
 export * as Log from "../shared/log";
+export * as Api from "../shared/api";
 
 // Server-specific utilities
 export * as File from "./file";

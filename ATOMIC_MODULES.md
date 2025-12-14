@@ -611,6 +611,163 @@ payments/
 
 **Rule of thumb:** If you're questioning whether to nest, flatten instead.
 
+## Contracts: The shared kernel
+
+When client and server need identical types, define them once in `packages/contracts`. This is the "shared kernel"—a small, stable set of types that both environments agree on.
+
+### Why contracts?
+
+In a monorepo with client and server, the same data structures often appear in both:
+
+```typescript
+// Without contracts: duplicated types that drift apart
+// packages/client/src/entities/entry/types.ts
+interface WordTiming {
+  start: number;
+  end: number;
+  word: string;
+}
+
+// packages/server/src/entities/entry/types.ts
+interface WordTiming {
+  start: number;
+  end: number;
+  word: string;
+  speaker?: number;
+}
+// ^ Oops, server added speaker field. Client breaks when it receives it.
+```
+
+Contracts eliminate this drift by defining shared types in one place:
+
+```typescript
+// packages/contracts/src/entry/types.ts
+export interface WordTiming {
+  speaker?: number;
+  start: number;
+  end: number;
+  word: string;
+}
+```
+
+### The pattern
+
+**Contracts are pure types.** No business logic, no I/O, no environment-specific code. Just the data shapes that cross the client-server boundary.
+
+```
+packages/
+  contracts/
+    src/
+      entry/
+        types.ts    # Shared types: ContentBlock, WordTiming, etc.
+        index.ts    # export type * from "./types"
+      user/
+        index.ts    # Schema + types for user entity
+      index.ts      # export * as Entry from "./entry"
+```
+
+**Local entities import and extend:**
+
+```typescript
+// packages/server/src/entities/entry/types.ts
+export type * from "contracts/entry"; // Re-export shared types
+
+// Server-specific: DDB record shape
+export interface Record {
+  pk: string;
+  sk: string;
+  audioS3Key: string; // Server stores S3 keys
+  content: ContentBlock[];
+  // ...
+}
+```
+
+```typescript
+// packages/client/src/entities/entry/types.ts
+export type * from "contracts/entry"; // Re-export shared types
+
+// Client-specific: UI presentation model
+export interface UnifiedEntry {
+  audioUrl?: string; // Client uses presigned URLs
+  isLocal: boolean; // Client tracks local state
+  content?: ContentBlock[];
+  // ...
+}
+```
+
+### What belongs in contracts?
+
+**Include:**
+
+- Types that appear identically in both client and server
+- API request/response shapes
+- Enum-like discriminated unions (`ContentBlock`, `SpeakerSegment`)
+- Validation schemas (arktype/zod) when runtime validation is needed
+
+**Don't include:**
+
+- Environment-specific extensions (DDB keys, presigned URLs)
+- UI-only types (`InsertionPoint`, `UnifiedEntry`)
+- Server-only types (`Record` with `pk`/`sk`)
+
+### Consuming contracts
+
+**Never import contracts directly in application code.** Always go through local entities:
+
+```typescript
+// ✅ GOOD: Import through local entity
+import * as Entry from "entities/entry";
+Entry.ContentBlock; // Shared type (from contracts)
+Entry.Record; // Server-specific type
+
+// ❌ AVOID: Bypassing the local entity layer
+import type { ContentBlock } from "contracts/entry";
+```
+
+**Why?** The local entity is the API surface. It can add, remove, or alias types without breaking consumers. If you import contracts directly, you're coupled to the shared kernel's internal structure.
+
+### Constraints
+
+**Contracts must be leaves.** They can't import from server or client packages—only external libraries and other contracts. This prevents circular dependencies.
+
+**Keep contracts minimal.** Only share what's truly identical. When in doubt, keep types local and share later when the need is proven.
+
+**Deploy together.** When contracts change, both client and server must deploy. In a monorepo this happens naturally, but be aware that independent versioning isn't possible.
+
+### Import path setup
+
+Configure path aliases in each package's tsconfig.json:
+
+```json
+// packages/server/tsconfig.json
+{
+  "compilerOptions": {
+    "paths": {
+      "contracts/*": ["../contracts/src/*"],
+      "entities/*": ["src/entities/*"]
+    }
+  }
+}
+
+// packages/client/tsconfig.json
+{
+  "compilerOptions": {
+    "paths": {
+      "contracts/*": ["../contracts/src/*"],
+      "entities/*": ["./src/entities/*"]
+    }
+  }
+}
+```
+
+### When to create a contract
+
+1. **Same type in both environments** - If you're copying a type from server to client (or vice versa), it belongs in contracts.
+2. **API boundary types** - Request/response shapes that define the contract between client and server.
+3. **Shared validation** - When you need the same runtime validation on both sides.
+
+**Not every shared concept needs a contract.** Simple primitives (`string`, `number`) or well-known library types don't need to be in contracts. Focus on domain-specific types that carry meaning in your application.
+
 ## API design principles
 
 **Consistency** - Predictable patterns reduce cognitive load
