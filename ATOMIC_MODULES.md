@@ -309,6 +309,33 @@ const [store, setStore] = React.useState<_t.Upload>({ ... });
 const [state, setState] = React.useState<_t.Upload>({ ... });
 ```
 
+### Ref comments: Explain the purpose
+
+**Always add a comment above each ref explaining its purpose in the app.** Refs often point to invisible DOM elements (sentinels, markers) or serve non-obvious roles. A brief comment saves readers from tracing through the code to understand what each ref is for.
+
+```tsx
+// ✅ GOOD: Each ref has a purpose comment
+// Container ref for auto-scroll to follow highlighted word during playback
+const entryRef = React.useRef<HTMLDivElement>(null);
+// Zero-height sentinel at top of entry; when it scrolls out, the header is sticky
+const headerSentinelRef = React.useRef<HTMLDivElement | null>(null);
+// Marker at bottom of content; used to calculate dynamic fade padding for sticky footer
+const contentEndRef = React.useRef<HTMLDivElement | null>(null);
+```
+
+```tsx
+// ❌ BAD: No context for what these refs do
+const entryRef = React.useRef<HTMLDivElement>(null);
+const headerSentinelRef = React.useRef<HTMLDivElement | null>(null);
+const contentEndRef = React.useRef<HTMLDivElement | null>(null);
+```
+
+**Why comment refs?**
+
+- **Invisible elements**: Sentinel divs have `height: 0`—comments explain their role
+- **Non-obvious connections**: Refs often connect to IntersectionObservers or scroll handlers defined elsewhere
+- **Quick orientation**: New readers can understand the component's DOM strategy at a glance
+
 ### Hook return values: Spread state
 
 **Spread state properties directly** in the return. Don't wrap in a `state` object—consumers shouldn't need `hook.state.isLoading`.

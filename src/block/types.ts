@@ -87,7 +87,7 @@ export type Icon =
 
 export interface IconProps {
   iconPrefix?: "solid" | "regular" | "brands";
-  className?: string;
+  className?: string | undefined;
   startIcon?: Icon;
   endIcon?: Icon;
   icon?: Icon;
@@ -136,8 +136,8 @@ export interface SharedBlockProps
   filepicker?: boolean;
   portal?: boolean;
   as?: React.ElementType;
-  className?: string;
-  style?: React.CSSProperties;
+  className?: string | undefined;
+  style?: React.CSSProperties | undefined;
 }
 
 // Helper to omit conflicting props from HTML attributes

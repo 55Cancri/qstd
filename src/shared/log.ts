@@ -117,3 +117,11 @@ export const label = (name: string) => ({
     console.log(`[${name}] ========== ${message} ==========`);
   },
 });
+
+/**
+ * Typed shape of the object returned from `Log.label(...)`.
+ *
+ * Exported so downstream packages can accept a logger dependency without
+ * re-declaring the method surface.
+ */
+export type LabeledLogger = ReturnType<typeof label>;
