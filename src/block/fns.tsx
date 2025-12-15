@@ -383,11 +383,18 @@ export const extractElAndStyles = (
     .join(" ");
 
   // [component, styles]
-  // m: 0 is a sensible default (matching CSS reset) but placed here so user props override it
+  // NOTE ON MARGINS:
+  // Don't set a default margin prop here.
+  //
+  // qstd ships Panda's preflight reset in `styled-system/styles.css`, which already does:
+  //   * { margin: 0px; padding: 0px; ... }
+  //
+  // Setting `m: 0` (or mt/mr/mb/ml) at the component level injects utility classes that can
+  // conflict with consumer margin utilities (e.g. mt) depending on CSS ordering.
+  // Relying on preflight keeps the default margin reset while ensuring consumer props always win.
   return [
     comp,
     {
-      m: 0,
       ...motionProps,
       ...remaining,
       className: mergedClassName,

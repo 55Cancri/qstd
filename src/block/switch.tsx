@@ -74,8 +74,11 @@ export type ThumbProps = StripConflictingHandlers<_t.BaseBlockProps> &
 
 function Switch(props: _t.SwitchBlockProps) {
   const {
+    // `is` is used by <Block is="switch" /> routing and should not be forwarded to <button>
+    is: _is,
     checked = false,
     disabled = false,
+    defaultChecked: _defaultChecked,
     thumbSize = 20,
     onChange,
     children,
@@ -95,24 +98,28 @@ function Switch(props: _t.SwitchBlockProps) {
   const xWhileOn = thumbSize; // This matches original logic
   const checkedPosition = xWhileOn * 0.5; // This is where thumb goes when checked
 
-  const stopwatch = useStopwatch();
+  const {
+    time: stopwatchTime,
+    start: stopwatchStart,
+    clear: stopwatchClear,
+  } = useStopwatch();
 
   // Handle press timing for thumb growth
   React.useEffect(() => {
     if (pressed && !disabled) {
-      stopwatch.start();
+      stopwatchStart();
     } else {
       setGrowThumb(false);
-      stopwatch.clear();
+      stopwatchClear();
     }
-  }, [pressed, disabled]);
+  }, [pressed, disabled, stopwatchStart, stopwatchClear]);
 
   // Grow thumb after 200ms of being pressed
   React.useEffect(() => {
-    if (stopwatch.time > 200) {
+    if (stopwatchTime > 200) {
       setGrowThumb(true);
     }
-  }, [stopwatch.time]);
+  }, [stopwatchTime]);
 
   // Sync thumb position with checked state
   React.useEffect(() => {
@@ -225,7 +232,6 @@ function Switch(props: _t.SwitchBlockProps) {
           flex
           alignItems="center"
           justifyContent="center"
-          m={0}
           px={1}
           py={1}
           h="fit-content"
@@ -254,7 +260,7 @@ function Switch(props: _t.SwitchBlockProps) {
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           disabled={disabled}
-          {...(rest as any)}
+          {...rest}
         >
           <Base
             flex
@@ -379,14 +385,17 @@ function useStopwatch(props: StopwatchProps = {}) {
     return () => clearInterval(interval!);
   }, [active, timeInterval]);
 
-  const start = () => setActive(true);
-  const stop = () => setActive(false);
-  const clear = () => {
+  const start = React.useCallback(() => setActive(true), []);
+  const stop = React.useCallback(() => setActive(false), []);
+  const clear = React.useCallback(() => {
     setActive(false);
     setTime(0);
-  };
+  }, []);
 
-  return { time, start, stop, clear };
+  return React.useMemo(
+    () => ({ time, start, stop, clear }),
+    [time, start, stop, clear]
+  );
 }
 
 export default Switch;
