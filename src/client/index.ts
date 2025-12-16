@@ -12,4 +12,5 @@ export * as Api from "../shared/api";
 
 // Client-specific utilities (DOM)
 export * as Haptics from "./haptics";
+export { Theme } from "./theme";
 export * as Dom from "./dom";
