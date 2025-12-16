@@ -388,6 +388,8 @@ export default function Textarea(props: _t.TextareaBlockProps) {
   }, [isControlled]);
 
   const resize = props.resize ?? "none";
+  // When debug is provided, skip default border styling so debug border shows
+  const hasDebug = "debug" in rest && rest.debug !== undefined;
 
   return (
     <Base grid rows="/ 4">
@@ -403,10 +405,10 @@ export default function Textarea(props: _t.TextareaBlockProps) {
             pb={0.5}
             px={2}
             color="text-primary"
-            border="1.5px solid"
-            borderColor={
-              error ? "input-border-color-error" : "input-border-color"
-            }
+            {...(!hasDebug && {
+              border: "1.5px solid",
+              borderColor: error ? "input-border-color-error" : "input-border-color",
+            })}
             {...(error && { outlineColor: "input-outline-color-error" })}
             borderRadius={8}
             // empty space so that label is lifted based on :placeholder-shown

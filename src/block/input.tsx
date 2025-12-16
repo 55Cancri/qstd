@@ -27,6 +27,9 @@ export default function Input(props: _t.InputBlockProps) {
     ...rest
   } = props;
 
+  // When debug is provided, skip default border styling so debug border shows
+  const hasDebug = "debug" in rest && rest.debug !== undefined;
+
   const label = _f.findChildrenByDisplayName<_t.InputBlockProps>(
     children,
     LabelNameKey
@@ -67,10 +70,10 @@ export default function Input(props: _t.InputBlockProps) {
             pl={leftIcon ? 7 : 2}
             pr={rightSide ? 6 : 2}
             color="text-primary"
-            border="1.5px solid"
-            borderColor={
-              error ? "input-border-color-error" : "input-border-color"
-            }
+            {...(!hasDebug && {
+              border: "1.5px solid",
+              borderColor: error ? "input-border-color-error" : "input-border-color",
+            })}
             {...(error && { outlineColor: "input-outline-color-error" })}
             borderRadius={8}
             // empty space so that label is lifted based on :placeholder-shown
