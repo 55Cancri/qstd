@@ -10,8 +10,13 @@ const Svg = _l.motionTags.svg;
 const CheckboxBtn = _l.motionTags.button;
 
 export default function Checkbox(props: _t.CheckboxBlockProps) {
-  const { children, onClick, onAnimationStart, onAnimationComplete, ...rest } =
-    props;
+  const {
+    children,
+    onClick: _onClick,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
+    ...rest
+  } = props;
   const [checked, setChecked] = React.useState(false);
   const [indeterminate, setIndeterminate] = React.useState(false);
 
@@ -24,6 +29,22 @@ export default function Checkbox(props: _t.CheckboxBlockProps) {
   }, [rest.indeterminate]);
 
   const isIndeterminate = typeof rest.indeterminate === "boolean";
+
+  // Check if consumer provided bg override via _checkbox selector
+  const checkboxSelector = (rest as Record<string, unknown>)._checkbox as
+    | Record<string, unknown>
+    | undefined;
+  const hasCheckboxBg =
+    checkboxSelector &&
+    _f.hasAnyProp(checkboxSelector, ["bg", "background", "backgroundColor"]);
+
+  // Check if consumer provided _checked bg override
+  const checkedSelector = (rest as Record<string, unknown>)._checked as
+    | Record<string, unknown>
+    | undefined;
+  const hasCheckedBg =
+    checkedSelector &&
+    _f.hasAnyProp(checkedSelector, ["bg", "background", "backgroundColor"]);
 
   return (
     <Base
@@ -46,8 +67,12 @@ export default function Checkbox(props: _t.CheckboxBlockProps) {
         cursor="pointer"
         boxSizing="border-box"
         outline="none !important"
-        bg={{ base: "neutral.200", _dark: "neutral.700" }}
-        _checked={{ bg: "blue.500", transition: ".14s background ease-out" }}
+        {...(!hasCheckboxBg && {
+          bg: { base: "neutral.200", _dark: "neutral.700" },
+        })}
+        {...(!hasCheckedBg && {
+          _checked: { bg: "blue.500", transition: ".14s background ease-out" },
+        })}
         _active={{ scale: 0.9 }}
         color="neutral.100"
         transition=".14s background ease-out .1s"
