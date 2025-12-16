@@ -41,7 +41,49 @@ export type Params = Record<
 >;
 
 export type Input = "json" | "form" | "text";
-export type Output = "json" | "text" | "blob" | "stream" | "arrayBuffer";
+export type Output = "json" | "text" | "blob" | "stream" | "arrayBuffer" | "sse";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SSE (Server-Sent Events)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * A parsed Server-Sent Event.
+ *
+ * SSE is a W3C standard format for server-to-client streaming:
+ * - `data` is the event payload (always JSON-parsed)
+ * - `event` is the optional event type (from `event:` field)
+ * - `id` is the optional event ID (from `id:` field)
+ *
+ * ## ⚠️ Important: JSON is required
+ *
+ * The `data` field is **always** parsed as JSON. The `Res` type parameter
+ * defines the expected JSON shape. If your server sends non-JSON data
+ * (plain strings, XML, etc.), this will throw a parse error.
+ *
+ * **Your server must send valid JSON in each `data:` line.**
+ *
+ * This matches the behavior of regular HTTP JSON responses — if you type
+ * `Res: SomeInterface`, you're declaring a JSON contract.
+ *
+ * @example
+ * ```ts
+ * // ✅ Server sends: data: {"type":"delta","content":"Hello"}
+ * type ChatChunk = { type: "delta" | "done"; content?: string };
+ * const events = Api.post<{ Res: ChatChunk }>("/chat", body, { output: "sse" });
+ * for await (const { data } of events) {
+ *   console.log(data.type); // "delta"
+ * }
+ *
+ * // ❌ Server sends: data: Hello world (plain string, NOT JSON)
+ * // This will throw: "SSE data must be valid JSON"
+ * ```
+ */
+export type SSEEvent<T = unknown> = {
+  data: T;
+  event?: string;
+  id?: string;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Generic helpers (typed Req/Res + output-driven response types)
@@ -98,6 +140,7 @@ export type ResFrom<T> =
  *
  * - `output: "json"` (or omitted) → `Res`
  * - `output: "blob"` → `Blob`
+ * - `output: "sse"` → `AsyncGenerator<SSEEvent<Res>>`
  * - etc.
  *
  * This makes `output` the single source of truth for non-JSON response shapes,
@@ -111,7 +154,9 @@ export type DataForOutput<Res, O extends Output | undefined> = O extends "text"
       ? ReadableStream<Uint8Array> | null
       : O extends "arrayBuffer"
         ? ArrayBuffer
-        : Res;
+        : O extends "sse"
+          ? AsyncGenerator<SSEEvent<Res>, void, unknown>
+          : Res;
 
 /**
  * Types that cannot be produced by JSON parsing and therefore require an explicit `output`.
@@ -119,7 +164,11 @@ export type DataForOutput<Res, O extends Output | undefined> = O extends "text"
  * (We intentionally do NOT include `string` here because JSON can legitimately parse to a
  * string, e.g. `"hello"`.)
  */
-export type NonJsonDecoded = Blob | ArrayBuffer | ReadableStream<Uint8Array>;
+export type NonJsonDecoded =
+  | Blob
+  | ArrayBuffer
+  | ReadableStream<Uint8Array>
+  | AsyncGenerator<unknown>;
 
 /**
  * A helpful compile-time error shape when a non-JSON decoded type is requested without
@@ -153,6 +202,7 @@ export type Options<
   params?: Params;
   output?: O;
   signal?: AbortSignal;
+  /** Progress callback for blob/arrayBuffer downloads (not applicable to SSE). */
   onProgress?: (progress: Progress) => void;
   onSuccess?: (data: DataForOutput<Res, O>) => Return;
   onError?: (error: RestError) => Return;
@@ -180,6 +230,7 @@ export type BodyOptions<
   params?: Params;
   output?: O;
   signal?: AbortSignal;
+  /** Progress callback for blob/arrayBuffer downloads (not applicable to SSE). */
   onProgress?: (progress: Progress) => void;
   onSuccess?: (data: DataForOutput<Res, O>) => Return;
   onError?: (error: RestError) => Return;

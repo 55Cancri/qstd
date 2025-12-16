@@ -249,6 +249,136 @@ export const prepareBody = (
  * );
  * ```
  */
+/**
+ * Parse a ReadableStream as Server-Sent Events (SSE).
+ *
+ * SSE is a W3C standard wire format for server-to-client streaming. This parser
+ * handles the protocol details:
+ * - Buffers incomplete lines across chunks (network packets don't align with events)
+ * - Parses `data:`, `event:`, `id:` fields per the spec
+ * - Yields complete events when an empty line is encountered
+ *
+ * The generator yields `SSEEvent<T>` objects containing the parsed data and optional
+ * event type and ID fields. It completes naturally when the stream ends.
+ *
+ * Note: Application-level signals like `[DONE]` (OpenAI) are NOT handled here.
+ * Those are application semantics, not protocol. The consumer should check for
+ * them in the yielded events.
+ *
+ * ## ⚠️ Important: JSON is required
+ *
+ * This parser **always** JSON-parses the `data:` payload. Your server must send
+ * valid JSON in each SSE event. If it sends plain strings, XML, or any non-JSON
+ * format, parsing will fail with a descriptive error.
+ *
+ * **Why JSON-only?** This matches regular HTTP behavior — when you type
+ * `Res: SomeInterface`, you're declaring a JSON contract. SSE follows the same
+ * convention: typed data = JSON data.
+ *
+ * @throws {Error} When a `data:` payload is not valid JSON. The error message
+ *   includes the raw data that failed to parse for debugging.
+ *
+ * @example
+ * ```ts
+ * // ✅ Works - server sends JSON
+ * // Server: data: {"type":"delta","content":"Hello"}
+ * for await (const { data } of parseSSE<ChatChunk>(stream)) {
+ *   console.log(data.type); // "delta"
+ * }
+ *
+ * // ❌ Throws - server sends plain string
+ * // Server: data: Hello world
+ * // Error: "SSE data must be valid JSON. Received: Hello world"
+ * ```
+ */
+export async function* parseSSE<T = unknown>(
+  stream: ReadableStream<Uint8Array>
+): AsyncGenerator<_t.SSEEvent<T>, void, unknown> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+
+  let buffer = "";
+  let eventType: string | undefined;
+  let eventId: string | undefined;
+  let dataLines: string[] = [];
+
+  /**
+   * Parse raw SSE data as JSON with a helpful error message.
+   */
+  const parseJsonData = (rawData: string): T => {
+    try {
+      return JSON.parse(rawData) as T;
+    } catch {
+      // Truncate long data for readability in error message
+      const preview = rawData.length > 100 ? rawData.slice(0, 100) + "..." : rawData;
+      throw new Error(
+        `[api] SSE data must be valid JSON. ` +
+        `This parser expects your server to send JSON-formatted data in each SSE event. ` +
+        `If you're sending plain strings or another format, you'll need to update your server ` +
+        `to send JSON instead (e.g., {"message":"Hello"} instead of just "Hello").\n\n` +
+        `Received: ${preview}`
+      );
+    }
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete lines from buffer
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line === "" || line === "\r") {
+          // Empty line = end of event, yield if we have data
+          if (dataLines.length > 0) {
+            const rawData = dataLines.join("\n");
+            yield {
+              data: parseJsonData(rawData),
+              ...(eventType && { event: eventType }),
+              ...(eventId && { id: eventId }),
+            };
+            // Reset for next event
+            dataLines = [];
+            eventType = undefined;
+            eventId = undefined;
+          }
+        } else if (line.startsWith("data:")) {
+          // data: field (strip "data:" prefix and optional leading space)
+          const value = line.slice(5);
+          dataLines.push(value.startsWith(" ") ? value.slice(1) : value);
+        } else if (line.startsWith("event:")) {
+          // event: field
+          const value = line.slice(6);
+          eventType = value.startsWith(" ") ? value.slice(1) : value;
+        } else if (line.startsWith("id:")) {
+          // id: field
+          const value = line.slice(3);
+          eventId = value.startsWith(" ") ? value.slice(1) : value;
+        }
+        // retry: field is intentionally ignored (reconnection is not applicable here)
+        // Lines starting with : are comments, also ignored
+      }
+    }
+
+    // Handle any remaining data in buffer (shouldn't normally happen with well-formed SSE)
+    if (dataLines.length > 0) {
+      const rawData = dataLines.join("\n");
+      yield {
+        data: parseJsonData(rawData),
+        ...(eventType && { event: eventType }),
+        ...(eventId && { id: eventId }),
+      };
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export const parseResponse = async <
   Res,
   O extends _t.Output | undefined = undefined,
@@ -262,6 +392,14 @@ export const parseResponse = async <
   // Stream output - return body directly
   if (out === "stream") {
     return response.body as _t.DataForOutput<Res, O>;
+  }
+
+  // SSE output - return async generator (always JSON-parses data)
+  if (out === "sse") {
+    if (!response.body) {
+      throw new Error("[api] SSE output requires a response body");
+    }
+    return parseSSE<Res>(response.body) as _t.DataForOutput<Res, O>;
   }
 
   // Track download progress if callback provided
