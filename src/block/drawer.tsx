@@ -528,12 +528,16 @@ type MatchedMedia = boolean[];
 function useMatchMedia(queries: MediaQuery): MatchedMedia;
 
 function useMatchMedia(queries: MediaQuery): MatchedMedia {
+  // SSR-safe: check for window before accessing matchMedia
+  const isClient = typeof window !== "undefined";
+
   const [value, setValue] = React.useState<MatchedMedia>(() => {
+    if (!isClient) return queries.map(() => false);
     return queries.map((q) => window.matchMedia(q).matches);
   });
 
   React.useLayoutEffect(() => {
-    // No-op for SSR
+    if (!isClient) return;
 
     const mediaQueryLists = queries.map((q) => window.matchMedia(q));
 
@@ -552,7 +556,7 @@ function useMatchMedia(queries: MediaQuery): MatchedMedia {
       mediaQueryLists.forEach((mql) =>
         mql.removeEventListener("change", handler)
       );
-  }, [queries]);
+  }, [queries, isClient]);
 
   return value;
 }
