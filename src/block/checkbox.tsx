@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import * as _l from "./literals";
 import * as _t from "./types";
+import * as _f from "./fns";
 
 const Base = _l.base;
 const Svg = _l.motionTags.svg;
@@ -26,8 +27,10 @@ export default function Checkbox(props: _t.CheckboxBlockProps) {
 
   return (
     <Base
-      flex
-      alignI
+      {...(!_f.hasAnyProp(rest, ["grid", "flex", "display"]) && {
+        alignI: true,
+        flex: true,
+      })}
       gap={2}
       cursor="pointer"
       userSelect="none"

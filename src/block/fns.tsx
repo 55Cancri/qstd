@@ -24,6 +24,29 @@ type GetIconProps = _t.IconProps &
   };
 
 /**
+ * Check if any of the specified props are defined in the object.
+ * Used to conditionally skip default styles when consumer provides overrides.
+ *
+ * @example
+ * const hasLayout = hasAnyProp(rest, ["grid", "flex", "display"]);
+ * const hasDebug = hasAnyProp(rest, ["debug"]);
+ *
+ * return (
+ *   <Base
+ *     {...(!hasLayout && { flex: true, alignI: true })}
+ *     {...(!hasDebug && { border: "1px solid", borderColor: "gray.300" })}
+ *     {...rest}
+ *   />
+ * );
+ */
+export function hasAnyProp<T extends Record<string, unknown>>(
+  obj: T,
+  keys: readonly string[]
+): boolean {
+  return keys.some((key) => key in obj && obj[key] !== undefined);
+}
+
+/**
  * Get preview, height, and width of image.
  * @param f
  * @returns
@@ -360,26 +383,26 @@ export const extractElAndStyles = (
 
   const cursor = anyProps.isLoading ? "not-allowed" : "pointer";
 
-  // Check if user provided their own display/layout prop
-  const hasGridProp = "grid" in remaining && remaining.grid !== undefined;
-  const hasFlexProp = "flex" in remaining && remaining.flex !== undefined;
-  const hasDisplayProp =
-    "display" in remaining && remaining.display !== undefined;
-  const hasCustomLayout = hasGridProp || hasFlexProp || hasDisplayProp;
+  // Check if user provided their own layout or color props
+  const hasCustomLayout = hasAnyProp(remaining, ["grid", "flex", "display"]);
+  const hasCustomColor = hasAnyProp(remaining, ["color"]);
 
   // Generate CSS classes at runtime using css() function
   // Skip default display:flex for buttons when user provides grid/flex/display
   const btnClassName =
     extract.is === "btn"
       ? css({
-          ...(hasCustomLayout ? {} : { display: "flex", alignI: "center" }),
+          ...(!hasCustomLayout && { display: "flex", alignI: "center" }),
           cursor,
         })
       : "";
 
+  // Skip default color for links when user provides their own color
   const linkClassName = extract.isLink
     ? css({
-        color: { base: "blue.500", _dark: "blue.400" },
+        ...(!hasCustomColor && {
+          color: { base: "blue.500", _dark: "blue.400" },
+        }),
         _hover: { textDecoration: "underline" },
         cursor,
       })

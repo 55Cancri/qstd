@@ -229,9 +229,11 @@ function Switch(props: _t.SwitchBlockProps) {
     <SwitchContext.Provider value={contextValue}>
       <MotionConfig transition={_motion}>
         <Button
-          flex
-          alignItems="center"
-          justifyContent="center"
+          {...(!_f.hasAnyProp(rest, ["grid", "flex", "display"]) && {
+            justifyContent: "center",
+            alignItems: "center",
+            flex: true,
+          })}
           px={1}
           py={1}
           h="fit-content"

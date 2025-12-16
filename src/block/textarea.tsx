@@ -43,7 +43,7 @@ const useIsomorphicLayoutEffect = isBrowser
  * Utility function to pick specific properties from an object
  * Used to extract only the CSS properties we need for sizing calculations
  */
-function pick<Obj extends { [key: string]: any }, Key extends keyof Obj>(
+function pick<Obj extends object, Key extends keyof Obj>(
   props: Key[],
   obj: Obj
 ): Pick<Obj, Key> {
@@ -55,14 +55,14 @@ function pick<Obj extends { [key: string]: any }, Key extends keyof Obj>(
 
 // Simple helper to merge internal and user refs without extra bookkeeping
 function assignRefs<T>(
-  targetRef: React.MutableRefObject<T | null>,
+  targetRef: React.RefObject<T | null>,
   userRef: React.Ref<T> | undefined
 ) {
   return (node: T | null) => {
     targetRef.current = node;
     if (!userRef) return;
     if (typeof userRef === "function") userRef(node);
-    else (userRef as React.MutableRefObject<T | null>).current = node;
+    else userRef.current = node;
   };
 }
 
@@ -167,13 +167,12 @@ const getSizingData = (node: HTMLElement): SizingData | null => {
 
   // Calculate total padding (top + bottom)
   const paddingSize =
-    parseFloat(sizingStyle.paddingBottom!) +
-    parseFloat(sizingStyle.paddingTop!);
+    parseFloat(sizingStyle.paddingBottom) + parseFloat(sizingStyle.paddingTop);
 
   // Calculate total border width (top + bottom)
   const borderSize =
-    parseFloat(sizingStyle.borderBottomWidth!) +
-    parseFloat(sizingStyle.borderTopWidth!);
+    parseFloat(sizingStyle.borderBottomWidth) +
+    parseFloat(sizingStyle.borderTopWidth);
 
   return { sizingStyle, paddingSize, borderSize };
 };
@@ -285,15 +284,15 @@ export default function Textarea(props: _t.TextareaBlockProps) {
     children,
     _motion,
     error,
-    onAnimationStart,
-    onAnimationComplete,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
     ...rest
   } = props;
 
   // Controlled vs uncontrolled: if parent sets `value`, they control content.
   // For controlled inputs, the effect watching `value` will resize. For
   // uncontrolled, we resize on every local change event.
-  const isControlled = (rest as any).value !== undefined;
+  const isControlled = props.value !== undefined;
   const libRef = React.useRef<HTMLTextAreaElement | null>(null);
   const ref = assignRefs(libRef, userRef);
   const heightRef = React.useRef(0);
@@ -302,29 +301,29 @@ export default function Textarea(props: _t.TextareaBlockProps) {
   const value = props.value ?? _value;
 
   const label = _f.findChildrenByDisplayName<_t.BaseBlockProps & LabelProps>(
-    children as React.ReactNode,
+    children,
     LabelNameKey
   );
 
   const labelWithProps = label
-    ? React.cloneElement<_t.BaseBlockProps & LabelProps>(label, {
+    ? React.cloneElement(label, {
         required: props.required,
         value: props.value,
         error,
       })
     : null;
 
-  const resizeTextarea = () => {
+  const resizeTextarea = React.useCallback(() => {
     const node = libRef.current;
     if (!node) return;
 
     const nodeSizingData = getSizingData(node);
     if (!nodeSizingData) return;
 
-    const value = node.value || node.placeholder || "x";
+    const nodeValue = node.value || node.placeholder || "x";
     const [height, rowHeight] = calculateNodeHeight(
       nodeSizingData,
-      value,
+      nodeValue,
       minRows,
       maxRows
     );
@@ -334,7 +333,7 @@ export default function Textarea(props: _t.TextareaBlockProps) {
       node.style.setProperty("height", `${height}px`, "important");
       onHeightChange?.(height, { rowHeight });
     }
-  };
+  }, [minRows, maxRows, onHeightChange]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     // Uncontrolled: resize immediately on local changes.
@@ -347,7 +346,7 @@ export default function Textarea(props: _t.TextareaBlockProps) {
   // Initial measure + on value/placeholder/row-constraint changes
   useIsomorphicLayoutEffect(() => {
     resizeTextarea();
-  }, [rest.value, rest.placeholder, minRows, maxRows]);
+  }, [rest.value, rest.placeholder, resizeTextarea]);
 
   // Recalculate on window resize
   // Window resize may change available width and line wrapping, so re-measure.
@@ -356,7 +355,7 @@ export default function Textarea(props: _t.TextareaBlockProps) {
     const onResize = () => resizeTextarea();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [minRows, maxRows, rest.placeholder, rest.value]);
+  }, [rest.placeholder, rest.value, resizeTextarea]);
 
   // Recalculate when fonts finish loading (affects metrics)
   // Font loading can change glyph metrics and line heights; re-measure once
@@ -367,7 +366,7 @@ export default function Textarea(props: _t.TextareaBlockProps) {
     const onFontsLoaded = () => resizeTextarea();
     fonts.addEventListener("loadingdone", onFontsLoaded);
     return () => fonts.removeEventListener("loadingdone", onFontsLoaded);
-  }, [minRows, maxRows, rest.placeholder, rest.value]);
+  }, [rest.placeholder, rest.value, resizeTextarea]);
 
   // Handle form resets (if uncontrolled)
   // For uncontrolled forms, a browser-initiated reset updates the element's
@@ -385,11 +384,11 @@ export default function Textarea(props: _t.TextareaBlockProps) {
     };
     form.addEventListener("reset", onReset);
     return () => form.removeEventListener("reset", onReset);
-  }, [isControlled]);
+  }, [isControlled, resizeTextarea]);
 
   const resize = props.resize ?? "none";
   // When debug is provided, skip default border styling so debug border shows
-  const hasDebug = "debug" in rest && rest.debug !== undefined;
+  const hasDebug = _f.hasAnyProp(rest, ["debug"]);
 
   return (
     <Base grid rows="/ 4">
@@ -407,7 +406,9 @@ export default function Textarea(props: _t.TextareaBlockProps) {
             color="text-primary"
             {...(!hasDebug && {
               border: "1.5px solid",
-              borderColor: error ? "input-border-color-error" : "input-border-color",
+              borderColor: error
+                ? "input-border-color-error"
+                : "input-border-color",
             })}
             {...(error && { outlineColor: "input-outline-color-error" })}
             borderRadius={8}
@@ -458,8 +459,8 @@ export function Label(props: _t.BaseBlockProps & LabelProps) {
     error,
     required,
     children,
-    onAnimationStart,
-    onAnimationComplete,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
     ...rest
   } = props;
 
@@ -493,7 +494,7 @@ export function Label(props: _t.BaseBlockProps & LabelProps) {
       }}
       {...rest}
     >
-      {children as React.ReactNode}
+      {children}
       {required && "*"}
     </Base>
   );

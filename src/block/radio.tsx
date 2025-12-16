@@ -2,6 +2,7 @@ import React from "react";
 
 import * as _l from "./literals";
 import * as _t from "./types";
+import * as _f from "./fns";
 
 type RadioItemProps = Omit<_t.BaseBlockProps, "is"> & {
   value: string;
@@ -48,8 +49,8 @@ export default function Radio(props: _t.RadioBlockProps) {
     options,
     renderOption,
     onKeyDown: onKeyDownProp,
-    onAnimationStart,
-    onAnimationComplete,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
     ...rest
   } = props;
 
@@ -60,9 +61,7 @@ export default function Radio(props: _t.RadioBlockProps) {
   const [uncontrolled, setUncontrolled] = React.useState<string | null>(
     defaultValue
   );
-  const selectedValue = (
-    isControlled ? (controlledValue as string | null) : uncontrolled
-  ) as string | null;
+  const selectedValue = isControlled ? controlledValue ?? null : uncontrolled;
 
   // Registry for roving tabindex and keyboard nav
   const itemsRef = React.useRef<RegisteredItem[]>([]);
@@ -177,7 +176,7 @@ export default function Radio(props: _t.RadioBlockProps) {
             }
           }
 
-          onKeyDownProp?.(e as React.KeyboardEvent<HTMLDivElement>);
+          onKeyDownProp?.(e);
         }}
       >
         {(options ?? []).map((opt) =>
@@ -215,12 +214,31 @@ export function Item(props: RadioItemProps) {
     onClick: onClickProp,
     onFocus: onFocusProp,
     onBlur: onBlurProp,
-    onAnimationStart,
-    onAnimationComplete,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
     ...rest
   } = props;
 
   const ctx = React.useContext(RadioContext);
+
+  // All hooks must be called unconditionally before any early returns
+  const ref = React.useRef<HTMLDivElement | null>(null);
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  const groupDisabled = ctx?.disabled;
+  const disabled = !!(groupDisabled || itemDisabled);
+  const groupId = ctx?.groupId ?? "";
+  const id = `radio-item-${groupId}-${value}`;
+
+  const registerItem = ctx?.registerItem;
+  const unregisterItem = ctx?.unregisterItem;
+
+  React.useEffect(() => {
+    if (!registerItem || !unregisterItem) return;
+    registerItem({ id, value, disabled, ref });
+    return () => unregisterItem(id);
+  }, [id, value, disabled, registerItem, unregisterItem]);
+
   if (!ctx) {
     // No provider found: render a simple, non-interactive line item
     return (
@@ -231,30 +249,10 @@ export function Item(props: RadioItemProps) {
     );
   }
 
-  const {
-    groupId,
-    registerItem,
-    unregisterItem,
-    selectedValue,
-    setSelectedValue,
-    isActiveId,
-    setActiveById,
-    disabled: groupDisabled,
-  } = ctx;
-
-  const disabled = !!(groupDisabled || itemDisabled);
-  // Stable id derived from group and value (no memo needed)
-  const id = `radio-item-${groupId}-${value}`;
-  const ref = React.useRef<HTMLDivElement | null>(null);
-
-  React.useEffect(() => {
-    registerItem({ id, value, disabled, ref });
-    return () => unregisterItem(id);
-  }, [id, value, disabled]);
+  const { selectedValue, setSelectedValue, isActiveId, setActiveById } = ctx;
 
   const isSelected = selectedValue === value;
   const isActive = isActiveId(id);
-  const [isFocused, setIsFocused] = React.useState(false);
 
   // Derive layout defaults: flex by default; if cols present and grid not provided, enable grid
   const shouldUseGrid = gridProp || !!colsProp;
@@ -273,11 +271,8 @@ export function Item(props: RadioItemProps) {
     // Non-string: attach data attribute directly if possible
     if (React.isValidElement(onlyChild)) {
       return React.cloneElement(
-        onlyChild as React.ReactElement,
-        {
-          ...((onlyChild as any).props || {}),
-          ["data-radio-label"]: true,
-        } as Record<string, unknown>
+        onlyChild as React.ReactElement<Record<string, unknown>>,
+        { "data-radio-label": true }
       );
     }
 
@@ -285,19 +280,20 @@ export function Item(props: RadioItemProps) {
     return <Base data-radio-label>{children}</Base>;
   };
 
+  const hasCustomLayout = _f.hasAnyProp(rest, ["flex", "display"]) || gridProp;
+
   return (
     <Base
       ref={ref}
-      flex
-      alignI
       outline="none"
       // Accessibility: roving tabindex and proper role/aria*
       role="radio"
       tabIndex={isActive ? 0 : -1}
       aria-checked={isSelected}
       aria-disabled={disabled}
-      // Layout defaults
-      {...(shouldUseGrid ? { grid: true } : { flex: true, alignI: true })}
+      // Layout defaults (only if consumer didn't provide their own)
+      {...(!hasCustomLayout && { flex: true, alignI: true })}
+      {...(shouldUseGrid && { grid: true })}
       {...(colsProp && { cols: colsProp })}
       gap={shouldUseGrid ? undefined : "8px"}
       cursor={disabled ? "not-allowed" : "pointer"}

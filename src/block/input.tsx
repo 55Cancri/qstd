@@ -28,7 +28,7 @@ export default function Input(props: _t.InputBlockProps) {
   } = props;
 
   // When debug is provided, skip default border styling so debug border shows
-  const hasDebug = "debug" in rest && rest.debug !== undefined;
+  const hasDebug = _f.hasAnyProp(rest, ["debug"]);
 
   const label = _f.findChildrenByDisplayName<_t.InputBlockProps>(
     children,
