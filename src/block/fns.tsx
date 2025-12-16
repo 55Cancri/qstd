@@ -360,10 +360,21 @@ export const extractElAndStyles = (
 
   const cursor = anyProps.isLoading ? "not-allowed" : "pointer";
 
+  // Check if user provided their own display/layout prop
+  const hasGridProp = "grid" in remaining && remaining.grid !== undefined;
+  const hasFlexProp = "flex" in remaining && remaining.flex !== undefined;
+  const hasDisplayProp =
+    "display" in remaining && remaining.display !== undefined;
+  const hasCustomLayout = hasGridProp || hasFlexProp || hasDisplayProp;
+
   // Generate CSS classes at runtime using css() function
+  // Skip default display:flex for buttons when user provides grid/flex/display
   const btnClassName =
     extract.is === "btn"
-      ? css({ display: "flex", alignI: "center", cursor })
+      ? css({
+          ...(hasCustomLayout ? {} : { display: "flex", alignI: "center" }),
+          cursor,
+        })
       : "";
 
   const linkClassName = extract.isLink
