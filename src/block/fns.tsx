@@ -1,9 +1,6 @@
 import React from "react";
 import { nanoid } from "nanoid";
-import type {
-  IconDefinition,
-  IconName,
-} from "@fortawesome/free-solid-svg-icons";
+import type { IconName } from "@fortawesome/free-solid-svg-icons";
 import type { SizeProp } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { RotatingLines } from "react-loader-spinner";
@@ -328,7 +325,7 @@ export const extractElAndStyles = (
 
   // Framer Motion reserves the prop name `transition` for animation config.
   // Panda also uses `transition` as a CSS style prop. When rendering a motion
-  // component (motion(styled(...))), Framer Motion will swallow `transition`,
+  // component (motion.create(styled(...))), Framer Motion will swallow `transition`,
   // so we move it onto the inline style instead to keep CSS transitions working.
   if (hasMotionProps && "transition" in remaining) {
     const cssTransition = (remaining as Record<string, unknown>).transition;
@@ -404,7 +401,7 @@ export const extractElAndStyles = (
 
 function getIcon(
   position: _t.LoadingProps["loadingPosition"],
-  Icon: _t.Icons | IconDefinition | (() => React.ReactElement) | null,
+  Icon: _t.Icons | null,
   props: GetIconProps
 ) {
   const {
@@ -426,17 +423,43 @@ function getIcon(
   if (isLoading && position === loadingPosition) {
     const chosen = Icon ?? loadingIcon ?? null;
     if (chosen) {
-      if (typeof chosen === "string" && _l.loadingIcons.includes(chosen)) {
-        const Cmp = _l.loadingIconsMap[chosen as _t.LoadingIcon];
-        const sizePx =
-          typeof loadingIconSize === "number" ? `${loadingIconSize}px` : "12px";
+      if (typeof chosen === "string") {
+        // Loading-icon preset names (react-loader-spinner/react-spinners)
+        if (_l.loadingIcons.includes(chosen)) {
+          const Cmp = _l.loadingIconsMap[chosen as _t.LoadingIcon];
+          const sizePx =
+            typeof loadingIconSize === "number"
+              ? `${loadingIconSize}px`
+              : "12px";
 
-        // react-loader-spinner components have differing props; normalize width/height
-        return Cmp({ width: sizePx, height: sizePx }) as React.ReactElement;
+          // react-loader-spinner components have differing props; normalize width/height
+          return React.createElement(Cmp as React.ElementType, {
+            width: sizePx,
+            height: sizePx,
+          });
+        }
+
+        // Otherwise treat as a FontAwesome icon name
+        return (
+          <FontAwesomeIcon
+            icon={{ prefix, iconName: chosen as IconName }}
+            className={props.className}
+            spinPulse={props.pulse}
+            size={props.size}
+            spin={props.spin}
+          />
+        );
       } else if (React.isValidElement(chosen)) {
         return chosen;
       } else if (typeof chosen === "function") {
-        return (chosen as () => React.ReactElement)();
+        // Support react-icons (IconType) without forwarding Block/motion props into <svg>.
+        // If a loadingIconSize is provided, pass it as react-icons' `size`.
+        const iconProps =
+          typeof loadingIconSize === "number" ||
+          typeof loadingIconSize === "string"
+            ? ({ size: loadingIconSize } as const)
+            : undefined;
+        return React.createElement(chosen as React.ElementType, iconProps);
       }
 
       // FontAwesome IconDefinition passed via loadingIcon
@@ -497,8 +520,11 @@ function getIcon(
       />
     );
   } else if (typeof Icon === "function") {
-    return Icon(props);
-  } else return Icon;
+    // Support react-icons (IconType) without forwarding Block/motion props into <svg>.
+    return React.createElement(Icon as React.ElementType);
+  } else if (React.isValidElement(Icon)) {
+    return Icon;
+  } else return null;
 }
 
 export const getIcons = (

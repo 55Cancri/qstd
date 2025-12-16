@@ -9,11 +9,10 @@ import { fas } from "@fortawesome/free-solid-svg-icons";
 library.add(fas, far, fab);
 
 import * as _t from "./types";
-import type { IconBaseProps } from "react-icons/lib";
 
 export default function Icon(props: _t.BaseBlockProps) {
   const { className, iconPrefix, pulse, spin } = props;
-  const iconSize = props.iconSize; // We'll need to add this to types
+  const iconSize = props.iconSize;
 
   const IconComp = props.icon ?? props.startIcon;
 
@@ -47,6 +46,11 @@ export default function Icon(props: _t.BaseBlockProps) {
       />
     );
   } else if (typeof IconComp === "function") {
-    return IconComp(props as IconBaseProps);
-  } else return IconComp;
+    // Support react-icons (IconType) without forwarding Block/motion props into <svg>.
+    // Sizing/color should typically come from CSS inheritance (1em + currentColor).
+    return React.createElement(IconComp as React.ElementType);
+  } else if (React.isValidElement(IconComp)) {
+    return IconComp;
+  }
+  return null;
 }

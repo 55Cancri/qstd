@@ -63,7 +63,7 @@ export const tags = {
   pre: styled("pre"),
 } as const;
 
-// WHY: We wrap motion AROUND styled (motion(styled("x"))) instead of styled(motion.x).
+// WHY: We wrap motion AROUND styled (motion.create(styled("x"))) instead of styled(motion.x).
 // This ensures framer-motion intercepts its props (initial, animate, transition, etc.)
 // BEFORE they reach Panda's styled wrapper. If Panda wraps motion, it may filter/transform
 // motion props before they reach the motion component, breaking animations.
@@ -73,7 +73,7 @@ export const tags = {
 // behavior is correct - motion intercepts its props first. Proper typing would require
 // complex union types and overloads that aren't worth the maintenance cost.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const motionStyled = (tag: string) => motion(styled(tag as any) as any);
+const motionStyled = (tag: string) => motion.create(styled(tag as any) as any);
 
 export const motionTags = {
   div: motionStyled("div"),

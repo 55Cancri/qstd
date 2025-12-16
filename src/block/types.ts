@@ -82,8 +82,7 @@ export type Icon =
   | IconName
   | IconType
   | IconDefinition
-  | React.ReactElement
-  | (() => React.ReactElement);
+  | React.ReactElement;
 
 export interface IconProps {
   iconPrefix?: "solid" | "regular" | "brands";

@@ -399,7 +399,8 @@ export default function Textarea(props: _t.TextareaBlockProps) {
             value={value}
             onContextMenu={(e) => e.preventDefault()}
             resize={resize}
-            py={0.5}
+            pt={0.5}
+            pb={0.5}
             px={2}
             color="text-primary"
             border="1.5px solid"

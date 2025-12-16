@@ -437,7 +437,7 @@ The `rows` prop mirrors `cols` but for grid rows:
 
 // Icon + text flex layout
 <Block flex cols="center / 4">
-  <Icon icon={TbMessage2} fontSize="sm" />
+  <Block icon={TbMessage2} fontSize="sm" />
   <Block is="txt">{messageCount}</Block>
 </Block>
 ```
