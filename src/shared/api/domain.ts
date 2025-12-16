@@ -12,6 +12,7 @@ import type {
   Output,
   ReqFrom,
   ResFrom,
+  SSEEvent,
 } from "./types";
 import * as _f from "./fns";
 
@@ -94,7 +95,7 @@ const request = async <
   Req,
   Res,
   O extends Output | undefined = undefined,
-  Return = DataForOutput<Res, O>,
+  Return = DataForOutput<Res, O>
 >(
   method: Method,
   path: string,
@@ -117,8 +118,8 @@ const request = async <
     opts && "input" in opts && opts.input !== undefined
       ? opts.input
       : isAutoDetect
-        ? undefined
-        : defaultInput;
+      ? undefined
+      : defaultInput;
 
   const headersOption = opts?.headers;
   const isExternal = _f.isAbsolute(path);
@@ -198,45 +199,58 @@ const request = async <
  *
  * // Download as blob
  * const image = await Api.get("/avatar.png", { output: "blob" });
+ *
+ * // SSE streaming
+ * const events = await Api.get<{ Res: Event }>("/events", { output: "sse" });
+ * for await (const { data } of events) { ... }
  * ```
  *
  * @throws {RestError} When the response is not ok and no `onError` handler is provided.
  */
+// SSE overload - must come before generic overloads for TypeScript to infer correctly
+export function get<TTypes = unknown>(
+  path: string,
+  opts: Omit<
+    Options<JsonRes<ResFrom<TTypes>>, never, "sse">,
+    "onSuccess" | "onError"
+  > & {
+    output: "sse";
+    onSuccess?: undefined;
+    onError?: undefined;
+  }
+): Promise<AsyncGenerator<SSEEvent<JsonRes<ResFrom<TTypes>>>, void, unknown>>;
+// onSuccess overload
 export function get<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = unknown,
+  Return = unknown
 >(
   path: string,
   opts: Options<JsonRes<ResFrom<TTypes>>, Return, O> & {
-    onSuccess: (
-      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
-    ) => Return;
+    onSuccess: (data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>) => Return;
   }
 ): Promise<Return>;
+// General overload
 export function get<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   opts?: Options<JsonRes<ResFrom<TTypes>>, Return, O> & {
     onSuccess?: undefined;
   }
 ): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return>;
+// Implementation
 export function get<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   opts?: Options<JsonRes<ResFrom<TTypes>>, Return, O>
 ): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
-  return request<never, JsonRes<ResFrom<TTypes>>, O, Return>(
-    "GET",
-    path,
-    opts
-  );
+  return request<never, JsonRes<ResFrom<TTypes>>, O, Return>("GET", path, opts);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -270,14 +284,32 @@ export function get<
  *
  * // External URL (never includes configured default headers like auth)
  * await Api.post(presignedUrl, formData);
+ *
+ * // SSE streaming (output type inferred from { output: "sse" })
+ * const events = await Api.post<{ Res: ChatChunk }>("/chat", body, { output: "sse" });
+ * for await (const { data } of events) { ... }
  * ```
  *
  * @throws {RestError} When the response is not ok and no `onError` handler is provided.
  */
+// SSE overload - must come before generic overloads for TypeScript to infer correctly
+export function post<TTypes = unknown>(
+  path: string,
+  body: ReqFrom<TTypes>,
+  opts: Omit<
+    BodylessOptions<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, never, "sse">,
+    "onSuccess" | "onError"
+  > & {
+    output: "sse";
+    onSuccess?: undefined;
+    onError?: undefined;
+  }
+): Promise<AsyncGenerator<SSEEvent<JsonRes<ResFrom<TTypes>>>, void, unknown>>;
+// onSuccess overload
 export function post<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = unknown,
+  Return = unknown
 >(
   path: string,
   body: ReqFrom<TTypes>,
@@ -287,15 +319,14 @@ export function post<
     Return,
     O
   > & {
-    onSuccess: (
-      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
-    ) => Return;
+    onSuccess: (data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>) => Return;
   }
 ): Promise<Return>;
+// General overload
 export function post<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   body?: ReqFrom<TTypes>,
@@ -306,19 +337,15 @@ export function post<
     O
   > & { onSuccess?: undefined }
 ): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return>;
+// Implementation
 export function post<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   body?: ReqFrom<TTypes>,
-  opts?: BodylessOptions<
-    ReqFrom<TTypes>,
-    JsonRes<ResFrom<TTypes>>,
-    Return,
-    O
-  >
+  opts?: BodylessOptions<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, Return, O>
 ): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
   return request<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, O, Return>(
     "POST",
@@ -353,7 +380,7 @@ export function post<
 export function put<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = unknown,
+  Return = unknown
 >(
   path: string,
   body: ReqFrom<TTypes>,
@@ -363,15 +390,13 @@ export function put<
     Return,
     O
   > & {
-    onSuccess: (
-      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
-    ) => Return;
+    onSuccess: (data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>) => Return;
   }
 ): Promise<Return>;
 export function put<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   body?: ReqFrom<TTypes>,
@@ -385,16 +410,11 @@ export function put<
 export function put<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   body?: ReqFrom<TTypes>,
-  opts?: BodylessOptions<
-    ReqFrom<TTypes>,
-    JsonRes<ResFrom<TTypes>>,
-    Return,
-    O
-  >
+  opts?: BodylessOptions<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, Return, O>
 ): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
   return request<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, O, Return>(
     "PUT",
@@ -426,7 +446,7 @@ export function put<
 export function patch<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = unknown,
+  Return = unknown
 >(
   path: string,
   body: ReqFrom<TTypes>,
@@ -436,15 +456,13 @@ export function patch<
     Return,
     O
   > & {
-    onSuccess: (
-      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
-    ) => Return;
+    onSuccess: (data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>) => Return;
   }
 ): Promise<Return>;
 export function patch<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   body?: ReqFrom<TTypes>,
@@ -458,16 +476,11 @@ export function patch<
 export function patch<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   body?: ReqFrom<TTypes>,
-  opts?: BodylessOptions<
-    ReqFrom<TTypes>,
-    JsonRes<ResFrom<TTypes>>,
-    Return,
-    O
-  >
+  opts?: BodylessOptions<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, Return, O>
 ): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
   return request<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, O, Return>(
     "PATCH",
@@ -507,7 +520,7 @@ export function patch<
 export function remove<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = unknown,
+  Return = unknown
 >(
   path: string,
   body: ReqFrom<TTypes>,
@@ -517,15 +530,13 @@ export function remove<
     Return,
     O
   > & {
-    onSuccess: (
-      data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>
-    ) => Return;
+    onSuccess: (data: DataForOutput<JsonRes<ResFrom<TTypes>>, O>) => Return;
   }
 ): Promise<Return>;
 export function remove<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   body?: ReqFrom<TTypes>,
@@ -539,16 +550,11 @@ export function remove<
 export function remove<
   TTypes = unknown,
   O extends Output | undefined = undefined,
-  Return = never,
+  Return = never
 >(
   path: string,
   body?: ReqFrom<TTypes>,
-  opts?: BodylessOptions<
-    ReqFrom<TTypes>,
-    JsonRes<ResFrom<TTypes>>,
-    Return,
-    O
-  >
+  opts?: BodylessOptions<ReqFrom<TTypes>, JsonRes<ResFrom<TTypes>>, Return, O>
 ): Promise<DataForOutput<JsonRes<ResFrom<TTypes>>, O> | Return> {
   // Only set default input to "json" if body is provided
   const defaultInput = body !== undefined ? "json" : undefined;
@@ -559,4 +565,3 @@ export function remove<
     defaultInput
   );
 }
-

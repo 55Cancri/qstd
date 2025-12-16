@@ -26,6 +26,12 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   const { open, setOpen } = useDrawer();
   const { onClose, onExitComplete, ...rest } = props;
 
+  // SSR-safe: only render portal on client after mount
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Create motion values for y
   const y = useMotionValue(0);
 
@@ -146,6 +152,9 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
     console.log("[close] clicked backdrop");
     closeFnRef.current?.();
   };
+
+  // Don't render portal during SSR - document doesn't exist on the server
+  if (!mounted) return null;
 
   return createPortal(
     <AnimatePresence initial={false} mode="wait" onExitComplete={onExitComplete}>

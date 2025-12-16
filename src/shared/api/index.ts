@@ -74,3 +74,4 @@ export { RestError } from "./types";
 export { parseSSE } from "./fns";
 export type * from "./types";
 export * from "./domain";
+
