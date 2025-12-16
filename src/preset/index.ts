@@ -261,7 +261,7 @@ const preset: Preset = {
       debug: {
         values: { type: "boolean" },
         transform(value) {
-          if (value === true) return { border: "1px solid red" };
+          if (value === true) return { border: "1px solid red", outline: "none" };
           if (typeof value === "string") {
             const parts = value.trim().split(/\s+/);
             let borderWidth = "1px",
@@ -311,9 +311,10 @@ const preset: Preset = {
               borderWidth,
               borderStyle,
               borderColor: normalizedBorderColor,
+              outline: "none",
             };
           }
-          return { border: "1px solid red" };
+          return { border: "1px solid red", outline: "none" };
         },
       },
       cols: {
