@@ -1,14 +1,21 @@
 import * as _t from "./types";
 import * as _l from "./literals";
 
+// SSR-safe check for browser environment
+const isBrowser = typeof window !== "undefined" && typeof localStorage !== "undefined";
+
 // helper to get initial theme from localStorage
 export const getInitialTheme = (): _t.Theme => {
+  if (!isBrowser) return "light";
   const stored = localStorage.getItem(_l.THEME_STORAGE_KEY);
   return stored === "light" || stored === "dark" ? stored : "light";
 };
 
 // helper to get initial store from localStorage
 export const getInitialStore = (): _t.ThemeStore => {
+  if (!isBrowser) {
+    return { value: "light", isManual: false };
+  }
   try {
     const stored = localStorage.getItem(_l.THEME_STORE_STORAGE_KEY);
     if (stored) {
@@ -29,6 +36,7 @@ export const getInitialStore = (): _t.ThemeStore => {
 
 // helper to save store to localStorage
 export const saveStore = (store: _t.ThemeStore) => {
+  if (!isBrowser) return;
   try {
     localStorage.setItem(_l.THEME_STORAGE_KEY, store.value);
     localStorage.setItem(_l.THEME_STORE_STORAGE_KEY, JSON.stringify(store));
@@ -40,6 +48,7 @@ export const saveStore = (store: _t.ThemeStore) => {
     // ignore storage errors (e.g., in private browsing)
   }
 };
+
 
 
 
