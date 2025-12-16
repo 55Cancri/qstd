@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /**
  * React module - Block component, hooks, and types
  *
