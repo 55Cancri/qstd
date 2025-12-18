@@ -682,26 +682,46 @@ Block includes several compound components accessible via namespace:
 #### Tooltip
 
 ```tsx
-// Simple tooltip
+// Simple tooltip (string)
 <Block is="btn" tooltip="This is a tooltip">
   Hover me
 </Block>
 
-// Custom tooltip
+// Custom tooltip with inline styling
 <Block
   is="btn"
   tooltip={
-    <Block.Tooltip.Container
-      bg="blue.900"
-      color={{ base: "blue.400", _dark: "red.400" }}
-    >
+    <Block role="tooltip" bg="blue.900" color="blue.400">
       Custom styled tooltip!
-    </Block.Tooltip.Container>
+    </Block>
   }
 >
   Hover for custom tooltip
 </Block>
+
+// Styling tooltips with _tooltip condition
+// Use _tooltip to style all tooltips from a parent element
+<Block
+  _tooltip={{
+    bg: "violet.900",
+    color: "violet.200",
+    px: 4,
+    py: 2,
+    borderRadius: 8,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+  }}
+>
+  <Block is="btn" tooltip="Styled via _tooltip condition">
+    Hover me
+  </Block>
+</Block>
 ```
+
+**Styling Tooltips:**
+
+- **Simple:** Pass a string to the `tooltip` prop for default styling
+- **Custom Content:** Pass a React element with `role="tooltip"` to customize content and styling
+- **Parent-Level Styling:** Use the `_tooltip` condition from a parent to style all descendant tooltips. The `_tooltip` selector targets elements with `role="tooltip"` or `data-tooltip` attribute.
 
 ### Common Utility Props
 

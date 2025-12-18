@@ -317,19 +317,9 @@ export default function Tooltip(
   //   }
   //   return { el: null, depth };
   // };
-  // Robust custom detection: check for our marker on the component type.
-  // We cannot see the internal role on the rendered DOM from here, so we tag
-  // the component factory with a stable flag that survives HMR reloads.
-  type ComponentWithMarker = { isBlockTooltipContainer?: boolean };
-  const isCustomTooltip =
-    React.isValidElement(content) &&
-    !!(
-      content.type &&
-      (content.type as ComponentWithMarker).isBlockTooltipContainer
-    );
-  const customEl = isCustomTooltip
-    ? (content as React.ReactElement<ElementProps>)
-    : findRoleTooltipElement(content);
+  // Custom tooltip detection: look for elements with role="tooltip"
+  // This allows users to pass <Block role="tooltip">...</Block> for custom styling
+  const customEl = findRoleTooltipElement(content);
   // Tracing for detection (disabled). Uncomment to debug detection behavior.
   // try {
   //   const rootIsElement = React.isValidElement(content);
@@ -350,9 +340,9 @@ export default function Tooltip(
   //   );
   // } catch {}
 
-  if (isCustomTooltip) {
+  if (customEl) {
     // Custom tooltip path: convert the custom element to motion-enabled
-    const el = customEl as React.ReactElement<ElementProps>;
+    const el = customEl;
     const childProps = (el.props || {}) as ElementProps &
       Record<string, unknown>;
     const floatingProps = getFloatingProps({});

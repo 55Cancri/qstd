@@ -59,11 +59,7 @@ const preset: Preset = {
        */
       colorScheme: "dark",
     },
-    html: {
-      fontSize: 16,
-      lineHeight: 1.5,
-      fontFamily: "geologica, sans-serif",
-    },
+    html: { fontSize: 16, lineHeight: 1.5 },
   },
 
   theme: {

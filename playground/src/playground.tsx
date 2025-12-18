@@ -116,24 +116,39 @@ export default function Playground() {
           Tooltip
         </Block>
         <Block flex="wrap" gap={3}>
+          {/* Custom tooltip with inline styling */}
           <Block
             is="btn"
             tooltip={
-              <Block.Tooltip.Container
+              <Block
+                role="tooltip"
                 bg="green.900"
                 color={{ base: "green.400", _dark: "green.400" }}
                 px={6}
                 py={3}
                 rounded={32}
               >
-                Hey!
-              </Block.Tooltip.Container>
+                Custom styled!
+              </Block>
             }
           >
-            Tooltip
+            Custom Tooltip
           </Block>
+          {/* Simple string tooltip */}
           <Block is="btn" tooltip="Simple tooltip">
             Simple Tooltip
+          </Block>
+          {/* Tooltip styled via _tooltip condition */}
+          <Block
+            _tooltip={{
+              bg: "violet.900",
+              color: "violet.200",
+              borderRadius: 12,
+            }}
+          >
+            <Block is="btn" tooltip="Styled via _tooltip">
+              _tooltip Styled
+            </Block>
           </Block>
         </Block>
       </Block>
