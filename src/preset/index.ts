@@ -158,6 +158,7 @@ const preset: Preset = {
       backdrop: "[data-backdrop]:has(> &)",
       path: "& path",
       svg: "& svg",
+      tooltip: "& :is([role='tooltip'], [data-tooltip])",
       // Input label lifted state (when input focused OR has value)
       labelLifted: "&:has(+ input:focus, + input:not(:placeholder-shown))",
     },
@@ -261,7 +262,7 @@ const preset: Preset = {
       debug: {
         values: { type: "boolean" },
         transform(value) {
-          if (value === true) return { border: "1px solid red", outline: "none" };
+          if (value === true) return { border: "1px solid red" };
           if (typeof value === "string") {
             const parts = value.trim().split(/\s+/);
             let borderWidth = "1px",

@@ -11,8 +11,8 @@ import Accordion, { Item as AccordionItem } from "./accordion";
 import Drawer, { BtnGroup, CloseBtn } from "./drawer";
 import Progress, { TrackBg, TrackFill } from "./progress";
 import Slider, { SliderTrack, SliderFill, SliderThumb } from "./slider";
-import Tooltip, { TooltipContainer } from "./tooltip";
 import Checkbox from "./checkbox";
+import Tooltip from "./tooltip";
 import * as _l from "./literals";
 import * as _t from "./types";
 import * as _f from "./fns";
@@ -179,15 +179,9 @@ function Block(props: any) {
 }
 
 // Tag the factory for robust detection (survives HMR component identity swaps)
-const TaggedTooltipContainer = Object.assign(TooltipContainer, {
-  isBlockTooltipContainer: true as const,
-});
 const TaggedMenuContainer = Object.assign(MenuContainer, {
   isBlockMenuContainer: true as const,
 });
-
-// Block.Tooltip namespace
-const TooltipNamespace = { Container: TaggedTooltipContainer } as const;
 
 // Block.Menu namespace
 const MenuNamespace = { Container: TaggedMenuContainer } as const;
@@ -237,13 +231,11 @@ const SliderNamespace = {
 } as const;
 
 /** Compound component with proper typing
- * - x Block.Tooltip is not callable, ✔ Block.Tooltip.Container is
  * - x Block.Btn is not callable, ✔ Block.Btn.RightSide, Block.Btn.LeftIcon, Block.Btn.Label is
  */
 type BlockComponent = typeof Block & {
   readonly Switch: typeof SwitchNamespace;
   readonly Drawer: typeof DrawerNamespace;
-  readonly Tooltip: typeof TooltipNamespace;
   readonly Progress: typeof ProgressNamespace;
   readonly Slider: typeof SliderNamespace;
   readonly Accordion: typeof AccordionNamespace;
@@ -258,7 +250,6 @@ const CompoundBlock: BlockComponent = Object.assign(Block, {
   Progress: ProgressNamespace,
   Slider: SliderNamespace,
   Textarea: TextareaNamespace,
-  Tooltip: TooltipNamespace,
   Switch: SwitchNamespace,
   Drawer: DrawerNamespace,
   Menu: MenuNamespace,

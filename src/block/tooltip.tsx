@@ -12,44 +12,53 @@ import {
   safePolygon,
   useInteractions,
   arrow as arrowMiddleware,
+  type ReferenceElement,
+  type VirtualElement,
 } from "@floating-ui/react";
 
-import * as _t from "./types";
+import type * as _t from "./types";
 import * as _l from "./literals";
 import { motion } from "framer-motion";
 import { createPortal } from "react-dom";
 
 const Base = _l.base;
 
-export const TooltipContainer = React.forwardRef<
-  HTMLDivElement,
-  _t.BaseBlockProps
->(function TooltipContainer(props, ref) {
-  const {
-    children,
-    className,
-    style,
-    onAnimationStart,
-    onAnimationComplete,
-    ...rest
-  } = props;
+// Ref type for React elements
+type RefCallback<T> = (instance: T | null) => void;
+type ElementRef<T> =
+  | RefCallback<T>
+  | React.RefObject<T | null>
+  | null
+  | undefined;
 
-  // Pass through Panda props as-is - consumer's Panda will handle them
-  // Use style prop for any inline styling needs
-  return (
-    <Base
-      className={className}
-      style={style}
-      ref={ref as any}
-      role="tooltip"
-      {...rest}
-    >
-      {children}
-    </Base>
-  );
-});
+// Type for element props we introspect at runtime
+type ElementProps = {
+  background?: string;
+  className?: string;
+  role?: string;
+  bg?: string;
+  color?: string;
+  shadow?: string;
+  boxShadow?: string;
+  p?: string | number;
+  px?: string | number;
+  py?: string | number;
+  padding?: string | number;
+  rounded?: string | number;
+  fontSize?: string | number;
+  paddingTop?: string | number;
+  paddingLeft?: string | number;
+  paddingRight?: string | number;
+  paddingBottom?: string | number;
+  borderRadius?: string | number;
+  ref?: ElementRef<HTMLElement>;
+  style?: React.CSSProperties;
+  children?: React.ReactNode;
+};
 
-export default function Tooltip(props: _t.CoreTooltipProps) {
+export default function Tooltip(
+  props: _t.CoreTooltipProps
+): React.ReactElement {
   const {
     children,
     content,
@@ -62,16 +71,19 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
     delay = 80,
     className,
   } = props;
+
+  // All refs - must be called unconditionally
   const referenceRef = React.useRef<HTMLElement | null>(null);
   const arrowRef = React.useRef<HTMLDivElement | null>(null);
+  const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const containerRef = React.useRef<HTMLElement | null>(null);
 
-  type VirtualElement = {
-    getBoundingClientRect: () => DOMRect;
-    contextElement?: Element | null;
-  };
-
-  // open state
+  // All state - must be called unconditionally
   const [open, setOpen] = React.useState(false);
+  const [isMounted, setIsMounted] = React.useState(false);
+  const [containerBg, setContainerBg] = React.useState<string | undefined>();
 
   // floating UI
   const { x, y, refs, strategy, middlewareData, context } = useFloating({
@@ -82,6 +94,7 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
       offset(offsetVal),
       flip(),
       shift({ padding: 6 }),
+      // eslint-disable-next-line react-hooks/refs -- arrowRef is passed as object, not read during render
       arrowMiddleware({ element: arrowRef }),
     ],
     whileElementsMounted: autoUpdate,
@@ -108,6 +121,30 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
   // Get interaction props
   const referenceProps = getReferenceProps({});
 
+  // Smooth mount/unmount with motion animate/initial and a short deferred unmount
+  React.useEffect(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    if (open) {
+      setIsMounted(true);
+    } else {
+      closeTimerRef.current = setTimeout(() => {
+        setIsMounted(false);
+        closeTimerRef.current = null;
+      }, 160);
+    }
+
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    };
+  }, [open]);
+
   // Handle follow mode with custom pointer tracking
   React.useEffect(() => {
     if (!follow || !referenceRef.current) return;
@@ -118,7 +155,7 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
         getBoundingClientRect: () => new DOMRect(e.clientX, e.clientY, 0, 0),
         contextElement: document.body,
       };
-      refs.setReference(virtualElement as unknown as HTMLElement);
+      refs.setReference(virtualElement as ReferenceElement);
     };
 
     el.addEventListener("pointermove", onMove);
@@ -127,6 +164,24 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
       el.removeEventListener("pointermove", onMove);
     };
   }, [follow, refs]);
+
+  // Sample the container background (custom or default) for the arrow
+  React.useEffect(() => {
+    if (!(open || isMounted)) return;
+    const el = containerRef.current;
+    if (!el) return;
+    try {
+      const cs = getComputedStyle(el);
+      const bg = cs.backgroundColor;
+      if (bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") {
+        setContainerBg(bg);
+      } else {
+        setContainerBg("rgba(20,20,20,0.95)");
+      }
+    } catch {
+      // Silently ignore errors from getComputedStyle (e.g., if element is not in DOM)
+    }
+  }, [open, isMounted]);
 
   // arrow position from middleware
   const arrowX = middlewareData?.arrow?.x ?? 0;
@@ -184,62 +239,32 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
   const mergedRef = (node: HTMLElement | null) => {
     referenceRef.current = node;
     if (!follow) {
-      refs.setReference(node as unknown as HTMLElement);
+      refs.setReference(node);
     }
-    const childWithRef = child as unknown as {
-      ref?:
-        | ((instance: HTMLElement | null) => void)
-        | React.MutableRefObject<HTMLElement | null>;
-    };
+    // Access ref from React element - this is an internal React detail
+    const childWithRef = child as { ref?: ElementRef<HTMLElement> };
     const originalRef = childWithRef?.ref;
-    if (typeof originalRef === "function") originalRef(node);
-    else if (originalRef && "current" in (originalRef as object))
-      (originalRef as React.MutableRefObject<HTMLElement | null>).current =
-        node;
+    if (typeof originalRef === "function") {
+      originalRef(node);
+    } else if (originalRef && "current" in originalRef) {
+      originalRef.current = node;
+    }
   };
 
-  const refAttrs =
-    referenceProps as unknown as React.HTMLAttributes<HTMLElement>;
-
   const cloned = React.cloneElement(
-    child as React.ReactElement,
+    child,
+    // eslint-disable-next-line react-hooks/refs -- ref callback is invoked after render, not during
     {
-      ...refAttrs,
+      ...referenceProps,
       ref: mergedRef,
       "data-tooltip-ref": true,
-    } as any
+    } as React.HTMLAttributes<HTMLElement> & {
+      ref: typeof mergedRef;
+      "data-tooltip-ref": boolean;
+    }
   );
 
   if (disabled) return <>{cloned}</>;
-
-  // Smooth mount/unmount with motion animate/initial and a short deferred unmount
-  const [isMounted, setIsMounted] = React.useState(false);
-  const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-
-  React.useEffect(() => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-
-    if (open) {
-      setIsMounted(true);
-    } else {
-      closeTimerRef.current = setTimeout(() => {
-        setIsMounted(false);
-        closeTimerRef.current = null;
-      }, 160);
-    }
-
-    return () => {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-    };
-  }, [open]);
 
   // Create arrow element
   // Arrow element is created after container is known to allow sampling its bg
@@ -249,16 +274,19 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
   let floatingNode: React.ReactNode | null = null;
   const findRoleTooltipElement = (
     node: React.ReactNode
-  ): React.ReactElement | null => {
+  ): React.ReactElement<ElementProps> | null => {
     if (!React.isValidElement(node)) return null;
-    const el = node as React.ReactElement<any>;
-    if ((el.props as any)?.role === "tooltip") return el;
-    const kids = (el.props as any)?.children;
+    const el = node as React.ReactElement<ElementProps>;
+    if (el.props?.role === "tooltip") return el;
+    const kids = el.props?.children;
     if (!kids) return null;
     const arr = React.Children.toArray(kids);
     for (const c of arr) {
-      if (React.isValidElement(c) && (c.props as any)?.role === "tooltip") {
-        return c as React.ReactElement<any>;
+      if (React.isValidElement(c)) {
+        const childEl = c as React.ReactElement<ElementProps>;
+        if (childEl.props?.role === "tooltip") {
+          return childEl;
+        }
       }
     }
     return null;
@@ -292,12 +320,16 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
   // Robust custom detection: check for our marker on the component type.
   // We cannot see the internal role on the rendered DOM from here, so we tag
   // the component factory with a stable flag that survives HMR reloads.
+  type ComponentWithMarker = { isBlockTooltipContainer?: boolean };
   const isCustomTooltip =
     React.isValidElement(content) &&
-    !!(content.type && (content as any).type.isBlockTooltipContainer);
+    !!(
+      content.type &&
+      (content.type as ComponentWithMarker).isBlockTooltipContainer
+    );
   const customEl = isCustomTooltip
-    ? (content as React.ReactElement<any>)
-    : findRoleTooltipElement(content as React.ReactNode);
+    ? (content as React.ReactElement<ElementProps>)
+    : findRoleTooltipElement(content);
   // Tracing for detection (disabled). Uncomment to debug detection behavior.
   // try {
   //   const rootIsElement = React.isValidElement(content);
@@ -318,35 +350,12 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
   //   );
   // } catch {}
 
-  // Sample the container background (custom or default) for the arrow
-  const containerRef = React.useRef<HTMLElement | null>(null);
-  const [containerBg, setContainerBg] = React.useState<string | undefined>();
-  React.useEffect(() => {
-    if (!(open || isMounted)) return;
-    const el = containerRef.current;
-    if (!el) return;
-    try {
-      const cs = getComputedStyle(el);
-      const bg = cs.backgroundColor;
-      if (bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") {
-        setContainerBg(bg);
-      } else {
-        setContainerBg("rgba(20,20,20,0.95)");
-      }
-      // logTooltipState(isCustomTooltip ? "custom" : "default", {
-      //   placement: context.placement,
-      //   open,
-      //   sampledBg: bg,
-      //   hasMounted: isMounted,
-      // });
-    } catch {}
-  }, [open, isMounted, isCustomTooltip]);
-
   if (isCustomTooltip) {
     // Custom tooltip path: convert the custom element to motion-enabled
-    const el = customEl as React.ReactElement<any>;
-    const childProps = (el.props || {}) as Record<string, any>;
-    const floatingProps = getFloatingProps({}) as Record<string, any>;
+    const el = customEl as React.ReactElement<ElementProps>;
+    const childProps = (el.props || {}) as ElementProps &
+      Record<string, unknown>;
+    const floatingProps = getFloatingProps({});
 
     // NOTES ON DEFAULTS vs PANDA OVERRIDES (custom path)
     // - We want sensible defaults, but Panda props must be able to override them.
@@ -413,20 +422,21 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
     const mergedStyle = { ...defaultStyles, ...childProps.style };
 
     // Compose event handlers
-    const combinedProps: Record<string, any> = {
+    const combinedProps: Record<string, unknown> = {
       ...childProps,
       ...floatingProps,
       style: mergedStyle,
     };
 
     Object.keys(floatingProps).forEach((key) => {
-      if (key.startsWith("on") && typeof floatingProps[key] === "function") {
-        const floatingHandler = floatingProps[key];
-        const childHandler = childProps[key];
+      const floatingValue = floatingProps[key];
+      if (key.startsWith("on") && typeof floatingValue === "function") {
+        const floatingHandler = floatingValue as (...args: unknown[]) => void;
+        const childHandler = childProps[key as keyof ElementProps];
         if (typeof childHandler === "function") {
-          combinedProps[key] = (...args: any[]) => {
+          combinedProps[key] = (...args: unknown[]) => {
             floatingHandler(...args);
-            childHandler(...args);
+            (childHandler as (...args: unknown[]) => void)(...args);
           };
         } else {
           combinedProps[key] = floatingHandler;
@@ -435,13 +445,14 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
     });
 
     // Handle refs properly
-    const originalRef = (el as any).ref;
+    const originalRef = (el as { ref?: ElementRef<HTMLElement> }).ref;
     const mergedFloatingRef = (node: HTMLElement | null) => {
-      refs.setFloating(node as unknown as HTMLElement);
-      if (typeof originalRef === "function") originalRef(node);
-      else if (originalRef && typeof originalRef === "object")
-        (originalRef as React.MutableRefObject<HTMLElement | null>).current =
-          node;
+      refs.setFloating(node);
+      if (typeof originalRef === "function") {
+        originalRef(node);
+      } else if (originalRef && "current" in originalRef) {
+        originalRef.current = node;
+      }
     };
 
     // Wrap custom element in motion.div for reliable animation
@@ -489,27 +500,29 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
       >
         {(() => {
           // merge original child ref with our probe ref to read computed styles
-          const originalChildRef = (el as any).ref;
+          const originalChildRef = (el as { ref?: ElementRef<HTMLElement> })
+            .ref;
           const mergedChildRef = (node: HTMLElement | null) => {
-            containerRef.current = node as HTMLElement | null;
-            if (typeof originalChildRef === "function") originalChildRef(node);
-            else if (originalChildRef && typeof originalChildRef === "object")
-              (
-                originalChildRef as React.MutableRefObject<HTMLElement | null>
-              ).current = node as HTMLElement | null;
+            containerRef.current = node;
+            if (typeof originalChildRef === "function") {
+              originalChildRef(node);
+            } else if (originalChildRef && "current" in originalChildRef) {
+              originalChildRef.current = node;
+            }
           };
           return React.cloneElement(
             el,
+            // eslint-disable-next-line react-hooks/refs -- ref callback is invoked after render, not during
             {
               // Spread childProps first
               ...childProps,
-              ref: mergedChildRef as any,
+              ref: mergedChildRef,
               // Then override className with merged value (must be after ...childProps)
               className: mergedClassName,
               style: {
                 // Apply inline defaults first, then user styles, then position
                 ...mergedStyle,
-                position: "relative",
+                position: "relative" as const,
               },
             },
             childProps.children
@@ -575,10 +588,10 @@ export default function Tooltip(props: _t.CoreTooltipProps) {
           color="white"
           px="10px"
           py="8px"
+          fontSize={13}
           borderRadius={6}
           boxShadow="0 6px 18px rgba(0,0,0,0.18)"
-          fontSize={13}
-          ref={containerRef as any}
+          ref={containerRef as React.RefObject<HTMLDivElement>}
         >
           {content}
         </Base>

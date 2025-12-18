@@ -495,3 +495,21 @@ export type CoreTooltipProps = {
   offsetVal?: number;
   className?: string;
 };
+
+// Drawer sub-component types
+// These are explicitly typed rather than using `typeof MotionBtn` because
+// the motion tags are typed as `any` due to framer-motion/PandaCSS conflicts.
+
+/** Props for Drawer.CloseBtn component */
+export type DrawerCloseBtnProps = SharedBlockProps &
+  Omit<
+    React.ComponentPropsWithoutRef<"button">,
+    OmittedHTMLProps | keyof SharedBlockProps
+  >;
+
+/** Props for Drawer.BtnGroup component */
+export type DrawerBtnGroupProps = SharedBlockProps &
+  Omit<
+    React.ComponentPropsWithoutRef<"div">,
+    OmittedHTMLProps | keyof SharedBlockProps
+  >;

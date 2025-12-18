@@ -41,7 +41,13 @@ export type Params = Record<
 >;
 
 export type Input = "json" | "form" | "text";
-export type Output = "json" | "text" | "blob" | "stream" | "arrayBuffer" | "sse";
+export type Output =
+  | "json"
+  | "text"
+  | "blob"
+  | "stream"
+  | "arrayBuffer"
+  | "sse";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SSE (Server-Sent Events)
@@ -113,27 +119,25 @@ type IsTypeArgs<T> = T extends object
   ? "Req" extends keyof T
     ? true
     : "Res" extends keyof T
-      ? true
-      : false
+    ? true
+    : false
   : false;
 
 /** Extract request/body type from either `TypeArgs` or legacy shorthand. */
-export type ReqFrom<T> =
-  IsTypeArgs<T> extends true
-    ? T extends { Req?: infer Req }
-      ? Req
-      : unknown
-    : unknown;
+export type ReqFrom<T> = IsTypeArgs<T> extends true
+  ? T extends { Req?: infer Req }
+    ? Req
+    : unknown
+  : unknown;
 
 /** Extract JSON response type from either `TypeArgs` or legacy shorthand. */
-export type ResFrom<T> =
-  IsTypeArgs<T> extends true
-    ? "Res" extends keyof T
-      ? T extends { Res?: infer Res }
-        ? Res
-        : unknown
+export type ResFrom<T> = IsTypeArgs<T> extends true
+  ? "Res" extends keyof T
+    ? T extends { Res?: infer Res }
+      ? Res
       : unknown
-    : T;
+    : unknown
+  : T;
 
 /**
  * Map the runtime `output` option to the parsed value type.
@@ -149,14 +153,14 @@ export type ResFrom<T> =
 export type DataForOutput<Res, O extends Output | undefined> = O extends "text"
   ? string
   : O extends "blob"
-    ? Blob
-    : O extends "stream"
-      ? ReadableStream<Uint8Array> | null
-      : O extends "arrayBuffer"
-        ? ArrayBuffer
-        : O extends "sse"
-          ? AsyncGenerator<SSEEvent<Res>, void, unknown>
-          : Res;
+  ? Blob
+  : O extends "stream"
+  ? ReadableStream<Uint8Array> | null
+  : O extends "arrayBuffer"
+  ? ArrayBuffer
+  : O extends "sse"
+  ? AsyncGenerator<SSEEvent<Res>, void, unknown>
+  : Res;
 
 /**
  * Types that cannot be produced by JSON parsing and therefore require an explicit `output`.
@@ -168,7 +172,7 @@ export type NonJsonDecoded =
   | Blob
   | ArrayBuffer
   | ReadableStream<Uint8Array>
-  | AsyncGenerator<unknown>;
+  | AsyncGenerator;
 
 /**
  * A helpful compile-time error shape when a non-JSON decoded type is requested without
@@ -196,7 +200,7 @@ export type Progress = {
 export type Options<
   Res,
   Return = Res,
-  O extends Output | undefined = undefined,
+  O extends Output | undefined = undefined
 > = {
   headers?: true | false | HeadersTransform;
   params?: Params;
@@ -222,7 +226,7 @@ export type BodyOptions<
   Req = unknown,
   Res = unknown,
   Return = Res,
-  O extends Output | undefined = undefined,
+  O extends Output | undefined = undefined
 > = {
   body?: Req;
   input?: Input;
@@ -244,9 +248,5 @@ export type BodylessOptions<
   Req = unknown,
   Res = unknown,
   Return = Res,
-  O extends Output | undefined = undefined,
+  O extends Output | undefined = undefined
 > = Omit<BodyOptions<Req, Res, Return, O>, "body">;
-
-
-
-

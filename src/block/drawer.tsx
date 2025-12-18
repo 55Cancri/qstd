@@ -157,7 +157,11 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   if (!mounted) return null;
 
   return createPortal(
-    <AnimatePresence initial={false} mode="wait" onExitComplete={onExitComplete}>
+    <AnimatePresence
+      initial={false}
+      mode="wait"
+      onExitComplete={onExitComplete}
+    >
       {open && (
         <Backdrop
           onClick={() => onBackdropClick()}
@@ -387,13 +391,13 @@ export default function Drawer(props: _t.DrawerBlockProps) {
 
 // show cancel btn and others at the bottom of the drawer when on mobile,
 // show close btn and others at the top of the drawer when on desktop
-export function BtnGroup(props: React.ComponentProps<typeof MotionDiv>) {
+export function BtnGroup(props: _t.DrawerBtnGroupProps) {
   const [isDesktop] = useMatchMedia(breakpoint);
   const { children, ...rest } = props;
   if (isDesktop) {
     return (
       <MotionDiv flex alignI gap={4} {...rest}>
-        {React.Children.toArray(children as React.ReactNode).toReversed()}
+        {React.Children.toArray(children).toReversed()}
       </MotionDiv>
     );
   } else {
@@ -401,7 +405,7 @@ export function BtnGroup(props: React.ComponentProps<typeof MotionDiv>) {
   }
 }
 
-export function CloseBtn(props: React.ComponentProps<typeof MotionBtn>) {
+export function CloseBtn(props: _t.DrawerCloseBtnProps) {
   const [isDesktop] = useMatchMedia(breakpoint);
   const { children, ...rest } = props;
   if (isDesktop) {
