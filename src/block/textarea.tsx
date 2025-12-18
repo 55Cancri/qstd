@@ -425,6 +425,10 @@ export default function Textarea(props: _t.TextareaBlockProps) {
             _focusWithin={{ _placeholder: { opacity: 1 } }}
             css={{
               boxSizing: "border-box",
+              // Native CSS auto-sizing - prevents SSR flash by sizing identically
+              // on server and client. JS fallback still runs for older browsers.
+              // Support: Chrome 123+, Edge 123+ (March 2024)
+              fieldSizing: "content",
               /* Works on Firefox */
               scrollbarWidth: "thin",
               scrollbarColor: "neutral.300 neutral.300",
