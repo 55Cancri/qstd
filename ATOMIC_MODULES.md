@@ -434,6 +434,55 @@ useAudioPlayer.tsx      # camelCase
 AudioRecorder.tsx       # PascalCase
 ```
 
+## Coding style
+
+### Prefer Maps for key-based lookups
+
+When aggregating or deduplicating items by a key, use `Map` instead of array methods like `findIndex`. Maps provide O(1) lookups vs O(n) scans.
+
+**Initialize Maps with mapped tuples** to leverage TypeScript inference:
+
+```typescript
+// ❌ AVOID: Manual loop + explicit types
+const claimMap = new Map<string, Claim>();
+for (const claim of existingClaims) {
+  claimMap.set(claim.text.toLowerCase(), claim);
+}
+
+// ✅ GOOD: Tuple initialization, types inferred
+const claimMap = new Map(
+  existingClaims.map((claim) => [claim.text.toLowerCase(), claim])
+);
+```
+
+**Why tuple initialization?**
+
+- TypeScript infers `Map<string, Claim>` from the tuple shape
+- More concise—one expression instead of loop + set
+- Declarative style fits functional patterns
+
+**Full pattern for merging/deduplicating:**
+
+```typescript
+export function mergeClaims(existing: Claim[], incoming: Claim[]): Claim[] {
+  const claimMap = new Map(
+    existing.map((c) => [c.text.toLowerCase(), c])
+  );
+
+  for (const claim of incoming) {
+    const key = claim.text.toLowerCase();
+    const found = claimMap.get(key);
+    if (found) {
+      claimMap.set(key, { ...found, foundBy: [...found.foundBy, ...claim.foundBy] });
+    } else {
+      claimMap.set(key, claim);
+    }
+  }
+
+  return Array.from(claimMap.values());
+}
+```
+
 ## Component props: Pass the object, not its fields
 
 **When multiple props come from the same object, pass the object directly.**

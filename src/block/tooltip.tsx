@@ -70,6 +70,7 @@ export default function Tooltip(
     offsetVal = 8,
     delay = 80,
     className,
+    tooltipStyles,
   } = props;
 
   // All refs - must be called unconditionally
@@ -343,8 +344,13 @@ export default function Tooltip(
   if (customEl) {
     // Custom tooltip path: convert the custom element to motion-enabled
     const el = customEl;
-    const childProps = (el.props || {}) as ElementProps &
+    // Merge tooltipStyles (from _tooltip) with the custom element's props
+    // Custom element's props take precedence over _tooltip styles
+    const rawChildProps = (el.props || {}) as ElementProps &
       Record<string, unknown>;
+    const childProps = tooltipStyles
+      ? { ...tooltipStyles, ...rawChildProps }
+      : rawChildProps;
     const floatingProps = getFloatingProps({});
 
     // NOTES ON DEFAULTS vs PANDA OVERRIDES (custom path)
@@ -571,6 +577,7 @@ export default function Tooltip(
         transition={{ type: "spring", stiffness: 520, damping: 34 }}
       >
         {/* Default container provides visual defaults as Panda props so users can override */}
+        {/* tooltipStyles from _tooltip prop are spread after defaults so user styles win */}
         <Base
           role="tooltip"
           style={{ position: "relative" }}
@@ -581,6 +588,7 @@ export default function Tooltip(
           fontSize={13}
           borderRadius={6}
           boxShadow="0 6px 18px rgba(0,0,0,0.18)"
+          {...tooltipStyles}
           ref={containerRef as React.RefObject<HTMLDivElement>}
         >
           {content}

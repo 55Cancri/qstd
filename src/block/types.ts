@@ -494,6 +494,8 @@ export type CoreTooltipProps = {
   disabled?: boolean;
   offsetVal?: number;
   className?: string;
+  /** Styles forwarded from _tooltip prop (since portaled tooltips can't use CSS descendant selectors) */
+  tooltipStyles?: Record<string, unknown>;
 };
 
 // Drawer sub-component types

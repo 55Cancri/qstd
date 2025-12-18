@@ -160,7 +160,14 @@ function Block(props: any) {
   if (tooltip) {
     const tooltipContent =
       typeof tooltip === "boolean" ? rest.content : tooltip;
-    const tooltipProps = { ...rest, content: tooltipContent };
+    // Extract _tooltip styles to forward to Tooltip container
+    // (portaled tooltips can't use CSS descendant selectors)
+    const { _tooltip: tooltipStyles, ...restWithoutTooltip } = rest;
+    const tooltipProps = {
+      ...restWithoutTooltip,
+      content: tooltipContent,
+      tooltipStyles,
+    };
     component = <Tooltip {...tooltipProps}>{component}</Tooltip>;
   }
 

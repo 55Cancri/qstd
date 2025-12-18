@@ -19,6 +19,16 @@ import * as _l from "./literals";
  *   heights). Uncontrolled form resets are handled by waiting a frame so the
  *   browser can update the value first, then we measure.
  * - minRows/maxRows are respected in both content-box and border-box models.
+ *
+ * TODO: Remove ALL JS auto-sizing code once `field-sizing: content` is GA
+ * (Firefox & Safari support). This includes:
+ * - useIsomorphicLayoutEffect
+ * - pick(), assignRefs(), HIDDEN_TEXTAREA_STYLE, forceHiddenStyles()
+ * - SIZING_STYLE, SizingProps, SizingStyle, SizingData
+ * - getSizingData(), hiddenTextarea, getHeight(), calculateNodeHeight()
+ * - resizeTextarea callback and all useEffect hooks for resize/fonts/form-reset
+ * - heightRef, onHeightChange prop
+ * Track support: https://caniuse.com/mdn-css_properties_field-sizing
  */
 
 type LabelProps = {
