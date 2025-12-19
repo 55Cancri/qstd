@@ -312,6 +312,15 @@ The `as` prop lets you control the underlying HTML element for SEO and accessibi
 <Block flex>Flex container</Block>
 <Block flex="wrap">Flex with wrapping</Block>
 
+// Flex item sizing (does NOT make a flex container)
+// - `basis` sets the CSS `flex` shorthand (grow/shrink/basis) on a *flex item*
+// - You can use `basis` without `flex`
+<Block basis={1}>Flex item (flex: 1)</Block>
+<Block basis="0 0 auto">Flex item (flex: 0 0 auto)</Block>
+
+// Flex container + flex item (valid, but be intentional)
+<Block flex basis={1}>This element is BOTH a flex container AND a flex item</Block>
+
 // Grid layout
 <Block grid>Grid container</Block>
 
@@ -324,6 +333,11 @@ The `as` prop lets you control the underlying HTML element for SEO and accessibi
 <Block fixed>Fixed position</Block>
 <Block sticky>Sticky position</Block>
 ```
+
+**Important**:
+- **`flex`** makes the element a **flex container** (`display: flex`, optional wrap)
+- **`basis`** sets the CSS **`flex` shorthand** on a **flex item** (does **not** change `display`)
+- Using **both** `flex` and `basis` means the element is **both** a flex container **and** a flex item
 
 #### Grid `cols` Prop (Flexible Column Syntax)
 
@@ -1036,7 +1050,7 @@ Block is fully typed with TypeScript:
 ### Best Practices
 
 1. **Use semantic HTML**: Always provide the `as` prop for proper SEO and accessibility
-2. **Prefer grid/flex**: Use the boolean `grid` and `flex` props over manual CSS
+2. **Prefer grid/flex**: Use the boolean `grid` and `flex` props for containers; use `basis` for flex item sizing
 3. **Leverage cols/rows**: The shorthand syntax is more readable than verbose gridTemplateColumns
 4. **Debug visually**: Use `debug` prop during development to understand layouts
 5. **Compound components**: Use Block compound components instead of mixing component types

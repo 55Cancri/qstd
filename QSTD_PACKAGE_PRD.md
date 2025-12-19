@@ -610,7 +610,7 @@ export function useTimeout(callback: () => void, delay: number): void;
 
 **Includes:**
 
-- Custom utilities (`cols`, `rows`, `debug`, `flex`, `grid`, etc.)
+- Custom utilities (`cols`, `rows`, `debug`, `grid`, `flex` (container), `basis` (flex item), etc.)
 - Custom conditions (`dark`, `hover`, `active`, etc.)
 - Semantic tokens (colors, spacing)
 - Custom keyframes (spin, sheen, pulse)

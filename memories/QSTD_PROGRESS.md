@@ -59,7 +59,8 @@ This understanding is critical for **any custom Panda utility that should accept
 ### Corrected Rule of Thumb
 
 - ✅ **Always add `values: { type: "boolean" }`** when you want to accept `true`/`false` literals
-- ✅ Works for boolean-only utilities: `flex: { values: { type: "boolean" } }`
+- ✅ Works for boolean (and literal) utilities: `flex: { values: { type: "boolean | 'wrap' | 'nowrap' | 'wrap-reverse'" } }`
+- ✅ Works for flex-item sizing utilities: `basis: { values: { type: "string | number" }, transform: (v) => ({ flex: v }) }`
 - ✅ Works for boolean+number utilities: `rounded: { values: { type: "boolean" }, transform(value: boolean | number) }`
 - ❌ **Never assume transform signatures will generate correct types for booleans**
 

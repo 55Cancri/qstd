@@ -62,6 +62,7 @@
 **Complete Panda CSS preset** from consumer-project:
 
 - Custom utilities: grid, flex, cols, rows, debug, shortcuts (h, w, p, br, etc.)
+- Custom utilities: grid, flex (container), basis (flex item), cols, rows, debug, shortcuts (h, w, p, br, etc.)
 - Custom conditions: \_dark, \_hover, \_active, radio states, etc.
 - Semantic tokens: text colors, input colors
 - Keyframes: spin, sheen, pulse

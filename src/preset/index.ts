@@ -174,8 +174,14 @@ const preset: Preset = {
           return { display: "grid" };
         },
       },
+      /**
+       * Flex-container shorthand.
+       *
+       * NOTE: This utility is intentionally reserved for flex *containers* (display:flex + optional wrap).
+       * For flex *items* (the CSS `flex` shorthand), use the `basis` utility below.
+       */
       flex: {
-        values: { type: "boolean" },
+        values: { type: "boolean | 'wrap' | 'nowrap' | 'wrap-reverse'" },
         transform(value) {
           return {
             display: "flex",
