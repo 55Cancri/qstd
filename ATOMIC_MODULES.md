@@ -19,14 +19,44 @@ A compact module structure that keeps concerns clear and greppable. Each module 
 
 **For small modules:** Just put everything in `index.ts` (or `index.tsx` for components). The atomic structure is useful for complex features, not simple utilities.
 
-**When to split into specialized modules:** When you have a complex feature (like a parser, compiler, or state machine) with 500+ lines of logic:
+**When to split into specialized modules:** When you have a complex feature (like a parser, compiler, or state machine) with 300+ lines of logic:
 
 - Split into focused modules: `ast.ts`, `parse-blocks.ts`, `parse-inline.ts`, `tokenize.ts`, etc.
 - Use `domain.ts` as the orchestrator (adds debugging, error handling, business rules)
 - **Skip `fns.ts`** - it's redundant when you have specialized modules
 - Each specialized module should be self-contained and focused on one responsibility
 
-**When to use fns.ts:** Only when you have a moderate amount of logic (< 500 lines) that fits in one file. If your logic is complex enough to need multiple specialized modules, skip `fns.ts` and use `domain.ts` or `index.ts` as the orchestrator.
+**When to use fns.ts:** Only when you have a moderate amount of logic (< 300 lines) that fits in one file. If your logic is complex enough to need multiple specialized modules, skip `fns.ts` and use `domain.ts` or `index.ts` as the orchestrator.
+
+### Deciding between fns.ts and domain.ts
+
+When a module grows past ~300 lines, split into `fns.ts` and `domain.ts` based on cognitive load, not just line count. Categorize functions by their nature:
+
+**fns.ts — Pure utilities with no business meaning:**
+
+- Data transformations (reshape data structures)
+- Formatters (convert to display strings)
+- Simple accessors (extract values from structures)
+- String/template builders
+
+**domain.ts — Business logic with semantic meaning:**
+
+- Math/algorithms that encode business rules (ELO calculations, scoring formulas)
+- Generators that implement business constraints (matchup generation, judge assignment)
+- State machines and workflow logic
+- Functions that could have different implementations in different business contexts
+
+**The litmus test:** If changing a function requires understanding the business domain (not just the data shape), it belongs in `domain.ts`. If it's a generic transformation that could work in any context, it belongs in `fns.ts`.
+
+```typescript
+// fns.ts - Pure utilities, no business knowledge needed
+export function formatEloWithDelta(current: number, baseline: number): string { ... }
+export function buildScoringPrompt(query: string, drafts: Draft[]): string { ... }
+
+// domain.ts - Business logic, requires domain understanding
+export function updateElo(ratingA: number, ratingB: number, winner: Winner): [number, number] { ... }
+export function assignJudges(modelIds: string[], matchups: Matchup[]): Assignment[] { ... }
+```
 
 ### Keep things where they belong
 
@@ -421,6 +451,29 @@ type DurationMs = number;
 type TokenId = string;
 ```
 
+### Document type fields with JSDoc
+
+**Add JSDoc to fields when the name is generic but the value has specific meaning.** Especially `id` fields with particular formats, foreign key references, or `string`/`number` fields with constraints.
+
+```typescript
+// ❌ BAD: What format is id? What do draftA/draftB contain?
+export type PairwiseMatchup = {
+  draftA: string;
+  draftB: string;
+  id: string;
+};
+
+// ✅ GOOD: Hover reveals meaning
+export type PairwiseMatchup = {
+  /** Model ID of the first draft (shown as "A" to judges) */
+  draftA: string;
+  /** Model ID of the second draft (shown as "B" to judges) */
+  draftB: string;
+  /** Unique matchup identifier, e.g. "claude-3-5-sonnet-vs-gpt-4o" */
+  id: string;
+};
+```
+
 ### File naming: Lowercase kebab-case
 
 ```
@@ -465,15 +518,16 @@ const claimMap = new Map(
 
 ```typescript
 export function mergeClaims(existing: Claim[], incoming: Claim[]): Claim[] {
-  const claimMap = new Map(
-    existing.map((c) => [c.text.toLowerCase(), c])
-  );
+  const claimMap = new Map(existing.map((c) => [c.text.toLowerCase(), c]));
 
   for (const claim of incoming) {
     const key = claim.text.toLowerCase();
     const found = claimMap.get(key);
     if (found) {
-      claimMap.set(key, { ...found, foundBy: [...found.foundBy, ...claim.foundBy] });
+      claimMap.set(key, {
+        ...found,
+        foundBy: [...found.foundBy, ...claim.foundBy],
+      });
     } else {
       claimMap.set(key, claim);
     }
@@ -482,6 +536,28 @@ export function mergeClaims(existing: Claim[], incoming: Claim[]): Claim[] {
   return Array.from(claimMap.values());
 }
 ```
+
+### Prefer toSorted over spread + sort
+
+For browser-only code, use `toSorted()` instead of `[...array].sort()`. It's cleaner and doesn't require the spread.
+
+```typescript
+// ❌ AVOID: Spread then sort
+const shuffled = [...matchups].sort(() => Math.random() - 0.5);
+const ranked = [...drafts].sort((a, b) => b.score - a.score);
+
+// ✅ GOOD: toSorted (ES2023, supported in all modern browsers)
+const shuffled = matchups.toSorted(() => Math.random() - 0.5);
+const ranked = drafts.toSorted((a, b) => b.score - a.score);
+```
+
+**Why toSorted?**
+
+- Cleaner syntax—no spread ceremony
+- Intent is clear: "give me a sorted copy"
+- Same performance, fewer characters
+
+**Note:** `toSorted()` is ES2023. For Node.js < 20 or older browsers, stick with spread + sort.
 
 ## Component props: Pass the object, not its fields
 

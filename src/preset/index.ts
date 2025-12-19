@@ -185,6 +185,24 @@ const preset: Preset = {
           };
         },
       },
+      /**
+       * Flex-item shorthand.
+       *
+       * WHY: qstd's `flex` utility is reserved for flex containers (display:flex + optional wrap).
+       * `basis` provides a safe, memorable way to set the CSS `flex` shorthand on flex items
+       * without accidentally turning the element into a flex container.
+       *
+       * Examples:
+       * - basis={1} -> flex: 1
+       * - basis="0 0 auto" -> flex: 0 0 auto
+       * - basis="none" -> flex: none
+       */
+      basis: {
+        values: { type: "string | number" },
+        transform(value: string | number) {
+          return { flex: value };
+        },
+      },
       center: {
         values: { type: "boolean | 'x' | 'y'" },
         transform(value?: boolean | "x" | "y") {
