@@ -139,7 +139,7 @@ export const prepareUrl = (
  */
 export const prepareHeaders = async (props: {
   defaults: _t.HeadersObject;
-  headersOption: true | false | _t.HeadersTransform | undefined;
+  headersOption: true | false | _t.HeadersObject | _t.HeadersTransform | undefined;
   input: _t.Input | undefined;
   body: unknown;
 }): Promise<_t.HeadersObject | undefined> => {
@@ -170,7 +170,12 @@ export const prepareHeaders = async (props: {
   }
 
   // headers: function → transform defaults
-  return await headersOption(headers);
+  if (typeof headersOption === "function") {
+    return await headersOption(headers);
+  }
+
+  // headers: plain object → merge with defaults
+  return { ...headers, ...headersOption };
 };
 
 /**

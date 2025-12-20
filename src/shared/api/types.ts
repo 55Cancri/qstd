@@ -202,7 +202,7 @@ export type Options<
   Return = Res,
   O extends Output | undefined = undefined
 > = {
-  headers?: true | false | HeadersTransform;
+  headers?: true | false | HeadersObject | HeadersTransform;
   params?: Params;
   output?: O;
   signal?: AbortSignal;
@@ -230,7 +230,7 @@ export type BodyOptions<
 > = {
   body?: Req;
   input?: Input;
-  headers?: true | false | HeadersTransform;
+  headers?: true | false | HeadersObject | HeadersTransform;
   params?: Params;
   output?: O;
   signal?: AbortSignal;
