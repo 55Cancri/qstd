@@ -250,7 +250,3 @@ export type BodylessOptions<
   Return = Res,
   O extends Output | undefined = undefined
 > = Omit<BodyOptions<Req, Res, Return, O>, "body">;
-
-
-
-

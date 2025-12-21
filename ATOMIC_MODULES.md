@@ -489,6 +489,44 @@ AudioRecorder.tsx       # PascalCase
 
 ## Coding style
 
+### Never use IIFEs
+
+**Never use Immediately Invoked Function Expressions.** They're ugly, hard to read, and always avoidable.
+
+```typescript
+// ❌ NEVER: IIFE in useEffect
+React.useEffect(() => {
+  void (async () => {
+    const data = await fetchData();
+    setData(data);
+  })();
+}, []);
+
+// ✅ GOOD: Promise chain
+React.useEffect(() => {
+  fetchData().then(setData).catch(console.error);
+}, []);
+
+// ✅ GOOD: Extract to named function if complex
+React.useEffect(() => {
+  const loadData = async () => {
+    const data = await fetchData();
+    const processed = transform(data);
+    setData(processed);
+  };
+  loadData().catch(console.error);
+}, []);
+```
+
+**Why IIFEs are banned:**
+
+- **Visual noise**: Extra parentheses and invocation clutter the code
+- **Confusing intent**: `void (async () => { ... })()` is cryptic to newcomers
+- **Always avoidable**: Promise chains or extracted functions are clearer
+- **Anti-pattern**: If you need an IIFE, your code structure is wrong
+
+**The rule:** If you're reaching for an IIFE, refactor instead. Extract a named function or use promise chains.
+
 ### Prefer Maps for key-based lookups
 
 When aggregating or deduplicating items by a key, use `Map` instead of array methods like `findIndex`. Maps provide O(1) lookups vs O(n) scans.

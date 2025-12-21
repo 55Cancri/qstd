@@ -400,6 +400,28 @@ export default function Textarea(props: _t.TextareaBlockProps) {
   // When debug is provided, skip default border styling so debug border shows
   const hasDebug = _f.hasAnyProp(rest, ["debug"]);
 
+  // Padding defaults:
+  // Textarea sets internal defaults (pt/pb/px) for a consistent baseline. However, in Panda's
+  // atomic CSS, longhand padding utilities (pt/px/etc) will typically win over the shorthand `p`
+  // utility due to deterministic CSS ordering. That makes `<Block is="textarea" p={3} />` appear
+  // to "not work" unless consumers use `!important` hacks.
+  //
+  // Fix: only apply padding defaults for edges the consumer did NOT explicitly set.
+  const hasP = _f.hasAnyProp(rest, ["p"]);
+  const hasPx = _f.hasAnyProp(rest, ["px"]);
+  const hasPy = _f.hasAnyProp(rest, ["py"]);
+  const hasPt = _f.hasAnyProp(rest, ["pt"]);
+  const hasPb = _f.hasAnyProp(rest, ["pb"]);
+  const hasPl = _f.hasAnyProp(rest, ["pl"]);
+  const hasPr = _f.hasAnyProp(rest, ["pr"]);
+
+  const paddingDefaults = {
+    ...(!hasP && !hasPy && !hasPt && { pt: 0.5 }),
+    ...(!hasP && !hasPy && !hasPb && { pb: 0.5 }),
+    ...(!hasP && !hasPx && !hasPl && { pl: 2 }),
+    ...(!hasP && !hasPx && !hasPr && { pr: 2 }),
+  } as const;
+
   return (
     <Base grid rows="/ 4">
       <Base grid relative>
@@ -410,9 +432,7 @@ export default function Textarea(props: _t.TextareaBlockProps) {
             value={value}
             onContextMenu={(e) => e.preventDefault()}
             resize={resize}
-            pt={0.5}
-            pb={0.5}
-            px={2}
+            {...paddingDefaults}
             color="text-primary"
             {...(!hasDebug && {
               border: "1.5px solid",
