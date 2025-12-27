@@ -10,8 +10,6 @@ import {
   PutObjectCommand,
   S3Client,
   type _Object,
-  type CreateBucketCommandOutput,
-  type DeleteBucketCommandOutput,
   type DeleteObjectCommandOutput,
   type GetObjectCommandOutput,
   type HeadObjectCommandOutput,
@@ -164,55 +162,45 @@ export const getFileMetadata = async (
 };
 
 // ================================
-// backup/restore bucket operations
+// bucket operations
 // ================================
 
-/** create a new bucket */
-export function bucketHandle(
-  s3: _t.Client,
-  props: { action: "create"; bucketName: string }
-): Promise<CreateBucketCommandOutput>;
-export function bucketHandle(
-  s3: _t.Client,
-  props: { action: "delete"; bucketName: string }
-): Promise<DeleteBucketCommandOutput>;
-export function bucketHandle(
-  s3: _t.Client,
-  props: { action: "exists"; bucketName: string }
-): Promise<boolean>;
-export async function bucketHandle(
-  s3: _t.Client,
-  props: { action: "create" | "delete" | "exists"; bucketName: string }
-) {
-  const Bucket = props.bucketName;
+/**
+ * Create a new S3 bucket
+ */
+export const createBucket = (s3: _t.Client, bucketName: string) => {
+  const command = new CreateBucketCommand({ Bucket: bucketName });
+  return s3.client.send(command);
+};
 
-  if (props.action === "create") {
-    const command = new CreateBucketCommand({ Bucket });
-    return s3.client.send(command);
-  } else if (props.action === "delete") {
-    const command = new DeleteBucketCommand({ Bucket });
-    return s3.client.send(command);
-  } else if (props.action === "exists") {
-    try {
-      const command = new HeadBucketCommand({ Bucket });
-      await s3.client.send(command);
-      return true;
-    } catch (err) {
-      // Type assertion for AWS SDK error
-      const awsError = err as S3ServiceException;
-      if (
-        awsError.$metadata?.httpStatusCode === 404 ||
-        awsError.$metadata?.httpStatusCode === 400
-      ) {
-        return false;
-      }
-      console.log(err);
-      throw err;
+/**
+ * Delete an S3 bucket
+ */
+export const deleteBucket = (s3: _t.Client, bucketName: string) => {
+  const command = new DeleteBucketCommand({ Bucket: bucketName });
+  return s3.client.send(command);
+};
+
+/**
+ * Check if an S3 bucket exists
+ */
+export const bucketExists = async (s3: _t.Client, bucketName: string) => {
+  try {
+    const command = new HeadBucketCommand({ Bucket: bucketName });
+    await s3.client.send(command);
+    return true;
+  } catch (err) {
+    const awsError = err as S3ServiceException;
+    if (
+      awsError.$metadata?.httpStatusCode === 404 ||
+      awsError.$metadata?.httpStatusCode === 400
+    ) {
+      return false;
     }
-  } else {
-    throw new Error(`[error] [bucketHandle] invalid action: ${props.action}`);
+    console.log(err);
+    throw err;
   }
-}
+};
 
 /**
  * Copy and delete original files from src bucket to target bucket.
