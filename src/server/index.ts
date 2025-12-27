@@ -11,6 +11,7 @@ export * as Log from "../shared/log";
 export * as Api from "../shared/api";
 
 // Server-specific utilities
+export * as Os from "./os";
 export * as File from "./file";
 export * as Lambda from "./aws/lambda";
 export * as DDB from "./aws/ddb";

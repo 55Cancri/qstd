@@ -1,6 +1,6 @@
 {
   "name": "qstd",
-  "version": "0.3.52",
+  "version": "0.3.53",
   "description": "Standard Block component and utilities library with Panda CSS",
   "author": "malin1",
   "license": "MIT",
@@ -89,7 +89,8 @@
     "react-icons": "^5.5.0",
     "react-loader-spinner": "^6.1.6",
     "react-spinners": "^0.17.0",
-    "use-immer": "^0.11.0"
+    "use-immer": "^0.11.0",
+    "await-spawn": "^4.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
