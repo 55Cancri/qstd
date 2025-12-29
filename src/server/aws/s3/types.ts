@@ -1,10 +1,16 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import type {
   CompletedPart,
-  UploadPartRequest,
   PutObjectCommandInput,
+  UploadPartRequest,
 } from "@aws-sdk/client-s3";
-import type { PresignedPostOptions } from "@aws-sdk/s3-presigned-post";
+import type {
+  PresignedPost,
+  PresignedPostOptions,
+} from "@aws-sdk/s3-presigned-post";
+
+// Re-export for consumer convenience
+export type { PresignedPost };
 
 import type { S3Event } from "aws-lambda";
 
@@ -111,23 +117,23 @@ export type MultiPartProps = {
 // ================================
 
 export type PrepareMultipartUploadProps = {
-  expiresInSecs?: number;
-  contentType?: string;
-  bucketName?: string;
-  numOfParts: number;
   key: string;
+  contentType?: string;
+  numOfParts: number;
+  expiresInSecs?: number;
+  bucketName?: string;
 };
 
 export type PrepareMultipartUploadResult = {
-  signedUrls: string[];
   uploadId: string;
+  signedUrls: string[];
   key: string;
 };
 
 export type FinalizeMultipartUploadProps = {
-  bucketName?: string;
-  uploadId: string;
   key: string;
+  uploadId: string;
+  bucketName?: string;
 };
 
 export type UploadPartProps = {
