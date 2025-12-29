@@ -1,8 +1,8 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import type {
   CompletedPart,
-  PutObjectCommandInput,
   UploadPartRequest,
+  PutObjectCommandInput,
 } from "@aws-sdk/client-s3";
 import type { PresignedPostOptions } from "@aws-sdk/s3-presigned-post";
 
@@ -52,7 +52,19 @@ export type SignedUrlPostProps = SignedPostOpts & {
   action: "post";
 };
 
-export type SignedUrlProps = SignedUrlGetProps | SignedUrlPostProps;
+export type SignedUrlMultipartProps = {
+  action: "multipart";
+  key: string;
+  contentType?: string;
+  numOfParts: number;
+  expiresInSecs?: number;
+  bucketName?: string;
+};
+
+export type SignedUrlProps =
+  | SignedUrlGetProps
+  | SignedUrlPostProps
+  | SignedUrlMultipartProps;
 
 export type SignedUrlOpts = {
   key: string;
@@ -89,6 +101,30 @@ export type CompleteMultiPartProps = {
 };
 
 export type MultiPartProps = {
+  bucketName?: string;
+  uploadId: string;
+  key: string;
+};
+
+// ================================
+// High-level multipart upload API
+// ================================
+
+export type PrepareMultipartUploadProps = {
+  expiresInSecs?: number;
+  contentType?: string;
+  bucketName?: string;
+  numOfParts: number;
+  key: string;
+};
+
+export type PrepareMultipartUploadResult = {
+  signedUrls: string[];
+  uploadId: string;
+  key: string;
+};
+
+export type FinalizeMultipartUploadProps = {
   bucketName?: string;
   uploadId: string;
   key: string;

@@ -7,6 +7,10 @@ import {
   HeadBucketCommand,
   HeadObjectCommand,
   ListObjectsV2Command,
+  CreateMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  UploadPartCommand,
+  ListPartsCommand,
   PutObjectCommand,
   S3Client,
   type _Object,
@@ -32,11 +36,15 @@ export const create = (props: _t.CreateProps = {}): _t.Client => {
 };
 
 /**
- * signed url for a get
- * NOTE: ensure lambda has permissions to create
- * signed url or url will give access denied
- * @param s3
- * @param props
+ * Create a signed URL for S3 operations.
+ *
+ * Supports three actions:
+ * - `get`: Returns a signed URL string for downloading
+ * - `post`: Returns a PresignedPost for single-part uploads (< 5MB)
+ * - `multipart`: Returns uploadId + signed URLs for multi-part uploads (> 5MB)
+ *
+ * NOTE: Ensure lambda has permissions to create signed URLs
+ * or the URL will give access denied.
  */
 export function createSignedUrl(
   s3: _t.Client,
@@ -46,6 +54,10 @@ export function createSignedUrl(
   s3: _t.Client,
   props: _t.SignedUrlPostProps
 ): Promise<PresignedPost>;
+export function createSignedUrl(
+  s3: _t.Client,
+  props: _t.SignedUrlMultipartProps
+): Promise<_t.PrepareMultipartUploadResult>;
 export function createSignedUrl(s3: _t.Client, props: _t.SignedUrlProps) {
   const Bucket = _f.getBucketNameOrThrow(props.bucketName, s3.bucketName);
 
@@ -80,6 +92,14 @@ export function createSignedUrl(s3: _t.Client, props: _t.SignedUrlProps) {
     }
 
     return createPresignedPost(s3.client, params);
+  } else if (props.action === "multipart") {
+    return prepareMultipartUpload(s3, {
+      expiresInSecs: props.expiresInSecs,
+      contentType: props.contentType,
+      numOfParts: props.numOfParts,
+      bucketName: props.bucketName,
+      key: props.key,
+    });
   } else {
     // This should be unreachable if types are correct, but good for runtime safety
     throw new Error(
@@ -228,6 +248,114 @@ export const migrateBucketContents = async (
     return s3.client.send(deleteCommand);
   });
   return Promise.all(s3Promises);
+};
+
+// ================================
+// multipart upload operations
+// ================================
+
+/**
+ * Prepare a multipart upload by initiating it and generating signed URLs
+ * for each part. Use this for files larger than 5MB.
+ *
+ * @example
+ * ```ts
+ * const { uploadId, signedUrls, key } = await S3.prepareMultipartUpload(s3, {
+ *   key: "videos/my-video.mp4",
+ *   contentType: "video/mp4",
+ *   numOfParts: 10,
+ *   expiresInSecs: 3600,
+ * });
+ *
+ * // Client uploads each part to its corresponding signed URL
+ * // Then call finalizeMultipartUpload to complete
+ * ```
+ */
+export const prepareMultipartUpload = async (
+  s3: _t.Client,
+  props: _t.PrepareMultipartUploadProps
+) => {
+  const Bucket = _f.getBucketNameOrThrow(props.bucketName, s3.bucketName);
+  const { key, contentType, numOfParts, expiresInSecs = 3600 } = props;
+
+  // Step 1: Initiate multipart upload
+  const createCommand = new CreateMultipartUploadCommand({
+    ContentType: contentType,
+    Key: key,
+    Bucket,
+  });
+  const { UploadId } = await s3.client.send(createCommand);
+
+  if (!UploadId) {
+    throw new Error("[s3] [prepareMultipartUpload] failed to get UploadId");
+  }
+
+  // Step 2: Generate signed URLs for each part
+  const signedUrls: string[] = [];
+  for (let partNumber = 1; partNumber <= numOfParts; partNumber++) {
+    const uploadPartCommand = new UploadPartCommand({
+      PartNumber: partNumber,
+      Key: key,
+      UploadId,
+      Bucket,
+    });
+    const url = await getSignedUrl(s3.client, uploadPartCommand, {
+      expiresIn: expiresInSecs,
+    });
+    signedUrls.push(url);
+  }
+
+  return { uploadId: UploadId, signedUrls, key };
+};
+
+/**
+ * Finalize a multipart upload after all parts have been uploaded.
+ * This internally lists all uploaded parts and completes the upload.
+ *
+ * @example
+ * ```ts
+ * // After client has uploaded all parts to their signed URLs
+ * await S3.finalizeMultipartUpload(s3, {
+ *   key: "videos/my-video.mp4",
+ *   uploadId: "abc123...",
+ * });
+ * ```
+ */
+export const finalizeMultipartUpload = async (
+  s3: _t.Client,
+  props: _t.FinalizeMultipartUploadProps
+) => {
+  const Bucket = _f.getBucketNameOrThrow(props.bucketName, s3.bucketName);
+  const { key, uploadId } = props;
+
+  // Step 1: List all uploaded parts
+  const listCommand = new ListPartsCommand({
+    UploadId: uploadId,
+    Key: key,
+    Bucket,
+  });
+  const { Parts } = await s3.client.send(listCommand);
+
+  if (!Parts || Parts.length === 0) {
+    throw new Error(
+      "[s3] [finalizeMultipartUpload] no parts found - ensure all parts were uploaded"
+    );
+  }
+
+  // Step 2: Complete the multipart upload
+  const completeCommand = new CompleteMultipartUploadCommand({
+    Bucket,
+    Key: key,
+    UploadId: uploadId,
+    MultipartUpload: {
+      Parts: Parts.map((part) => ({
+        PartNumber: part.PartNumber,
+        ETag: part.ETag,
+      })),
+    },
+  });
+
+  return s3.client.send(completeCommand);
 };
 
 /**
