@@ -9,6 +9,8 @@ import {
   type Target,
   type TargetAndTransition,
   type AnimationDefinition,
+  type DragControls,
+  type PanInfo,
 } from "framer-motion";
 import type { IconName, SizeProp } from "@fortawesome/fontawesome-svg-core";
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
@@ -116,12 +118,33 @@ type BlockMotionProps = {
   whileHover?: TargetAndTransition | VariantLabels;
   whileTap?: TargetAndTransition | VariantLabels;
   whileFocus?: TargetAndTransition | VariantLabels;
+  whileDrag?: TargetAndTransition | VariantLabels;
   layout?: boolean | "position" | "size" | "preserve-aspect";
   _motion?: Transition; // Custom transition prop for global motion config
   /** Called when animation starts. Receives the animation definition being animated to. */
   onAnimationStart?: (definition: AnimationDefinition) => void;
   /** Called when animation completes. Receives the animation definition that just completed. */
   onAnimationComplete?: (definition: AnimationDefinition) => void;
+
+  // drag (framer-motion)
+  drag?: boolean | "x" | "y";
+  dragListener?: boolean;
+  dragControls?: DragControls;
+  dragConstraints?:
+    | false
+    | Partial<{ top: number; left: number; right: number; bottom: number }>
+    | React.RefObject<Element>;
+  dragElastic?:
+    | number
+    | Partial<{ top: number; left: number; right: number; bottom: number }>;
+  dragMomentum?: boolean;
+  // NOTE: React also defines `onDrag*` handlers for HTML drag & drop and uses a
+  // different event type/signature. To avoid internal qstd component prop
+  // forwarding type errors (spreading props onto non-motion base elements),
+  // we keep these handler args intentionally broad.
+  onDragStart?: (event: unknown, info?: PanInfo) => void;
+  onDrag?: (event: unknown, info?: PanInfo) => void;
+  onDragEnd?: (event: unknown, info?: PanInfo) => void;
 };
 
 // Shared props interface to reduce intersection complexity

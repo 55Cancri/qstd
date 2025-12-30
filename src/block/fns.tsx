@@ -288,10 +288,20 @@ export const extractElAndStyles = (
     whileTap,
     whileHover,
     whileFocus,
+    whileDrag,
     variants,
     custom,
     onAnimationStart,
     onAnimationComplete,
+    drag,
+    dragListener,
+    dragControls,
+    dragConstraints,
+    dragElastic,
+    dragMomentum,
+    onDragStart,
+    onDrag,
+    onDragEnd,
     ...rest
   } = anyProps;
 
@@ -312,10 +322,20 @@ export const extractElAndStyles = (
     whileHover !== undefined ||
     whileTap !== undefined ||
     whileFocus !== undefined ||
+    whileDrag !== undefined ||
     variants !== undefined ||
     custom !== undefined ||
     onAnimationStart !== undefined ||
-    onAnimationComplete !== undefined;
+    onAnimationComplete !== undefined ||
+    drag !== undefined ||
+    dragListener !== undefined ||
+    dragControls !== undefined ||
+    dragConstraints !== undefined ||
+    dragElastic !== undefined ||
+    dragMomentum !== undefined ||
+    onDragStart !== undefined ||
+    onDrag !== undefined ||
+    onDragEnd !== undefined;
 
   const comp: React.ElementType = hasMotionProps ? MotionComp : StdComp;
   const motionProps = hasMotionProps
@@ -327,10 +347,20 @@ export const extractElAndStyles = (
         whileHover,
         whileTap,
         whileFocus,
+        whileDrag,
         variants,
         custom,
         onAnimationStart,
         onAnimationComplete,
+        drag,
+        dragListener,
+        dragControls,
+        dragConstraints,
+        dragElastic,
+        dragMomentum,
+        onDragStart,
+        onDrag,
+        onDragEnd,
       }
     : undefined;
 
