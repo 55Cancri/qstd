@@ -16,6 +16,39 @@ const MotionDiv = _l.motionTags.div;
 const MotionBtn = _l.motionTags.button;
 const breakpoint = ["(min-width: 600px)"];
 
+function requirePortalRootForDrawer(): HTMLElement {
+  // Drawer always renders through a portal; missing portal root should fail loudly
+  // with a clear, actionable message (instead of React's minified error).
+  if (typeof document === "undefined") {
+    throw new Error(
+      [
+        `[qstd] Block is="drawer" requires a DOM (document is undefined).`,
+        `If you're server-rendering, render drawers only on the client.`,
+      ].join("\n")
+    );
+  }
+
+  const portal = document.getElementById("portal");
+  if (!portal) {
+    throw new Error(
+      [
+        `[qstd] You cannot use <Block is="drawer" /> unless your HTML contains a portal root: <div id="portal"></div>.`,
+        ``,
+        `No element with id="portal" was found in the document.`,
+        ``,
+        `Fix: add this next to your app root in your HTML (usually right under #root):`,
+        ``,
+        `  <div id="root"></div>`,
+        `  <div id="portal"></div>`,
+        ``,
+        `Without #portal, qstd cannot render drawers (they use React portals).`,
+      ].join("\n")
+    );
+  }
+
+  return portal;
+}
+
 function DrawerComponent(props: _t.DrawerBlockProps) {
   const ref = React.useRef<HTMLDivElement | null>(null);
   const dragHandleRef = React.useRef<HTMLDivElement | null>(null);
@@ -155,6 +188,8 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
 
   // Don't render portal during SSR - document doesn't exist on the server
   if (!mounted) return null;
+
+  const portalRoot = requirePortalRootForDrawer();
 
   return createPortal(
     <AnimatePresence
@@ -347,7 +382,7 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
         </Backdrop>
       )}
     </AnimatePresence>,
-    document.getElementById("portal")!
+    portalRoot
   );
 }
 
