@@ -172,6 +172,7 @@ type OmittedHTMLProps =
   | "height"
   | "translate"
   | "content"
+  | "style" // Omit React's CSSProperties to use MotionStyle from SharedBlockProps
   | "as"
   | "onAnimationStart"
   | "onAnimationEnd"
