@@ -21,14 +21,14 @@ import type { Locale } from "date-fns";
 // ============================================================================
 
 type DurationFormat = "compact" | "full" | "clock" | "fractional";
-type DurationUnit = "ms" | "seconds" | "minutes";
-type DurationUnitInput = DurationUnit | "secs" | "ss" | "mins" | "mm";
+/** Suggested units - aliases like 'ss', 'secs', 'mm', 'mins' are also accepted */
+type DurationUnit = "ms" | "seconds" | "minutes" | (string & {});
 
 type DurationOptions = {
   /** Format style: 'compact' (1h 2m), 'full' (1 hour 2 minutes), 'clock' (01:02:03), 'fractional' (1.4s, 1m4.4s) */
   format?: DurationFormat;
   /** Input unit: 'ms' (milliseconds, default), 'seconds' (or 'secs'/'ss'), or 'minutes' (or 'mins'/'mm'). Use 'seconds' for audio/video currentTime. */
-  unit?: DurationUnitInput;
+  unit?: DurationUnit;
   /** Show zero values for intermediate units (e.g., "1h 0m 30s" vs "1h 30s") */
   showZero?: boolean;
   /** Include milliseconds in compact format (e.g., "1s 200ms") */
@@ -142,8 +142,16 @@ export const formatDuration = (
   } = options;
 
   // Normalize to milliseconds internally
+  const isMs = unit === "ms";
   const isSeconds = unit === "seconds" || unit === "secs" || unit === "ss";
   const isMinutes = unit === "minutes" || unit === "mins" || unit === "mm";
+
+  if (!isMs && !isSeconds && !isMinutes) {
+    throw new Error(
+      `Invalid unit "${unit}". Use "ms", "seconds" (or "secs"/"ss"), or "minutes" (or "mins"/"mm").`
+    );
+  }
+
   const ms = isSeconds ? value * 1000 : isMinutes ? value * 60 * 1000 : value;
 
   const absMs = Math.abs(ms);
