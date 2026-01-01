@@ -160,8 +160,9 @@ export interface SharedBlockProps
   portal?: boolean;
   as?: React.ElementType;
   className?: string | undefined;
-  // Allow MotionStyle to support MotionValue<T> in style props when using motion features
-  style?: React.CSSProperties | MotionStyle | undefined;
+  // Use MotionStyle to support both regular CSS values and MotionValue<T> in style props.
+  // MotionStyle already accepts plain values (string/number) via its T | MotionValue<any> mapping.
+  style?: MotionStyle | undefined;
 }
 
 // Helper to omit conflicting props from HTML attributes
