@@ -4,9 +4,12 @@
  * @param ms
  * @returns
  */
-export const throttle = (fn: any, ms: number) => {
+export const throttle = <Args extends unknown[]>(
+  fn: (...args: Args) => void,
+  ms: number
+) => {
   let time = Date.now();
-  return (...args: any[]) => {
+  return (...args: Args) => {
     if (time + ms - Date.now() < 0) {
       fn(...args);
       time = Date.now();
@@ -22,13 +25,13 @@ export const throttle = (fn: any, ms: number) => {
  * @param timeout
  * @returns
  */
-export const debounce = <T extends any[]>(
-  fn: (...args: T) => any,
+export const debounce = <Args extends unknown[], R>(
+  fn: (...args: Args) => R,
   timeout: number
-): ((...args: T) => void) => {
+): ((...args: Args) => void) => {
   let timer: NodeJS.Timeout;
 
-  return (...args: T) => {
+  return (...args: Args) => {
     clearTimeout(timer);
 
     timer = setTimeout(() => {
@@ -55,35 +58,31 @@ export const sleep = (ms: number): Promise<void> =>
  * ```
  * @param concurrency
  * @param iterable
- * @param iterator_fn
+ * @param iteratorFn
  */
-export async function* asyncPool<T>(
+export async function* asyncPool<T, R>(
   concurrency: number,
   iterable: T[],
-  iterator_fn: (x: T, xs: T[]) => any
-) {
-  const executing = new Set();
-  const consume = async () => {
-    // @ts-ignore
-    const [promise, value] = await Promise.race(executing);
-    executing.delete(promise);
-    return value;
-  };
+  iteratorFn: (x: T, xs: T[]) => PromiseLike<R> | R
+): AsyncGenerator<R> {
+  const executing = new Set<Promise<R>>();
   for (const item of iterable) {
-    // Wrap iteratorFn() in an async fn to ensure we get a promise.
-    // Then expose such promise, so it's possible to later reference and
-    // remove it from the executing pool.
-    // @ts-ignore
-    const promise = (async () => await iterator_fn(item, iterable))().then(
-      (value) => [promise, value]
-    );
+    const promise = Promise.resolve().then(() => iteratorFn(item, iterable));
     executing.add(promise);
+    // Remove the promise from the pool once it settles (both resolve and reject).
+    void promise.then(
+      () => {
+        executing.delete(promise);
+      },
+      () => {
+        executing.delete(promise);
+      }
+    );
     if (executing.size >= concurrency) {
-      yield await consume();
+      yield await Promise.race(executing);
     }
   }
   while (executing.size) {
-    yield await consume();
+    yield await Promise.race(executing);
   }
 }
-

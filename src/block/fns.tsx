@@ -337,7 +337,25 @@ export const extractElAndStyles = (
     onDrag !== undefined ||
     onDragEnd !== undefined;
 
-  const comp: React.ElementType = hasMotionProps ? MotionComp : StdComp;
+  // If a consumer passes MotionValues in `style` (e.g. `{ y, height }`) but no other
+  // explicit motion props, we still need to render the motion component for them to work.
+  const style = (rest as Record<string, unknown>).style;
+  let hasMotionStyle = false;
+  if (style && typeof style === "object" && !Array.isArray(style)) {
+    for (const v of Object.values(style as Record<string, unknown>)) {
+      if (!v || typeof v !== "object") continue;
+      const mv = v as { get?: unknown; on?: unknown };
+      // MotionValue instances have a `get()` and `on()` API (among others).
+      if (typeof mv.get === "function" && typeof mv.on === "function") {
+        hasMotionStyle = true;
+        break;
+      }
+    }
+  }
+
+  const shouldUseMotionComp = hasMotionProps || hasMotionStyle;
+
+  const comp: React.ElementType = shouldUseMotionComp ? MotionComp : StdComp;
   const motionProps = hasMotionProps
     ? {
         layout,
@@ -380,7 +398,7 @@ export const extractElAndStyles = (
   // Panda also uses `transition` as a CSS style prop. When rendering a motion
   // component (motion.create(styled(...))), Framer Motion will swallow `transition`,
   // so we move it onto the inline style instead to keep CSS transitions working.
-  if (hasMotionProps && "transition" in remaining) {
+  if (shouldUseMotionComp && "transition" in remaining) {
     const cssTransition = (remaining as Record<string, unknown>).transition;
     if (cssTransition !== undefined) {
       delete (remaining as Record<string, unknown>).transition;

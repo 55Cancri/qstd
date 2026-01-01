@@ -470,6 +470,35 @@ export default function Tooltip(
       />
     ) : null;
 
+    // merge original child ref with our probe ref to read computed styles
+    const originalChildRef = (el as { ref?: ElementRef<HTMLElement> }).ref;
+    const mergedChildRef = (node: HTMLElement | null) => {
+      containerRef.current = node;
+      if (typeof originalChildRef === "function") {
+        originalChildRef(node);
+      } else if (originalChildRef && "current" in originalChildRef) {
+        originalChildRef.current = node;
+      }
+    };
+
+    const wrappedChild = React.cloneElement(
+      el,
+      // eslint-disable-next-line react-hooks/refs -- ref callback is invoked after render, not during
+      {
+        // Spread childProps first
+        ...childProps,
+        ref: mergedChildRef,
+        // Then override className with merged value (must be after ...childProps)
+        className: mergedClassName,
+        style: {
+          // Apply inline defaults first, then user styles, then position
+          ...mergedStyle,
+          position: "relative" as const,
+        },
+      },
+      childProps.children
+    );
+
     floatingNode = (
       <motion.div
         ref={mergedFloatingRef}
@@ -494,36 +523,7 @@ export default function Tooltip(
         transition={{ type: "spring", stiffness: 520, damping: 34 }}
         role="tooltip"
       >
-        {(() => {
-          // merge original child ref with our probe ref to read computed styles
-          const originalChildRef = (el as { ref?: ElementRef<HTMLElement> })
-            .ref;
-          const mergedChildRef = (node: HTMLElement | null) => {
-            containerRef.current = node;
-            if (typeof originalChildRef === "function") {
-              originalChildRef(node);
-            } else if (originalChildRef && "current" in originalChildRef) {
-              originalChildRef.current = node;
-            }
-          };
-          return React.cloneElement(
-            el,
-            // eslint-disable-next-line react-hooks/refs -- ref callback is invoked after render, not during
-            {
-              // Spread childProps first
-              ...childProps,
-              ref: mergedChildRef,
-              // Then override className with merged value (must be after ...childProps)
-              className: mergedClassName,
-              style: {
-                // Apply inline defaults first, then user styles, then position
-                ...mergedStyle,
-                position: "relative" as const,
-              },
-            },
-            childProps.children
-          );
-        })()}
+        {wrappedChild}
         {arrowEl}
       </motion.div>
     );

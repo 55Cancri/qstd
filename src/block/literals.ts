@@ -5,6 +5,64 @@ import { Oval, RotatingLines, TailSpin, ThreeDots } from "react-loader-spinner";
 import { styled } from "panda/jsx";
 import { motion } from "framer-motion";
 
+export const base = styled("div");
+
+export const tags = {
+  div: base,
+  a: styled("a"),
+  br: styled("br"),
+  button: styled("button"),
+  canvas: styled("canvas"),
+  form: styled("form"),
+  h1: styled("h1"),
+  h2: styled("h2"),
+  h3: styled("h3"),
+  hr: styled("hr"),
+  nav: styled("nav"),
+  main: styled("main"),
+  aside: styled("aside"),
+  article: styled("article"),
+  section: styled("section"),
+  details: styled("details"),
+  header: styled("header"),
+  footer: styled("footer"),
+  strong: styled("strong"),
+  em: styled("em"),
+  img: styled("img"),
+  del: styled("del"),
+  ins: styled("ins"),
+  kbd: styled("kbd"),
+  code: styled("code"),
+  mark: styled("mark"),
+  samp: styled("samp"),
+  small: styled("small"),
+  sub: styled("sub"),
+  sup: styled("sup"),
+  u: styled("u"),
+  var: styled("var"),
+  input: styled("input"),
+  label: styled("label"),
+  legend: styled("legend"),
+  p: styled("p"),
+  select: styled("select"),
+  span: styled("span"),
+  svg: styled("svg"),
+  textarea: styled("textarea"),
+  table: styled("table"),
+  tr: styled("tr"),
+  th: styled("th"),
+  td: styled("td"),
+  tbody: styled("tbody"),
+  thead: styled("thead"),
+  tfoot: styled("tfoot"),
+  progress: styled("progress"),
+  ol: styled("ol"),
+  ul: styled("ul"),
+  li: styled("li"),
+  blockquote: styled("blockquote"),
+  pre: styled("pre"),
+} as const;
+
 // WHY: We wrap motion AROUND styled (motion.create(styled("x"))) instead of styled(motion.x).
 // This ensures framer-motion intercepts its props (initial, animate, transition, etc.)
 // BEFORE they reach Panda's styled wrapper. If Panda wraps motion, it may filter/transform
@@ -14,19 +72,11 @@ import { motion } from "framer-motion";
 // conflicts with Panda's CSS `transition` prop (string like "all 0.2s"). The runtime
 // behavior is correct - motion intercepts its props first. Proper typing would require
 // complex union types and overloads that aren't worth the maintenance cost.
-//
-// STYLE NOTE: All components are motion-wrapped so they accept MotionStyle (style props
-// with MotionValue). This allows SharedBlockProps.style to be MotionStyle while internal
-// components that spread {...rest} don't cause type conflicts.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const motionStyled = (tag: string) => motion.create(styled(tag as any) as any);
 
-// Base div component used throughout internal implementations
-export const base = motionStyled("div");
-
-// All tags are motion-wrapped for MotionStyle compatibility
-export const tags = {
-  div: base,
+export const motionTags = {
+  div: motionStyled("div"),
   a: motionStyled("a"),
   br: motionStyled("br"),
   button: motionStyled("button"),
@@ -79,10 +129,7 @@ export const tags = {
   li: motionStyled("li"),
   blockquote: motionStyled("blockquote"),
   pre: motionStyled("pre"),
-} as const;
-
-// motionTags is now an alias to tags (all tags are motion-wrapped)
-export const motionTags = tags;
+} as const satisfies { [K in keyof typeof tags]: unknown };
 
 export const loadingIconsMap = {
   rotatingLines: RotatingLines,

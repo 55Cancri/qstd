@@ -3,14 +3,32 @@
 
 import * as React from "react";
 import Block from ".";
+import { useMotionValue, useTransform } from "framer-motion";
 
 // Test all requested is variants with proper typing
 const TestAllVariants = () => {
+  const y = useMotionValue(0);
+  const height = useTransform(y, (v) => v + 100);
+  const radius = useTransform(y, (v) => v);
+
   return (
     <div>
       {/* Base usage without is */}
       <Block grid cursor="pointer">
         Base Block
+      </Block>
+
+      <Block
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 100 }}
+        style={{
+          borderTopLeftRadius: radius,
+          borderTopRightRadius: radius,
+          height,
+          y,
+        }}
+      >
+        MotionValue style props
       </Block>
 
       {/* All requested is variants */}
@@ -31,16 +49,16 @@ const TestAllVariants = () => {
 
       <Block is="input" placeholder="Enter text" />
       <Block is="textarea" rows={4} />
-      <Block is="checkbox" checked onChecked={(v: boolean) => {}} />
+      <Block is="checkbox" checked onChecked={(_v: boolean) => {}} />
       <Block is="progress" value={50} max={100} />
-      <Block is="switch" checked onChange={(v: boolean) => {}} />
+      <Block is="switch" checked onChange={(_v: boolean) => {}} />
       <Block is="drawer" open onClose={() => {}} />
       <Block is="radio" name="test" value="option1" />
       <Block
         is="menu"
         isOpen
         variant="click"
-        onOpenOrClose={(v: boolean) => {}}
+        onOpenOrClose={(_v: boolean) => {}}
       />
       <Block is="link" href="/test">
         Link

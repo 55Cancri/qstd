@@ -21,7 +21,9 @@ const Hr = _l.motionTags.hr;
 const Skeleton = _l.motionTags.div;
 
 function Block<T extends _t.Is>(props: _t.BlockProps<T>): React.ReactElement;
-function Block(props: _t.BaseBlockProps): React.ReactElement;
+function Block(
+  props: _t.BaseBlockProps | _t.MotionBaseBlockProps
+): React.ReactElement;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Implementation signature for polymorphic overloads
 function Block(props: any) {
   const anyProps = props;

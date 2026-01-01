@@ -160,10 +160,18 @@ export interface SharedBlockProps
   portal?: boolean;
   as?: React.ElementType;
   className?: string | undefined;
-  // Use MotionStyle to support both regular CSS values and MotionValue<T> in style props.
-  // MotionStyle already accepts plain values (string/number) via its T | MotionValue<any> mapping.
-  style?: MotionStyle | undefined;
+  // NOTE: Most internal qstd components spread `...rest` onto Panda `styled()` elements.
+  // Those elements expect React's `CSSProperties` for `style`, not Framer's `MotionStyle`.
+  // MotionStyle is enabled only for the variants that actually render motion elements.
+  style?: React.CSSProperties | undefined;
 }
+
+// Variants that can render motion elements should allow MotionStyle in `style` so consumers
+// can pass MotionValues (e.g. `{ y, height }`). We keep this separate to avoid breaking
+// internal non-motion components (Input, Checkbox, Menu, etc).
+type SharedMotionStyleBlockProps = Omit<SharedBlockProps, "style"> & {
+  style?: MotionStyle | undefined;
+};
 
 // Helper to omit conflicting props from HTML attributes
 type OmittedHTMLProps =
@@ -172,7 +180,9 @@ type OmittedHTMLProps =
   | "height"
   | "translate"
   | "content"
-  | "style" // Omit React's CSSProperties to use MotionStyle from SharedBlockProps
+  // Avoid `style` becoming an intersection (`CSSProperties & MotionStyle`) via `& HTMLProps<T>`.
+  // We provide `style` explicitly via SharedBlockProps / SharedMotionStyleBlockProps.
+  | "style"
   | "as"
   | "onAnimationStart"
   | "onAnimationEnd"
@@ -192,16 +202,21 @@ type HTMLProps<T extends React.ElementType> = Omit<
 export type BaseBlockProps = SharedBlockProps &
   HTMLProps<"div"> & { is?: undefined };
 
+export type MotionBaseBlockProps = Omit<BaseBlockProps, "style"> & {
+  style?: MotionStyle | undefined;
+};
+
 // simplified variants with motion support
-type TxtBlockProps = SharedBlockProps &
+type TxtBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"div"> & {
     is: "txt";
     as?: "p" | "span" | "h1" | "h2" | "h3" | "em" | "strong"; // defaults to p
   };
 
-export type HrBlockProps = SharedBlockProps & HTMLProps<"hr"> & { is: "hr" };
+export type HrBlockProps = SharedMotionStyleBlockProps &
+  HTMLProps<"hr"> & { is: "hr" };
 
-export type SkeletonBlockProps = SharedBlockProps &
+export type SkeletonBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"div"> & {
     is: "skeleton";
     as: "block";
@@ -210,7 +225,7 @@ export type SkeletonBlockProps = SharedBlockProps &
     br?: string | number;
   };
 
-export type SkeletonCircleProps = SharedBlockProps &
+export type SkeletonCircleProps = SharedMotionStyleBlockProps &
   HTMLProps<"div"> & {
     is: "skeleton";
     as: "circle";
@@ -219,7 +234,7 @@ export type SkeletonCircleProps = SharedBlockProps &
   };
 
 // Base button props without onChange
-type BtnBlockPropsBase = SharedBlockProps &
+type BtnBlockPropsBase = SharedMotionStyleBlockProps &
   Omit<HTMLProps<"button">, "onChange"> &
   LoadingProps & {
     is: "btn";
@@ -380,7 +395,7 @@ export type MenuBlockProps = SharedBlockProps &
     width?: string | number;
   };
 
-type LinkBlockProps = SharedBlockProps &
+type LinkBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"div"> & {
     is: "link";
     href?: string;
@@ -389,30 +404,30 @@ type LinkBlockProps = SharedBlockProps &
     rel?: string;
   };
 
-type ImgBlockProps = SharedBlockProps &
+type ImgBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"img"> & {
     is: "img";
     src: string;
     alt: string;
   };
 
-type SelectBlockProps = SharedBlockProps &
+type SelectBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"select"> & {
     is: "select";
   };
 
-type BlockquoteBlockProps = SharedBlockProps &
+type BlockquoteBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"blockquote"> & {
     is: "blockquote";
   };
 
-type PreBlockProps = SharedBlockProps &
+type PreBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"pre"> & {
     is: "pre";
   };
 
 // Form variants with as constraints
-type FormBlockProps = SharedBlockProps &
+type FormBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"form"> &
   (
     | { is: "form"; as?: undefined }
@@ -421,7 +436,7 @@ type FormBlockProps = SharedBlockProps &
   );
 
 // Table variants with as constraints
-type TableBlockProps = SharedBlockProps &
+type TableBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"table"> &
   (
     | { is: "table"; as?: undefined }
@@ -434,7 +449,7 @@ type TableBlockProps = SharedBlockProps &
   );
 
 // List variants with required as
-type ListBlockProps = SharedBlockProps &
+type ListBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"div"> &
   (
     | ({ is: "list"; as: "ul" } & HTMLProps<"ul">)
@@ -443,7 +458,7 @@ type ListBlockProps = SharedBlockProps &
   );
 
 // SEO variants with required as
-type SeoBlockProps = SharedBlockProps &
+type SeoBlockProps = SharedMotionStyleBlockProps &
   HTMLProps<"div"> &
   (
     | ({ is: "seo"; as: "nav" } & HTMLProps<"nav">)
