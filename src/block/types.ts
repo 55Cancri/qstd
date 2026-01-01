@@ -11,6 +11,7 @@ import {
   type AnimationDefinition,
   type DragControls,
   type PanInfo,
+  type MotionStyle,
 } from "framer-motion";
 import type { IconName, SizeProp } from "@fortawesome/fontawesome-svg-core";
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
@@ -159,7 +160,8 @@ export interface SharedBlockProps
   portal?: boolean;
   as?: React.ElementType;
   className?: string | undefined;
-  style?: React.CSSProperties | undefined;
+  // Allow MotionStyle to support MotionValue<T> in style props when using motion features
+  style?: React.CSSProperties | MotionStyle | undefined;
 }
 
 // Helper to omit conflicting props from HTML attributes

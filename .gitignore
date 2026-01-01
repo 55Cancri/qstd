@@ -1,3 +1,5 @@
+.specstory/
+
 # Dependencies
 node_modules/
 .pnp
