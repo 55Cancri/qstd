@@ -72,7 +72,9 @@ export default function Input(props: _t.InputBlockProps) {
             color="text-primary"
             {...(!hasDebug && {
               border: "1.5px solid",
-              borderColor: error ? "input-border-color-error" : "input-border-color",
+              borderColor: error
+                ? "input-border-color-error"
+                : "input-border-color",
             })}
             {...(error && { outlineColor: "input-outline-color-error" })}
             borderRadius={8}
@@ -143,18 +145,20 @@ export function RightSide(
 
   return (
     <Base
-      position="absolute"
+      absolute
       top="50%"
-      transform="translateY(-50%)"
       right="11px"
+      transform="translateY(-50%)"
       {...rest}
       {...(clearable && {
         cursor: "pointer",
-        onClick: (e) => {
+        onClick: (e: React.MouseEvent) => {
           const clearedValueEvent = Object.assign({}, e, {
             target: Object.assign({}, e.target, { value: "" }),
           });
-          props.onChange?.(clearedValueEvent);
+          props.onChange?.(
+            clearedValueEvent as unknown as React.ChangeEvent<HTMLInputElement>
+          );
         },
       })}
     />

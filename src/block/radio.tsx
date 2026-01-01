@@ -157,7 +157,7 @@ export default function Radio(props: _t.RadioBlockProps) {
         role="radiogroup"
         aria-disabled={disabled}
         {...rest}
-        onKeyDown={(e) => {
+        onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
           if (disabled) return;
 
           // Arrow keys move the active item, Space/Enter selects the active item
@@ -305,18 +305,18 @@ export function Item(props: RadioItemProps) {
         _radioLabel: { color: { base: "neutral.400", _dark: "neutral.600" } },
       }}
       // Events: click selects; focus updates active roving target
-      onClick={(e) => {
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
         if (!disabled) setSelectedValue(value);
-        onClickProp?.(e as React.MouseEvent<HTMLDivElement>);
+        onClickProp?.(e);
       }}
-      onFocus={(e) => {
+      onFocus={(e: React.FocusEvent<HTMLDivElement>) => {
         setActiveById(id);
         setIsFocused(true);
-        onFocusProp?.(e as React.FocusEvent<HTMLDivElement>);
+        onFocusProp?.(e);
       }}
-      onBlur={(e) => {
+      onBlur={(e: React.FocusEvent<HTMLDivElement>) => {
         setIsFocused(false);
-        onBlurProp?.(e as React.FocusEvent<HTMLDivElement>);
+        onBlurProp?.(e);
       }}
       {...rest}
     >

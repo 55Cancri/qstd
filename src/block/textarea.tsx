@@ -430,7 +430,7 @@ export default function Textarea(props: _t.TextareaBlockProps) {
           <Txtarea
             ref={ref}
             value={value}
-            onContextMenu={(e) => e.preventDefault()}
+            onContextMenu={(e: React.MouseEvent) => e.preventDefault()}
             resize={resize}
             {...paddingDefaults}
             color="text-primary"
