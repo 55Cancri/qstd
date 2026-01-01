@@ -88,6 +88,7 @@ const configHeaders = async (): Promise<HeadersObject> => {
  * - Bodies are serialized consistently (`json` by default for write methods)
  * - Errors are normalized into `RestError` and can be converted via `onError`
  * - Responses are parsed via `_f.parseResponse` with optional progress tracking
+ * - Interceptor hooks (onRequest/onResponse/onError) are called for observability
  *
  * @throws {RestError} When the response is not ok and no `onError` handler is provided.
  */
@@ -102,6 +103,11 @@ const request = async <
   options?: BodyOptions<Req, Res, Return, O> | Options<Res, Return, O>,
   defaultInput?: Input
 ): Promise<Return> => {
+  const start = Date.now();
+  
+  // Call onRequest hook (for telemetry/logging)
+  config.onRequest?.(method, path);
+
   const opts = options as BodyOptions<Req, Res, Return, O> | undefined;
   const url = _f.prepareUrl(path, {
     baseUrl: config.baseUrl,
@@ -138,21 +144,36 @@ const request = async <
 
   const body = _f.prepareBody(rawBody, input);
 
-  const response = await fetch(url, {
-    method,
-    ...(headers && { headers }),
-    ...(body !== undefined && { body }),
-    ...(opts?.signal && { signal: opts.signal }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      ...(headers && { headers }),
+      ...(body !== undefined && { body }),
+      ...(opts?.signal && { signal: opts.signal }),
+    });
+  } catch (networkError) {
+    // Network error (offline, DNS failure, etc.)
+    const elapsed = Date.now() - start;
+    const error = networkError instanceof Error ? networkError : new Error(String(networkError));
+    config.onError?.(method, path, error, elapsed);
+    throw error;
+  }
 
   if (!response.ok) {
+    const elapsed = Date.now() - start;
     const error = new RestError({
       status: response.status,
       body: await response.text(),
     });
+    config.onError?.(method, path, error, elapsed);
     if (opts?.onError) return opts.onError(error);
     throw error;
   }
+
+  // Call onResponse hook (for telemetry/logging)
+  const elapsed = Date.now() - start;
+  config.onResponse?.(method, path, elapsed);
 
   const data = await _f.parseResponse<Res, O>(
     response,

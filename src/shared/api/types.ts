@@ -26,10 +26,41 @@ export type HeadersTransform = (
   defaults: HeadersObject
 ) => HeadersObject | Promise<HeadersObject>;
 
+/**
+ * Interceptor hooks for observability (telemetry, logging, debugging).
+ *
+ * These hooks are called during the request lifecycle but do NOT affect
+ * the request/response. Use them for breadcrumbs, metrics, or logging.
+ *
+ * @example
+ * ```ts
+ * Api.configure({
+ *   baseUrl: "https://api.example.com",
+ *   onRequest: (method, path) => {
+ *     Telemetry.addBreadcrumb({ type: "http", message: `${method} ${path}` });
+ *   },
+ *   onResponse: (method, path, elapsed) => {
+ *     Telemetry.addBreadcrumb({ type: "http", message: `${method} ${path} OK (${elapsed}ms)` });
+ *   },
+ *   onError: (method, path, error, elapsed) => {
+ *     Telemetry.addBreadcrumb({ type: "http", message: `${method} ${path} FAIL`, data: { error } });
+ *   },
+ * });
+ * ```
+ */
+export type RequestHooks = {
+  /** Called before each request starts */
+  onRequest?: (method: Method, path: string) => void;
+  /** Called after successful response (before parsing) */
+  onResponse?: (method: Method, path: string, elapsed: number) => void;
+  /** Called when request fails (network error or non-ok response) */
+  onError?: (method: Method, path: string, error: Error, elapsed: number) => void;
+};
+
 export type Config = {
   baseUrl: string;
   headers?: HeadersObject | HeadersGetter;
-};
+} & RequestHooks;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Input / Output
