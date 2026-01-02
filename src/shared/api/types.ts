@@ -54,7 +54,12 @@ export type RequestHooks = {
   /** Called after successful response (before parsing) */
   onResponse?: (method: Method, path: string, elapsed: number) => void;
   /** Called when request fails (network error or non-ok response) */
-  onError?: (method: Method, path: string, error: Error, elapsed: number) => void;
+  onError?: (
+    method: Method,
+    path: string,
+    error: Error,
+    elapsed: number
+  ) => void;
 };
 
 export type Config = {
@@ -79,6 +84,9 @@ export type Output =
   | "stream"
   | "arrayBuffer"
   | "sse";
+
+/** Output types that require fetch's streaming capabilities (incompatible with XHR). */
+export type StreamingOutput = "sse" | "stream";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SSE (Server-Sent Events)
@@ -265,8 +273,18 @@ export type BodyOptions<
   params?: Params;
   output?: O;
   signal?: AbortSignal;
-  /** Progress callback for blob/arrayBuffer downloads (not applicable to SSE). */
+  /** Progress callback for response body downloads (not applicable to SSE/stream). */
   onProgress?: (progress: Progress) => void;
+  /**
+   * Progress callback for request body uploads. Uses XHR internally.
+   *
+   * ⚠️ Cannot be combined with streaming outputs (`output: "sse"` or `output: "stream"`)
+   * because XHR doesn't support true streaming responses. TypeScript will error if you
+   * try to use both.
+   */
+  onUploadProgress?: [O] extends [StreamingOutput]
+    ? never
+    : (progress: Progress) => void;
   onSuccess?: (data: DataForOutput<Res, O>) => Return;
   onError?: (error: RestError) => Return;
 };
@@ -281,4 +299,3 @@ export type BodylessOptions<
   Return = Res,
   O extends Output | undefined = undefined
 > = Omit<BodyOptions<Req, Res, Return, O>, "body">;
-

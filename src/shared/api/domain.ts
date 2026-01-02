@@ -104,7 +104,7 @@ const request = async <
   defaultInput?: Input
 ): Promise<Return> => {
   const start = Date.now();
-  
+
   // Call onRequest hook (for telemetry/logging)
   config.onRequest?.(method, path);
 
@@ -136,14 +136,47 @@ const request = async <
   const defaults =
     headersOption !== false && !isExternal ? await configHeaders() : {};
   const headers = await _f.prepareHeaders({
-    defaults,
     headersOption,
-    input,
     body: rawBody,
+    defaults,
+    input,
   });
 
   const body = _f.prepareBody(rawBody, input);
 
+  // Use XHR for upload progress (fetch doesn't support it)
+  // Type system already prevents combining onUploadProgress with streaming outputs
+  const onUploadProgress = opts?.onUploadProgress;
+
+  if (onUploadProgress && body !== undefined) {
+    try {
+      const data = await _f.requestWithXhr<Res, O>({
+        headers: headers ?? undefined,
+        onProgress: opts?.onProgress,
+        output: opts?.output,
+        signal: opts?.signal,
+        onUploadProgress,
+        method,
+        body,
+        url,
+      });
+      const elapsed = Date.now() - start;
+      config.onResponse?.(method, path, elapsed);
+      return opts?.onSuccess
+        ? opts.onSuccess(data)
+        : (data as unknown as Return);
+    } catch (error) {
+      const elapsed = Date.now() - start;
+      const err = error instanceof Error ? error : new Error(String(error));
+      config.onError?.(method, path, err, elapsed);
+      if (opts?.onError && error instanceof RestError) {
+        return opts.onError(error);
+      }
+      throw error;
+    }
+  }
+
+  // Standard fetch path
   let response: Response;
   try {
     response = await fetch(url, {
@@ -155,7 +188,10 @@ const request = async <
   } catch (networkError) {
     // Network error (offline, DNS failure, etc.)
     const elapsed = Date.now() - start;
-    const error = networkError instanceof Error ? networkError : new Error(String(networkError));
+    const error =
+      networkError instanceof Error
+        ? networkError
+        : new Error(String(networkError));
     config.onError?.(method, path, error, elapsed);
     throw error;
   }

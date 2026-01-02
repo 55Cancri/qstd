@@ -1,3 +1,4 @@
+import { RestError } from "./types";
 import * as _t from "./types";
 
 /**
@@ -13,8 +14,11 @@ const isDev = (): boolean => {
     return process.env.NODE_ENV !== "production";
   }
   // Vite/browser environment
-  // @ts-expect-error - import.meta.env is Vite-specific
-  if (typeof import.meta !== "undefined" && import.meta.env?.DEV !== undefined) {
+  if (
+    typeof import.meta !== "undefined" &&
+    // @ts-expect-error - import.meta.env is Vite-specific
+    import.meta.env?.DEV !== undefined
+  ) {
     // @ts-expect-error - import.meta.env is Vite-specific
     return import.meta.env.DEV;
   }
@@ -139,7 +143,12 @@ export const prepareUrl = (
  */
 export const prepareHeaders = async (props: {
   defaults: _t.HeadersObject;
-  headersOption: true | false | _t.HeadersObject | _t.HeadersTransform | undefined;
+  headersOption:
+    | true
+    | false
+    | _t.HeadersObject
+    | _t.HeadersTransform
+    | undefined;
   input: _t.Input | undefined;
   body: unknown;
 }): Promise<_t.HeadersObject | undefined> => {
@@ -315,13 +324,14 @@ export async function* parseSSE<T = unknown>(
       return JSON.parse(rawData) as T;
     } catch {
       // Truncate long data for readability in error message
-      const preview = rawData.length > 100 ? rawData.slice(0, 100) + "..." : rawData;
+      const preview =
+        rawData.length > 100 ? rawData.slice(0, 100) + "..." : rawData;
       throw new Error(
         `[api] SSE data must be valid JSON. ` +
-        `This parser expects your server to send JSON-formatted data in each SSE event. ` +
-        `If you're sending plain strings or another format, you'll need to update your server ` +
-        `to send JSON instead (e.g., {"message":"Hello"} instead of just "Hello").\n\n` +
-        `Received: ${preview}`
+          `This parser expects your server to send JSON-formatted data in each SSE event. ` +
+          `If you're sending plain strings or another format, you'll need to update your server ` +
+          `to send JSON instead (e.g., {"message":"Hello"} instead of just "Hello").\n\n` +
+          `Received: ${preview}`
       );
     }
   };
@@ -386,7 +396,7 @@ export async function* parseSSE<T = unknown>(
 
 export const parseResponse = async <
   Res,
-  O extends _t.Output | undefined = undefined,
+  O extends _t.Output | undefined = undefined
 >(
   response: Response,
   output?: O,
@@ -450,12 +460,128 @@ export const parseResponse = async <
   return (text ? JSON.parse(text) : null) as _t.DataForOutput<Res, O>;
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// XHR Request (for upload progress support)
+// ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Execute an HTTP request using XMLHttpRequest for upload progress tracking.
+ *
+ * This is used internally when `onUploadProgress` is provided. XHR is the only
+ * browser API that supports tracking upload progress via `xhr.upload.onprogress`.
+ *
+ * Note: This function does NOT support streaming outputs (`sse`, `stream`) because
+ * XHR buffers the entire response. The type system prevents this combination.
+ *
+ * @throws {RestError} When the response status is not 2xx.
+ */
+export const requestWithXhr = <
+  Res,
+  O extends _t.Output | undefined = undefined
+>(props: {
+  onUploadProgress?: (progress: _t.Progress) => void;
+  onProgress?: (progress: _t.Progress) => void;
+  headers?: _t.HeadersObject;
+  signal?: AbortSignal;
+  method: _t.Method;
+  body?: BodyInit;
+  url: string;
+  output?: O;
+}): Promise<_t.DataForOutput<Res, O>> => {
+  const {
+    url,
+    body,
+    method,
+    output,
+    signal,
+    headers,
+    onUploadProgress,
+    onProgress,
+  } = props;
 
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url);
 
+    // Set response type for non-JSON outputs
+    const out = output ?? "json";
+    if (out === "blob") {
+      xhr.responseType = "blob";
+    } else if (out === "arrayBuffer") {
+      xhr.responseType = "arraybuffer";
+    } else {
+      // json, text - use default (text) and parse manually
+      xhr.responseType = "text";
+    }
 
+    // Set headers (skip Content-Type for FormData - browser sets it with boundary)
+    if (headers) {
+      for (const [key, value] of Object.entries(headers)) {
+        // Don't override Content-Type for FormData
+        if (key.toLowerCase() === "content-type" && body instanceof FormData) {
+          continue;
+        }
+        xhr.setRequestHeader(key, value);
+      }
+    }
 
+    // Upload progress tracking
+    if (onUploadProgress) {
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          onUploadProgress({
+            percent: Math.round((e.loaded / e.total) * 100),
+            loaded: e.loaded,
+            total: e.total,
+          });
+        }
+      };
+    }
 
+    // Download progress tracking
+    if (onProgress) {
+      xhr.onprogress = (e) => {
+        if (e.lengthComputable) {
+          onProgress({
+            loaded: e.loaded,
+            total: e.total,
+            percent: Math.round((e.loaded / e.total) * 100),
+          });
+        }
+      };
+    }
 
+    // Handle abort signal
+    if (signal) {
+      signal.addEventListener("abort", () => {
+        xhr.abort();
+        reject(new Error("Request aborted"));
+      });
+    }
 
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // Parse response based on output type
+        if (out === "blob" || out === "arrayBuffer") {
+          resolve(xhr.response as _t.DataForOutput<Res, O>);
+        } else if (out === "text") {
+          resolve(xhr.responseText as _t.DataForOutput<Res, O>);
+        } else {
+          // json (default)
+          const text = xhr.responseText;
+          resolve((text ? JSON.parse(text) : null) as _t.DataForOutput<Res, O>);
+        }
+      } else {
+        reject(new RestError({ status: xhr.status, body: xhr.responseText }));
+      }
+    };
 
+    xhr.onerror = () => reject(new Error("Network request failed"));
+    xhr.ontimeout = () => reject(new Error("Request timed out"));
+
+    // Note: ReadableStream bodies are not supported with XHR (fetch-only).
+    // The type system prevents combining onUploadProgress with streaming outputs,
+    // but we cast here since BodyInit includes ReadableStream which XHR can't handle.
+    xhr.send(body as XMLHttpRequestBodyInit | Document | null | undefined);
+  });
+};
