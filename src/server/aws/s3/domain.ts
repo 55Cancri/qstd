@@ -131,7 +131,25 @@ export const uploadFile = (s3: _t.Client, props: _t.UploadProps) => {
 // file operations
 // ================================
 
-export type FileProps = { key: string; bucketName?: string };
+export type FileProps = {
+  key: string;
+  bucketName?: string;
+  /**
+   * HTTP Range header for partial content requests.
+   * Format: "bytes=start-end" (e.g., "bytes=0-1023" for first 1KB)
+   *
+   * @example
+   * ```ts
+   * // Fetch only the first 64KB (useful for reading file headers)
+   * const response = await S3.getFile(s3, {
+   *   key: "videos/movie.mp4",
+   *   range: "bytes=0-65535",
+   * });
+   * // Response status will be 206 Partial Content
+   * ```
+   */
+  range?: string;
+};
 
 export const getFile = async (
   s3: _t.Client,
@@ -140,7 +158,11 @@ export const getFile = async (
   try {
     const Bucket = _f.getBucketNameOrThrow(props.bucketName, s3.bucketName);
     return await s3.client.send(
-      new GetObjectCommand({ Bucket, Key: props.key })
+      new GetObjectCommand({
+        Range: props.range,
+        Key: props.key,
+        Bucket,
+      })
     );
   } catch (err) {
     console.log(`[error] [s3] [getFile] failed. Input:`);
