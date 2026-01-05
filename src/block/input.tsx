@@ -195,13 +195,27 @@ export function Label(props: Omit<_t.InputBlockProps, "is"> & LabelProps) {
     children,
     hasLeftIcon,
     bg: consumerBg,
+    // Extract all spacing/style props that have defaults to prevent atomic CSS conflicts
+    ml: consumerMl,
+    mr: consumerMr,
+    px: consumerPx,
+    py: consumerPy,
+    br: consumerBr,
+    lineHeight: consumerLineHeight,
     _labelLifted: consumerLabelLifted,
     onAnimationStart: _onAnimationStart,
     onAnimationComplete: _onAnimationComplete,
     ...rest
   } = props;
 
-  const ml = hasLeftIcon ? 6 : 1;
+  // Resolve defaults - consumer values take precedence
+  const defaultMl = hasLeftIcon ? 6 : 1;
+  const ml = consumerMl ?? defaultMl;
+  const mr = consumerMr ?? 1;
+  const px = consumerPx ?? 2;
+  const py = consumerPy ?? 0.5;
+  const br = consumerBr ?? 8;
+  const lineHeight = consumerLineHeight ?? 1.1;
 
   // Default _labelLifted styles - consumer can partially override
   // If consumer provides `bg`, it cascades to lifted state unless overridden
@@ -228,12 +242,12 @@ export function Label(props: Omit<_t.InputBlockProps, "is"> & LabelProps) {
       transform="translate(0, -50%) scale(1)"
       transition="200ms cubic-bezier(0, 0, 0.2, 1) 0ms, .2s color ease-in-out, .2s background ease-in-out"
       ml={ml}
-      mr={1}
-      px={2}
-      py={0.5}
-      br={8}
+      mr={mr}
+      px={px}
+      py={py}
+      br={br}
       color={error ? "text-alert" : "input-label-color"}
-      lineHeight={1.1}
+      lineHeight={lineHeight}
       bg={consumerBg}
       {...rest}
       _labelLifted={{

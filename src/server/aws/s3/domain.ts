@@ -159,9 +159,9 @@ export const getFile = async (
     const Bucket = _f.getBucketNameOrThrow(props.bucketName, s3.bucketName);
     return await s3.client.send(
       new GetObjectCommand({
-        Range: props.range,
-        Key: props.key,
         Bucket,
+        Key: props.key,
+        Range: props.range,
       })
     );
   } catch (err) {
