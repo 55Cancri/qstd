@@ -261,6 +261,17 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
                   borderTopLeftRadius: 12,
                   borderTopRightRadius: 12,
                   overflow: "hidden",
+                  // Extend background below viewport to cover spring overshoot bounce
+                  _after: {
+                    content: '""',
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 100,
+                    transform: "translateY(100%)",
+                    bg: "inherit",
+                  },
                   // Note: Can't use framer-motion's `y` prop because it conflicts
                   // with the drag motion value. Use CSS transform instead.
                   variants: {
