@@ -203,6 +203,85 @@ export const getFileMetadata = async (
   }
 };
 
+/**
+ * Check if a file exists in S3.
+ *
+ * Returns true if the file exists, false if it doesn't.
+ * Only throws on unexpected errors (not 404).
+ *
+ * @example
+ * ```ts
+ * const exists = await S3.fileExists(s3, { key: "images/photo.jpg" });
+ * if (exists) {
+ *   // File exists, safe to reference or copy
+ * }
+ * ```
+ */
+export const fileExists = async (
+  s3: _t.Client,
+  props: FileProps
+): Promise<boolean> => {
+  try {
+    const Bucket = _f.getBucketNameOrThrow(props.bucketName, s3.bucketName);
+    await s3.client.send(new HeadObjectCommand({ Bucket, Key: props.key }));
+    return true;
+  } catch (err) {
+    const awsError = err as S3ServiceException;
+    if (awsError.$metadata?.httpStatusCode === 404) {
+      return false;
+    }
+    // Unexpected error - rethrow
+    throw err;
+  }
+};
+
+export type CopyFileProps = {
+  /** Source file location */
+  src: { bucket?: string; key: string };
+  /** Destination file location */
+  dest: { bucket?: string; key: string };
+};
+
+/**
+ * Copy a file within S3.
+ *
+ * By default, both source and destination use the client's configured bucket.
+ * Override with `src.bucket` or `dest.bucket` for cross-bucket copies.
+ *
+ * @example
+ * ```ts
+ * // Copy within same bucket
+ * await S3.copyFile(s3, {
+ *   src: { key: "index.sqlite" },
+ *   dest: { key: "index.backup.1.sqlite" },
+ * });
+ *
+ * // Copy across buckets
+ * await S3.copyFile(s3, {
+ *   src: { bucket: "prod-bucket", key: "data/file.json" },
+ *   dest: { bucket: "backup-bucket", key: "backup/file.json" },
+ * });
+ * ```
+ */
+export const copyFile = async (s3: _t.Client, props: CopyFileProps) => {
+  const srcBucket = _f.getBucketNameOrThrow(props.src.bucket, s3.bucketName);
+  const dstBucket = _f.getBucketNameOrThrow(props.dest.bucket, s3.bucketName);
+
+  const command = new CopyObjectCommand({
+    CopySource: `${srcBucket}/${props.src.key}`,
+    Key: props.dest.key,
+    Bucket: dstBucket,
+  });
+
+  try {
+    return await s3.client.send(command);
+  } catch (err) {
+    console.log(`[error] [s3] [copyFile] failed. Input:`);
+    console.dir(props, { depth: 100 });
+    throw err;
+  }
+};
+
 // ================================
 // bucket operations
 // ================================
