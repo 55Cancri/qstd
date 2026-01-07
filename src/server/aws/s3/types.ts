@@ -145,3 +145,15 @@ export type UploadPartProps = {
 };
 
 export type PresignedPostOpts = PresignedPostOptions;
+
+// ================================
+// listFiles
+// ================================
+
+export type ListFilesProps = {
+  /** Key prefix to filter by (e.g., "search/index.backup") */
+  prefix: string;
+  /** Max files to return (default 1000) */
+  limit?: number;
+  bucketName?: string;
+};

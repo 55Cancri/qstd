@@ -269,8 +269,8 @@ export const copyFile = async (s3: _t.Client, props: CopyFileProps) => {
 
   const command = new CopyObjectCommand({
     CopySource: `${srcBucket}/${props.src.key}`,
-    Key: props.dest.key,
     Bucket: dstBucket,
+    Key: props.dest.key,
   });
 
   try {
@@ -280,6 +280,43 @@ export const copyFile = async (s3: _t.Client, props: CopyFileProps) => {
     console.dir(props, { depth: 100 });
     throw err;
   }
+};
+
+/**
+ * List files in S3 by prefix.
+ *
+ * Returns file keys sorted by LastModified (newest first).
+ *
+ * @example
+ * ```ts
+ * const backups = await S3.listFiles(s3, {
+ *   prefix: "search/index.backup",
+ *   limit: 10,
+ * });
+ * // Returns: ["search/index.backup.2024-01-06.sqlite", ...]
+ * ```
+ */
+export const listFiles = async (s3: _t.Client, props: _t.ListFilesProps) => {
+  const Bucket = _f.getBucketNameOrThrow(props.bucketName, s3.bucketName);
+
+  const command = new ListObjectsV2Command({
+    MaxKeys: props.limit ?? 1000,
+    Prefix: props.prefix,
+    Bucket,
+  });
+
+  const result = await s3.client.send(command);
+  const contents = result.Contents ?? [];
+
+  // Sort by LastModified descending (newest first)
+  return contents
+    .sort((a, b) => {
+      const aTime = a.LastModified?.getTime() ?? 0;
+      const bTime = b.LastModified?.getTime() ?? 0;
+      return bTime - aTime;
+    })
+    .map((obj) => obj.Key!)
+    .filter(Boolean);
 };
 
 // ================================
