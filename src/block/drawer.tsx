@@ -261,17 +261,6 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
                   borderTopLeftRadius: 12,
                   borderTopRightRadius: 12,
                   overflow: "hidden",
-                  // Extend background below viewport to cover spring overshoot bounce
-                  _after: {
-                    content: '""',
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    height: 100,
-                    transform: "translateY(100%)",
-                    bg: "inherit",
-                  },
                   // Note: Can't use framer-motion's `y` prop because it conflicts
                   // with the drag motion value. Use CSS transform instead.
                   variants: {
@@ -389,6 +378,19 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
               )}
               {props.children}
             </MotionDiv>
+            {/* Tail extension to cover spring overshoot bounce on mobile */}
+            {!isDesktop && (
+              <MotionDiv
+                position="absolute"
+                left={0}
+                right={0}
+                bottom={0}
+                h={100}
+                transform="translateY(100%)"
+                bg={{ base: "neutral.100", _dark: "neutral.900" }}
+                pointerEvents="none"
+              />
+            )}
           </MotionDiv>
         </Backdrop>
       )}
