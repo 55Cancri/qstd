@@ -15,9 +15,6 @@ import * as _t from "./types";
 const MotionDiv = _l.motionTags.div;
 const MotionBtn = _l.motionTags.button;
 const breakpoint = ["(min-width: 600px)"];
-// How much extra drawer background to keep pinned to the viewport bottom so the
-// spring enter animation can overshoot upward without revealing the page.
-const mobileOvershootCoverPx = 96;
 
 function requirePortalRootForDrawer(): HTMLElement {
   // Drawer always renders through a portal; missing portal root should fail loudly
@@ -64,6 +61,52 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
   const drawerBg =
     (rest as Record<string, unknown>).bg ??
     ({ base: "neutral.100", _dark: "neutral.900" } as const);
+  const hasMobileHeight = props.height !== undefined;
+  const mobileVariants = hasMobileHeight
+    ? {
+        initial: { height: 0, opacity: 0.5 },
+        animate: {
+          height: props.height,
+          opacity: 1,
+          transition: {
+            type: "spring",
+            damping: 22,
+            stiffness: 400,
+            mass: 0.7,
+          },
+        },
+        exit: {
+          height: 0,
+          opacity: 0,
+          transition: {
+            type: "tween",
+            duration: 0.2,
+            ease: [0.4, 0, 1, 1], // ease-in for quick exit
+          },
+        },
+      }
+    : {
+        initial: { transform: "translateY(100%)", opacity: 0.5 },
+        animate: {
+          transform: "translateY(0%)",
+          opacity: 1,
+          transition: {
+            type: "spring",
+            damping: 22,
+            stiffness: 400,
+            mass: 0.7,
+          },
+        },
+        exit: {
+          transform: "translateY(100%)",
+          opacity: 0,
+          transition: {
+            type: "tween",
+            duration: 0.2,
+            ease: [0.4, 0, 1, 1], // ease-in for quick exit
+          },
+        },
+      };
 
   // SSR-safe: only render portal on client after mount
   const [mounted, setMounted] = React.useState(false);
@@ -208,23 +251,6 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
           onClick={() => onBackdropClick()}
           // _backdrop={props._backdrop}
         >
-          {/* 
-            Mobile-only underlay pinned to the viewport bottom.
-            WHY: The drawer uses a spring enter animation that can overshoot above translateY(0%),
-            briefly lifting the drawer bottom edge off the viewport. This underlay keeps the
-            background continuous during that overshoot without changing the bounce feel.
-          */}
-          {!isDesktop && (
-            <MotionDiv
-              fixed
-              left={0}
-              right={0}
-              bottom={0}
-              h={mobileOvershootCoverPx}
-              pointerEvents="none"
-              bg={drawerBg}
-            />
-          )}
           <MotionDiv
             grid
             key="drawer"
@@ -286,34 +312,10 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
                   overflow: "hidden",
                   // Note: Can't use framer-motion's `y` prop because it conflicts
                   // with the drag motion value. Use CSS transform instead.
-                  variants: {
-                    initial: {
-                      transform: "translateY(100%)",
-                      opacity: 0.5,
-                    },
-                    animate: {
-                      transform: "translateY(0%)",
-                      opacity: 1,
-                      transition: {
-                        type: "spring",
-                        damping: 22,
-                        stiffness: 400,
-                        mass: 0.7,
-                      },
-                    },
-                    exit: {
-                      transform: "translateY(100%)",
-                      opacity: 0,
-                      transition: {
-                        type: "tween",
-                        duration: 0.2,
-                        ease: [0.4, 0, 1, 1], // ease-in for quick exit
-                      },
-                    },
-                  },
                   drag: "y",
                   style: { y },
                   dragControls,
+                  variants: mobileVariants,
                   onPointerDown: (e: React.PointerEvent) => onDragStart(e),
                   //   drag={hasBackdrop ? "y" : false}
                   dragElastic: 0,
@@ -347,8 +349,8 @@ function DrawerComponent(props: _t.DrawerBlockProps) {
             //   borderTopRightRadius={12}
             boxSizing="border-box"
             boxShadow="hsl(0deg 0% 0% / 60%) 0px -4px 20px"
-            bg={{ base: "neutral.100", _dark: "neutral.900" }}
             color="text-primary"
+            bg={drawerBg}
             // bg="white"
             // bg={theme.colors.gray2}
             ref={ref}
