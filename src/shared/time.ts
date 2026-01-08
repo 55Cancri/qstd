@@ -16,9 +16,7 @@ import {
 } from "date-fns";
 import type { Locale } from "date-fns";
 
-// ============================================================================
 // DURATION FORMATTING
-// ============================================================================
 
 type DurationFormat = "compact" | "full" | "clock" | "fractional";
 /** Suggested units - aliases like 'ss', 'secs', 'mm', 'mins' are also accepted */
@@ -252,19 +250,11 @@ export const formatDuration = (
   return parts.join(separator);
 };
 
-// ============================================================================
 // DATE FORMATTING
-// ============================================================================
 
 type DateInput = Date | string | number;
 
-type DateFormatStyle =
-  | "iso"
-  | "short"
-  | "medium"
-  | "long"
-  | "relative"
-  | "year";
+type DateFormatStyle = "iso" | "short" | "medium" | "long" | "year";
 
 type DateOptions = {
   /** Predefined format style */
@@ -327,8 +317,6 @@ export const formatDate = (input: DateInput, options: DateOptions = {}) => {
       return includeTime
         ? format(date, "MMMM d, yyyy 'at' h:mm a")
         : format(date, "MMMM d, yyyy");
-    case "relative":
-      return formatDistanceToNow(date, { addSuffix: true });
     case "year":
       return format(date, "yyyy");
     default:
@@ -338,9 +326,97 @@ export const formatDate = (input: DateInput, options: DateOptions = {}) => {
   }
 };
 
-// ============================================================================
+// RELATIVE TIME ("TIME AGO")
+
+type TimeAgoInput = Date | string | number;
+
+type TimeAgoOptions = {
+  /** Use verbose format ("about 3 hours ago") instead of compact ("3h ago"). Default: false */
+  verbose?: boolean;
+};
+
+/**
+ * Formats a past date as relative elapsed time ("3h ago", "1d ago", "just now").
+ *
+ * Compact by default for UI badges, sync indicators, and timestamps.
+ * Use `verbose: true` for accessibility or screen readers.
+ *
+ * @param input - Date to format (Date object, ISO string, or Unix timestamp)
+ * @param options - Configuration options
+ * @param options.verbose - Use verbose format ("about 3 hours ago") instead of compact ("3h ago")
+ *
+ * @example
+ * ```ts
+ * // COMPACT FORMAT (default) - Best for UI badges, sync indicators
+ *
+ * formatTimeAgo(new Date())                           // "just now"
+ * formatTimeAgo(Date.now() - 1000 * 60 * 30)          // "just now" (< 1 hour)
+ * formatTimeAgo(Date.now() - 1000 * 60 * 60 * 3)      // "3h ago"
+ * formatTimeAgo(Date.now() - 1000 * 60 * 60 * 24)     // "1d ago"
+ * formatTimeAgo(Date.now() - 1000 * 60 * 60 * 24 * 5) // "5d ago"
+ *
+ * // VERBOSE FORMAT - Best for accessibility, screen readers
+ *
+ * formatTimeAgo(date, { verbose: true })              // "about 3 hours ago"
+ * formatTimeAgo(date, { verbose: true })              // "5 days ago"
+ *
+ * // COMMON USE CASES
+ *
+ * // Search index freshness indicator
+ * `${count} songs indexed · ${formatTimeAgo(buildTime)}`  // "1,234 songs indexed · 3h ago"
+ *
+ * // Last sync timestamp
+ * `Last synced ${formatTimeAgo(lastSync)}`                // "Last synced 5d ago"
+ *
+ * // Comment timestamps
+ * `Posted ${formatTimeAgo(createdAt)}`                    // "Posted just now"
+ * ```
+ */
+export const formatTimeAgo = (
+  input: TimeAgoInput,
+  options: TimeAgoOptions = {}
+) => {
+  const { verbose = false } = options;
+
+  // Convert input to Date object
+  let date: Date;
+  if (typeof input === "string") {
+    date = new Date(input);
+  } else if (typeof input === "number") {
+    date = new Date(input);
+  } else {
+    date = input;
+  }
+
+  // Handle invalid dates
+  if (isNaN(date.getTime())) {
+    return "Invalid Date";
+  }
+
+  // Verbose mode uses date-fns for natural language
+  if (verbose) {
+    return formatDistanceToNow(date, { addSuffix: true });
+  }
+
+  // Compact mode: custom implementation for "3h ago", "1d ago", etc.
+  const diffMs = Date.now() - date.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffYears > 0) return `${diffYears}y ago`;
+  if (diffMonths > 0) return `${diffMonths}mo ago`;
+  if (diffWeeks > 0) return `${diffWeeks}w ago`;
+  if (diffDays > 0) return `${diffDays}d ago`;
+  if (diffHours > 0) return `${diffHours}h ago`;
+  return "just now";
+};
+
 // THREAD DATE RANGE FORMATTING
-// ============================================================================
 
 type DateRangeInput = Date | string | number;
 
@@ -472,9 +548,7 @@ export const formatThreadDateRange = (
   options: DateRangeOptions = {}
 ) => formatDateRange(startInput, endInput, options);
 
-// ============================================================================
 // DATE MANIPULATION
-// ============================================================================
 
 type TimeUnit =
   | "seconds"
@@ -515,9 +589,7 @@ export const adjustDate = (
   return result;
 };
 
-// ============================================================================
 // UTILITIES
-// ============================================================================
 
 /**
  * Promise-based delay utility for async operations
@@ -552,9 +624,7 @@ export const toMs = (
   return value * multipliers[unit];
 };
 
-// ============================================================================
 // TIMER
-// ============================================================================
 
 type TimerFormat = "ms" | "compact";
 
