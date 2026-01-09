@@ -594,8 +594,8 @@ export const adjustDate = (
 /**
  * Promise-based delay utility for async operations
  */
-export const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+export const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
  * Gets the current timestamp in milliseconds

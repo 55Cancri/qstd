@@ -314,3 +314,92 @@ export type BatchDeleteResult = {
   failed: number;
   consumedCapacity?: number | undefined;
 };
+
+// Transaction Types
+
+/** Expression attribute values for condition expressions */
+export type ExprValues = Record<string, unknown>;
+
+/** Expression attribute names for reserved word escaping */
+export type ExprNames = Record<string, string>;
+
+/** Put operation in a transaction */
+export type TransactPut<T extends object = Record<string, unknown>> = {
+  put: {
+    item: T;
+    /** Type-safe conditions (like filters). Auto-generates expression attributes. */
+    conditions?: ReadonlyArray<FilterClause<T>>;
+    /** Raw condition expression (e.g., 'attribute_not_exists(pk)'). Use conditions for type-safety. */
+    cond?: string;
+    /** Expression attribute values for raw cond (e.g., { ':v': 1 }) */
+    exprValues?: ExprValues;
+    /** Expression attribute names for raw cond */
+    exprNames?: ExprNames;
+  };
+};
+
+/** Delete operation in a transaction */
+export type TransactDelete<T extends object = Record<string, unknown>> = {
+  delete: {
+    key: Key;
+    /** Type-safe conditions (like filters). Auto-generates expression attributes. */
+    conditions?: ReadonlyArray<FilterClause<T>>;
+    /** Raw condition expression. Use conditions for type-safety. */
+    cond?: string;
+    /** Expression attribute values for raw cond */
+    exprValues?: ExprValues;
+    /** Expression attribute names for raw cond */
+    exprNames?: ExprNames;
+  };
+};
+
+/** Update operation in a transaction */
+export type TransactUpdate<T extends object = Record<string, unknown>> = {
+  update: {
+    key: Key;
+    /** Update expression (e.g., 'SET #count = #count + :inc') */
+    expr: string;
+    /** Type-safe conditions (like filters). Auto-generates expression attributes. */
+    conditions?: ReadonlyArray<FilterClause<T>>;
+    /** Raw condition expression. Use conditions for type-safety. */
+    cond?: string;
+    /** Expression attribute values (for expr and/or cond) */
+    exprValues?: ExprValues;
+    /** Expression attribute names (for expr and/or cond) */
+    exprNames?: ExprNames;
+  };
+};
+
+/** ConditionCheck operation - validates a condition without modifying the item */
+export type TransactConditionCheck<T extends object = Record<string, unknown>> =
+  {
+    conditionCheck: {
+      /** Type-safe conditions (like filters). Auto-generates expression attributes. */
+      conditions?: ReadonlyArray<FilterClause<T>>;
+      /** Raw condition expression. Use conditions for type-safety. */
+      cond?: string;
+      /** Expression attribute values for raw cond */
+      exprValues?: ExprValues;
+      /** Expression attribute names for raw cond */
+      exprNames?: ExprNames;
+      key: Key;
+    };
+  };
+
+/**
+ * A single operation in a transaction.
+ * Discriminated union - exactly one of: put, delete, update, conditionCheck
+ */
+export type TransactItem<T extends object = Record<string, unknown>> =
+  | TransactPut<T>
+  | TransactDelete<T>
+  | TransactUpdate<T>
+  | TransactConditionCheck<T>;
+
+/** Result of a transact operation */
+export type TransactResult = {
+  /** Number of operations successfully processed */
+  processed: number;
+  /** Consumed capacity units (if returned by DynamoDB) */
+  consumedCapacity?: number;
+};

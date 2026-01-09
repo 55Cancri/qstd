@@ -32,9 +32,9 @@ export const validateFindProps = <T extends object = Record<string, unknown>>(
   // Query-specific validations
   if (!isScan) {
     const queryProps = props as {
-      pk?: unknown;
-      sk?: _t.SkCond;
       indexName?: string;
+      sk?: _t.SkCond;
+      pk?: unknown;
     };
     if (!queryProps.pk) {
       throw new Error(

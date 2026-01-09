@@ -338,7 +338,7 @@ export async function batchGet<T extends object>(
     maxRetries?: number;
     strong?: boolean;
   }
-): Promise<_t.BatchGetResult<T>> {
+) {
   const { keys, maxRetries = 3, strong = false } = props;
   const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
   const chunks = _f.chunk(keys, 100);
@@ -473,7 +473,10 @@ export function batchWrite<T extends object, I>(
     maxRetries?: number;
   }
 ): Promise<_t.BatchWriteResult>;
-export async function batchWrite<T extends object, I = { item: T; cond?: string }>(
+export async function batchWrite<
+  T extends object,
+  I = { item: T; cond?: string }
+>(
   ddb: Client,
   props: {
     tableName?: string;
@@ -797,3 +800,249 @@ export const tableExists = async (
     throw err;
   }
 };
+
+// TRANSACT WRITE
+
+/**
+ * Execute an atomic transaction with mixed Put, Delete, Update, and ConditionCheck operations.
+ *
+ * DynamoDB transactions are all-or-nothing: if any operation fails (including condition checks),
+ * the entire transaction is rolled back. This is useful when you need to atomically update
+ * multiple items that must stay consistent.
+ *
+ * ## Limits
+ * - Max 100 operations per transaction
+ * - Max 4MB total request size
+ * - Cost: 2 WCU per item (2x regular writes)
+ * - Cannot have multiple operations on the same item
+ *
+ * @example
+ * // Type-safe conditions (recommended) - like filters in find()
+ * await transact<User>(ddb, {
+ *   items: [
+ *     {
+ *       put: {
+ *         item: { pk: 'user#1', sk: 'profile', version: 2, name: 'Updated' },
+ *         conditions: [{ key: 'version', op: '=', value: 1 }]
+ *       }
+ *     },
+ *     {
+ *       delete: {
+ *         key: { pk: 'user#2', sk: 'profile' },
+ *         conditions: [{ key: 'status', op: '=', value: 'inactive' }]
+ *       }
+ *     },
+ *     {
+ *       conditionCheck: {
+ *         key: { pk: 'org#1', sk: 'org#1' },
+ *         conditions: [{ key: 'pk', op: 'attribute_exists' }]
+ *       }
+ *     }
+ *   ]
+ * });
+ *
+ * @example
+ * // Delete a media item and update its group atomically
+ * await transact(ddb, {
+ *   items: [
+ *     { delete: { key: { pk: 'media#123', sk: 'media#123' } } },
+ *     { put: { item: { ...group, memberMediaIds: filtered, updatedAt: Date.now() } } },
+ *   ]
+ * });
+ *
+ * @example
+ * // Raw expressions (for advanced use cases)
+ * await transact(ddb, {
+ *   items: [
+ *     {
+ *       put: {
+ *         item: { pk: 'user#1', sk: 'profile', version: 2, name: 'Updated' },
+ *         cond: 'version = :v',
+ *         exprValues: { ':v': 1 }
+ *       }
+ *     }
+ *   ]
+ * });
+ */
+export async function transact<T extends object = Record<string, unknown>>(
+  ddb: Client,
+  props: { tableName?: string; items: _t.TransactItem<T>[] }
+) {
+  const { items } = props;
+  const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
+
+  if (items.length === 0) {
+    return { processed: 0 };
+  }
+
+  if (items.length > 100) {
+    throw new Error(
+      `[ddb] [transact] Transaction exceeds 100 item limit (got ${items.length}). ` +
+        `DynamoDB transactions must be <= 100 operations. Split into multiple transactions or use batch operations.`
+    );
+  }
+
+  // Helper to build condition expression from type-safe conditions array
+  const buildCondition = (
+    conditions: ReadonlyArray<_t.FilterClause<T>> | undefined,
+    rawCond: string | undefined,
+    rawNames: Record<string, string> | undefined,
+    rawValues: Record<string, unknown> | undefined
+  ) => {
+    const names: Record<string, string> = { ...rawNames };
+    const values: Record<string, NativeAttributeValue> = {
+      ...(rawValues as Record<string, NativeAttributeValue>),
+    };
+
+    // Build from type-safe conditions (like filters)
+    const condExpr = conditions
+      ? _f.buildFilterExpression(
+          conditions as ReadonlyArray<_t.FilterClause<Record<string, unknown>>>,
+          names,
+          values
+        )
+      : undefined;
+
+    // Combine: conditions expression + raw cond (AND them if both exist)
+    let finalCond: string | undefined;
+    if (condExpr && rawCond) {
+      finalCond = `(${condExpr}) AND (${rawCond})`;
+    } else {
+      finalCond = condExpr ?? rawCond;
+    }
+
+    return {
+      ConditionExpression: finalCond,
+      ExpressionAttributeNames:
+        Object.keys(names).length > 0 ? names : undefined,
+      ExpressionAttributeValues:
+        Object.keys(values).length > 0 ? values : undefined,
+    };
+  };
+
+  const transactItems = items.map((item) => {
+    if ("put" in item) {
+      const {
+        ConditionExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      } = buildCondition(
+        item.put.conditions as ReadonlyArray<_t.FilterClause<T>> | undefined,
+        item.put.cond,
+        item.put.exprNames,
+        item.put.exprValues
+      );
+      return {
+        Put: {
+          TableName,
+          Item: item.put.item as Record<string, NativeAttributeValue>,
+          ...(ConditionExpression && { ConditionExpression }),
+          ...(ExpressionAttributeValues && { ExpressionAttributeValues }),
+          ...(ExpressionAttributeNames && { ExpressionAttributeNames }),
+        },
+      };
+    }
+
+    if ("delete" in item) {
+      const {
+        ConditionExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      } = buildCondition(
+        item.delete.conditions as ReadonlyArray<_t.FilterClause<T>> | undefined,
+        item.delete.cond,
+        item.delete.exprNames,
+        item.delete.exprValues
+      );
+      return {
+        Delete: {
+          TableName,
+          Key: item.delete.key as Record<string, NativeAttributeValue>,
+          ...(ConditionExpression && { ConditionExpression }),
+          ...(ExpressionAttributeValues && { ExpressionAttributeValues }),
+          ...(ExpressionAttributeNames && { ExpressionAttributeNames }),
+        },
+      };
+    }
+
+    if ("update" in item) {
+      const {
+        ConditionExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      } = buildCondition(
+        item.update.conditions as ReadonlyArray<_t.FilterClause<T>> | undefined,
+        item.update.cond,
+        item.update.exprNames,
+        item.update.exprValues
+      );
+      return {
+        Update: {
+          TableName,
+          Key: item.update.key as Record<string, NativeAttributeValue>,
+          UpdateExpression: item.update.expr,
+          ...(ConditionExpression && { ConditionExpression }),
+          ...(ExpressionAttributeValues && { ExpressionAttributeValues }),
+          ...(ExpressionAttributeNames && { ExpressionAttributeNames }),
+        },
+      };
+    }
+
+    if ("conditionCheck" in item) {
+      const {
+        ConditionExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      } = buildCondition(
+        item.conditionCheck.conditions as
+          | ReadonlyArray<_t.FilterClause<T>>
+          | undefined,
+        item.conditionCheck.cond,
+        item.conditionCheck.exprNames,
+        item.conditionCheck.exprValues
+      );
+
+      if (!ConditionExpression) {
+        throw new Error(
+          `[ddb] [transact] conditionCheck requires either 'conditions' or 'cond'`
+        );
+      }
+
+      return {
+        ConditionCheck: {
+          TableName,
+          Key: item.conditionCheck.key as Record<string, NativeAttributeValue>,
+          ConditionExpression,
+          ...(ExpressionAttributeValues && { ExpressionAttributeValues }),
+          ...(ExpressionAttributeNames && { ExpressionAttributeNames }),
+        },
+      };
+    }
+
+    throw new Error(
+      `[ddb] [transact] Invalid transaction item: expected put, delete, update, or conditionCheck`
+    );
+  });
+
+  try {
+    const command = new TransactWriteCommand({ TransactItems: transactItems });
+    const result = await ddb.client.send(command);
+
+    let consumedCapacity: number | undefined;
+    if (result.ConsumedCapacity) {
+      consumedCapacity = result.ConsumedCapacity.reduce(
+        (sum, cap) => sum + (cap.CapacityUnits ?? 0),
+        0
+      );
+    }
+
+    return {
+      processed: items.length,
+      ...(consumedCapacity && { consumedCapacity }),
+    };
+  } catch (error) {
+    const err = error as Error;
+    console.log(`[error] [ddb] [transact] Transaction failed: ${err.message}`);
+    throw err;
+  }
+}
