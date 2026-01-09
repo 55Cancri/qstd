@@ -1,5 +1,4 @@
 import {
-  GetCommand,
   PutCommand,
   ScanCommand,
   QueryCommand,
@@ -16,6 +15,7 @@ import {
   DeleteTableCommand,
   DescribeTableCommand,
   DynamoDBServiceException,
+  ReturnValue,
 } from "@aws-sdk/client-dynamodb";
 import * as _t from "./types";
 import * as _f from "./fns";
@@ -310,9 +310,132 @@ export const save = async <T extends object>(
   return ddb.client.send(command);
 };
 
-// ============================================================================
+// UPDATE
+
+const RETURN_VALUES_MAP: Record<_t.UpdateReturnValues, ReturnValue> = {
+  updatedNew: ReturnValue.UPDATED_NEW,
+  updatedOld: ReturnValue.UPDATED_OLD,
+  allOld: ReturnValue.ALL_OLD,
+  allNew: ReturnValue.ALL_NEW,
+  none: ReturnValue.NONE,
+};
+
+/**
+ * Update a single item with type-safe operations
+ *
+ * Supports all DynamoDB update operations with a clean, type-safe API.
+ * Use this for single-item updates; use `transact` for atomic multi-item updates.
+ *
+ * @example
+ * ```ts
+ * // All operations with DynamoDB expression comments
+ * await update<User>(ddb, {
+ *   key: { pk: 'user#123', sk: 'profile' },
+ *
+ *   // Value operations
+ *   set: { name: 'Alice', status: 'active' },     // SET #name = :name, #status = :status
+ *   incr: { loginCount: 1, failedAttempts: -1 },  // SET #x = #x + :val (negative to decrement)
+ *   remove: ['tempToken', 'oldField'],            // REMOVE #tempToken, #oldField
+ *
+ *   // List operations
+ *   append: { tags: ['new-tag'] },                // SET #tags = list_append(#tags, :tags)
+ *   prepend: { notifications: [latest] },         // SET #notif = list_append(:notif, #notif)
+ *
+ *   // Conditional & atomic operations
+ *   ifNotExists: { createdAt: Date.now() },       // SET #createdAt = if_not_exists(#createdAt, :val)
+ *   add: { viewCount: 1 },                        // ADD #viewCount :val (atomic, creates if missing)
+ *
+ *   // Advanced operations
+ *   setPath: { 'address.city': 'NYC' },           // SET #address.#city = :val (nested updates)
+ *   compute: { total: ['subtotal', '+', 'tax'] }, // SET #total = #subtotal + #tax (cross-attribute)
+ *
+ *   // Conditional execution (ConditionExpression)
+ *   conditions: [{ key: 'version', op: '=', value: 1 }],
+ * });
+ *
+ * // Get updated item back
+ * const result = await update<User>(ddb, {
+ *   key: { pk: 'user#123', sk: 'profile' },
+ *   incr: { views: 1 },
+ *   returnValues: 'allNew',
+ * });
+ * console.log(result.Attributes); // Updated item
+ * ```
+ */
+export async function update<T extends object = Record<string, unknown>>(
+  ddb: Client,
+  props: _t.UpdateProps<T>
+) {
+  const TableName = _f.getTableNameOrThrow(
+    props.tableName as string | undefined,
+    ddb.tableName
+  );
+  const names: Record<string, string> = {};
+  const values: Record<string, NativeAttributeValue> = {};
+
+  // Build update expression
+  const UpdateExpression = _f.buildUpdateExpression(
+    props as _t.UpdateOperations<T>,
+    names,
+    values
+  );
+
+  if (!UpdateExpression) {
+    throw new Error(
+      `[ddb] [update] requires at least one operation (set, incr, remove, append, etc.)`
+    );
+  }
+
+  // Build condition expression if provided
+  let ConditionExpression: string | undefined;
+  if (props.conditions || props.cond) {
+    const condNames: Record<string, string> = {};
+    const condValues: Record<string, NativeAttributeValue> = {};
+
+    if (props.conditions) {
+      ConditionExpression = _f.buildFilterExpression(
+        props.conditions as ReadonlyArray<
+          _t.FilterClause<Record<string, unknown>>
+        >,
+        condNames,
+        condValues
+      );
+    }
+
+    // Combine with raw cond if provided
+    if (props.cond) {
+      ConditionExpression = ConditionExpression
+        ? `(${ConditionExpression}) AND (${props.cond})`
+        : props.cond;
+    }
+
+    Object.assign(names, condNames);
+    Object.assign(values, condValues);
+  }
+
+  const input: ConstructorParameters<typeof UpdateCommand>[0] = {
+    TableName,
+    Key: props.key as Record<string, NativeAttributeValue>,
+    UpdateExpression,
+  };
+
+  if (ConditionExpression) {
+    input.ConditionExpression = ConditionExpression;
+  }
+  if (Object.keys(names).length > 0) {
+    input.ExpressionAttributeNames = names;
+  }
+  if (Object.keys(values).length > 0) {
+    input.ExpressionAttributeValues = values;
+  }
+  if (props.returnValues) {
+    input.ReturnValues = RETURN_VALUES_MAP[props.returnValues];
+  }
+
+  return ddb.client.send(new UpdateCommand(input));
+}
+
 // BATCH GET
-// ============================================================================
 
 /**
  * Batch get multiple items from DynamoDB
@@ -817,52 +940,107 @@ export const tableExists = async (
  * - Cannot have multiple operations on the same item
  *
  * @example
- * // Type-safe conditions (recommended) - like filters in find()
+ * ```ts
+ *
+ * // OPTIMISTIC LOCKING - Type-safe conditions (recommended)
+ *
  * await transact<User>(ddb, {
  *   items: [
  *     {
  *       put: {
- *         item: { pk: 'user#1', sk: 'profile', version: 2, name: 'Updated' },
- *         conditions: [{ key: 'version', op: '=', value: 1 }]
- *       }
- *     },
- *     {
- *       delete: {
- *         key: { pk: 'user#2', sk: 'profile' },
- *         conditions: [{ key: 'status', op: '=', value: 'inactive' }]
- *       }
- *     },
- *     {
- *       conditionCheck: {
- *         key: { pk: 'org#1', sk: 'org#1' },
- *         conditions: [{ key: 'pk', op: 'attribute_exists' }]
+ *         item: { ...user, version: user.version + 1 },
+ *         conditions: [{ key: 'version', op: '=', value: user.version }]
  *       }
  *     }
  *   ]
  * });
  *
- * @example
- * // Delete a media item and update its group atomically
- * await transact(ddb, {
- *   items: [
- *     { delete: { key: { pk: 'media#123', sk: 'media#123' } } },
- *     { put: { item: { ...group, memberMediaIds: filtered, updatedAt: Date.now() } } },
- *   ]
- * });
  *
- * @example
- * // Raw expressions (for advanced use cases)
- * await transact(ddb, {
+ * // PREVENT OVERWRITES - Only create if doesn't exist
+ *
+ * await transact<User>(ddb, {
  *   items: [
  *     {
  *       put: {
- *         item: { pk: 'user#1', sk: 'profile', version: 2, name: 'Updated' },
- *         cond: 'version = :v',
- *         exprValues: { ':v': 1 }
+ *         item: newUser,
+ *         conditions: [{ key: 'pk', op: 'attribute_not_exists' }]
  *       }
  *     }
  *   ]
  * });
+ *
+ *
+ * // CONDITIONAL DELETE - Only delete if status matches
+ *
+ * await transact<User>(ddb, {
+ *   items: [
+ *     {
+ *       delete: {
+ *         key: { pk: 'user#123', sk: 'profile' },
+ *         conditions: [{ key: 'status', op: '=', value: 'inactive' }]
+ *       }
+ *     }
+ *   ]
+ * });
+ *
+ *
+ * // ATOMIC MULTI-ITEM - Delete media and update group together
+ *
+ * await transact(ddb, {
+ *   items: [
+ *     { delete: { key: { pk: 'media#123', sk: 'media#123' } } },
+ *     { put: { item: { ...group, mediaIds: updatedIds, updatedAt: Date.now() } } },
+ *   ]
+ * });
+ *
+ *
+ * // CONDITION CHECK - Verify related item exists before writing
+ *
+ * await transact<User>(ddb, {
+ *   items: [
+ *     {
+ *       conditionCheck: {
+ *         key: { pk: 'org#456', sk: 'org#456' },
+ *         conditions: [{ key: 'pk', op: 'attribute_exists' }]
+ *       }
+ *     },
+ *     { put: { item: { ...user, orgId: 'org#456' } } }
+ *   ]
+ * });
+ *
+ *
+ * // TYPE-SAFE UPDATE - All operations with DynamoDB expression comments
+ *
+ * await transact<Order>(ddb, {
+ *   items: [
+ *     {
+ *       update: {
+ *         key: { pk: 'order#123', sk: 'order#123' },
+ *
+ *         // Value operations
+ *         set: { status: 'shipped', updatedAt: Date.now() },  // SET #status = :status
+ *         incr: { version: 1, shipmentCount: 1 },             // SET #version = #version + :val
+ *         remove: ['pendingReason'],                          // REMOVE #pendingReason
+ *
+ *         // List operations
+ *         append: { history: ['shipped'] },                   // SET #history = list_append(#history, :val)
+ *         prepend: { alerts: ['urgent'] },                    // SET #alerts = list_append(:val, #alerts)
+ *
+ *         // Conditional & atomic operations
+ *         ifNotExists: { firstShippedAt: Date.now() },        // SET #x = if_not_exists(#x, :val)
+ *         add: { totalOrders: 1 },                            // ADD #totalOrders :val
+ *
+ *         // Advanced operations
+ *         setPath: { 'shipping.carrier': 'FedEx' },           // SET #shipping.#carrier = :val
+ *         compute: { total: ['subtotal', '+', 'tax'] },       // SET #total = #subtotal + #tax
+ *
+ *         // Conditional execution
+ *         conditions: [{ key: 'status', op: '=', value: 'pending' }]
+ *       }
+ *     }
+ *   ]
+ * });
+ * ```
  */
 export async function transact<T extends object = Record<string, unknown>>(
   ddb: Client,
@@ -927,7 +1105,7 @@ export async function transact<T extends object = Record<string, unknown>>(
         ExpressionAttributeNames,
         ExpressionAttributeValues,
       } = buildCondition(
-        item.put.conditions as ReadonlyArray<_t.FilterClause<T>> | undefined,
+        item.put.conditions,
         item.put.cond,
         item.put.exprNames,
         item.put.exprValues
@@ -949,7 +1127,7 @@ export async function transact<T extends object = Record<string, unknown>>(
         ExpressionAttributeNames,
         ExpressionAttributeValues,
       } = buildCondition(
-        item.delete.conditions as ReadonlyArray<_t.FilterClause<T>> | undefined,
+        item.delete.conditions,
         item.delete.cond,
         item.delete.exprNames,
         item.delete.exprValues
@@ -966,24 +1144,52 @@ export async function transact<T extends object = Record<string, unknown>>(
     }
 
     if ("update" in item) {
-      const {
-        ConditionExpression,
-        ExpressionAttributeNames,
-        ExpressionAttributeValues,
-      } = buildCondition(
-        item.update.conditions as ReadonlyArray<_t.FilterClause<T>> | undefined,
-        item.update.cond,
-        item.update.exprNames,
-        item.update.exprValues
+      const names: Record<string, string> = {};
+      const values: Record<string, NativeAttributeValue> = {};
+
+      // Build update expression from type-safe helpers
+      const UpdateExpression = _f.buildUpdateExpression(
+        item.update,
+        names,
+        values
       );
+
+      if (!UpdateExpression) {
+        throw new Error(
+          `[ddb] [transact] update requires at least one operation (set, incr, remove, append, etc.)`
+        );
+      }
+
+      // Build condition expression
+      const condResult = buildCondition(
+        item.update.conditions,
+        item.update.cond,
+        undefined,
+        undefined
+      );
+
+      // Merge condition names/values
+      if (condResult.ExpressionAttributeNames) {
+        Object.assign(names, condResult.ExpressionAttributeNames);
+      }
+      if (condResult.ExpressionAttributeValues) {
+        Object.assign(values, condResult.ExpressionAttributeValues);
+      }
+
       return {
         Update: {
           TableName,
           Key: item.update.key as Record<string, NativeAttributeValue>,
-          UpdateExpression: item.update.expr,
-          ...(ConditionExpression && { ConditionExpression }),
-          ...(ExpressionAttributeValues && { ExpressionAttributeValues }),
-          ...(ExpressionAttributeNames && { ExpressionAttributeNames }),
+          UpdateExpression,
+          ...(condResult.ConditionExpression && {
+            ConditionExpression: condResult.ConditionExpression,
+          }),
+          ...(Object.keys(values).length > 0 && {
+            ExpressionAttributeValues: values,
+          }),
+          ...(Object.keys(names).length > 0 && {
+            ExpressionAttributeNames: names,
+          }),
         },
       };
     }
@@ -994,9 +1200,7 @@ export async function transact<T extends object = Record<string, unknown>>(
         ExpressionAttributeNames,
         ExpressionAttributeValues,
       } = buildCondition(
-        item.conditionCheck.conditions as
-          | ReadonlyArray<_t.FilterClause<T>>
-          | undefined,
+        item.conditionCheck.conditions,
         item.conditionCheck.cond,
         item.conditionCheck.exprNames,
         item.conditionCheck.exprValues

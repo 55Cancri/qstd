@@ -219,3 +219,152 @@ export const chunk = <T>(arr: T[], size: number): T[][] => {
     arr.slice(i * size, i * size + size)
   );
 };
+
+/**
+ * Build UpdateExpression and expression attributes from type-safe update operations
+ */
+export const buildUpdateExpression = <T extends object>(
+  ops: _t.UpdateOperations<T>,
+  names: Record<string, string>,
+  values: Record<string, NativeAttributeValue>
+) => {
+  const setParts: string[] = [];
+  const removeParts: string[] = [];
+  const addParts: string[] = [];
+
+  // Helper to get unique name token
+  let nameIdx = 0;
+  const getName = (key: string) => {
+    const token = `#u${nameIdx++}`;
+    names[token] = key;
+    return token;
+  };
+  let valIdx = 0;
+  const getValue = (val: unknown) => {
+    const token = `:u${valIdx++}`;
+    values[token] = val as NativeAttributeValue;
+    return token;
+  };
+
+  // SET: { field: value } → SET #field = :field
+  if (ops.set) {
+    for (const [key, val] of Object.entries(
+      ops.set as Record<string, unknown>
+    )) {
+      if (val !== undefined) {
+        setParts.push(`${getName(key)} = ${getValue(val)}`);
+      }
+    }
+  }
+
+  // INCR: { field: 1 } → SET #field = #field + :val
+  if (ops.incr) {
+    for (const [key, val] of Object.entries(
+      ops.incr as Record<string, number>
+    )) {
+      if (val !== undefined) {
+        const nameToken = getName(key);
+        setParts.push(`${nameToken} = ${nameToken} + ${getValue(val)}`);
+      }
+    }
+  }
+
+  // REMOVE: ['field'] → REMOVE #field
+  if (ops.remove) {
+    for (const key of ops.remove as string[]) {
+      removeParts.push(getName(key));
+    }
+  }
+
+  // APPEND: { list: ['item'] } → SET #list = list_append(#list, :list)
+  if (ops.append) {
+    for (const [key, val] of Object.entries(
+      ops.append as Record<string, unknown[]>
+    )) {
+      if (val !== undefined) {
+        const nameToken = getName(key);
+        setParts.push(
+          `${nameToken} = list_append(${nameToken}, ${getValue(val)})`
+        );
+      }
+    }
+  }
+
+  // PREPEND: { list: ['item'] } → SET #list = list_append(:list, #list)
+  if (ops.prepend) {
+    for (const [key, val] of Object.entries(
+      ops.prepend as Record<string, unknown[]>
+    )) {
+      if (val !== undefined) {
+        const nameToken = getName(key);
+        setParts.push(
+          `${nameToken} = list_append(${getValue(val)}, ${nameToken})`
+        );
+      }
+    }
+  }
+
+  // IF NOT EXISTS: { field: 'default' } → SET #field = if_not_exists(#field, :field)
+  if (ops.ifNotExists) {
+    for (const [key, val] of Object.entries(
+      ops.ifNotExists as Record<string, unknown>
+    )) {
+      if (val !== undefined) {
+        const nameToken = getName(key);
+        setParts.push(
+          `${nameToken} = if_not_exists(${nameToken}, ${getValue(val)})`
+        );
+      }
+    }
+  }
+
+  // ADD: { counter: 5 } → ADD #counter :counter (atomic increment, creates if missing)
+  if (ops.add) {
+    for (const [key, val] of Object.entries(
+      ops.add as Record<string, number>
+    )) {
+      if (val !== undefined) {
+        addParts.push(`${getName(key)} ${getValue(val)}`);
+      }
+    }
+  }
+
+  // SET PATH: { 'address.city': 'NYC' } → SET #address.#city = :val
+  if (ops.setPath) {
+    for (const [path, val] of Object.entries(ops.setPath)) {
+      if (val !== undefined) {
+        const pathParts = path.split(".");
+        const pathTokens = pathParts.map((p) => getName(p));
+        setParts.push(`${pathTokens.join(".")} = ${getValue(val)}`);
+      }
+    }
+  }
+
+  // COMPUTE: { total: ['price', '+', 'tax'] } → SET #total = #price + #tax
+  if (ops.compute) {
+    for (const [key, val] of Object.entries(
+      ops.compute as Record<string, unknown>
+    )) {
+      if (val && Array.isArray(val) && val.length === 3) {
+        const [left, op, right] = val as [string, "+" | "-", string];
+        setParts.push(
+          `${getName(key)} = ${getName(left)} ${op} ${getName(right)}`
+        );
+      }
+    }
+  }
+
+  // Build expression parts
+  const exprParts: string[] = [];
+  if (setParts.length > 0) {
+    exprParts.push(`SET ${setParts.join(", ")}`);
+  }
+  if (removeParts.length > 0) {
+    exprParts.push(`REMOVE ${removeParts.join(", ")}`);
+  }
+  if (addParts.length > 0) {
+    exprParts.push(`ADD ${addParts.join(", ")}`);
+  }
+
+  return exprParts.join(" ") || undefined;
+};

@@ -323,22 +323,38 @@ export type ExprValues = Record<string, unknown>;
 /** Expression attribute names for reserved word escaping */
 export type ExprNames = Record<string, string>;
 
-/** Put operation in a transaction */
+/**
+ * Put operation in a transaction
+ * @example
+ * // Type-safe conditions (recommended)
+ * { put: { item: user, conditions: [{ key: 'version', op: '=', value: 1 }] } }
+ *
+ * // Raw expression (advanced)
+ * { put: { item: user, cond: 'attribute_not_exists(pk)' } }
+ */
 export type TransactPut<T extends object = Record<string, unknown>> = {
   put: {
     item: T;
     /** Type-safe conditions (like filters). Auto-generates expression attributes. */
     conditions?: ReadonlyArray<FilterClause<T>>;
-    /** Raw condition expression (e.g., 'attribute_not_exists(pk)'). Use conditions for type-safety. */
+    /** Raw condition expression. Use conditions for type-safety. */
     cond?: string;
-    /** Expression attribute values for raw cond (e.g., { ':v': 1 }) */
+    /** Expression attribute values for raw cond */
     exprValues?: ExprValues;
     /** Expression attribute names for raw cond */
     exprNames?: ExprNames;
   };
 };
 
-/** Delete operation in a transaction */
+/**
+ * Delete operation in a transaction
+ * @example
+ * // Type-safe conditions (recommended)
+ * { delete: { key: { pk, sk }, conditions: [{ key: 'status', op: '=', value: 'inactive' }] } }
+ *
+ * // Simple delete (no conditions)
+ * { delete: { key: { pk, sk } } }
+ */
 export type TransactDelete<T extends object = Record<string, unknown>> = {
   delete: {
     key: Key;
@@ -353,27 +369,146 @@ export type TransactDelete<T extends object = Record<string, unknown>> = {
   };
 };
 
-/** Update operation in a transaction */
+/**
+ * Type-safe update operations - shared between transact and update functions
+ * @example
+ * ```ts
+ * // Value operations
+ * set: { name: 'Alice', status: 'active' }     // SET #name = :name, #status = :status
+ * incr: { count: 1, views: -5 }                // SET #count = #count + :incr (use negative to decrement)
+ * remove: ['oldField', 'tempData']             // REMOVE #oldField, #tempData
+ *
+ * // List operations
+ * append: { items: ['new1', 'new2'] }          // SET #items = list_append(#items, :items)
+ * prepend: { items: ['first'] }                // SET #items = list_append(:items, #items)
+ *
+ * // Conditional & set operations
+ * ifNotExists: { field: 'default' }            // SET #field = if_not_exists(#field, :field)
+ * add: { counter: 5 }                           // ADD #counter :counter (atomic, creates if missing)
+ *
+ * // Advanced
+ * setPath: { 'address.city': 'NYC' }           // SET #address.#city = :val (nested updates)
+ * compute: { total: ['price', '+', 'tax'] }    // SET #total = #price + #tax (cross-attribute math)
+ * ```
+ */
+export type UpdateOperations<T extends object = Record<string, unknown>> = {
+  /** SET: assign values to attributes */
+  set?: Partial<T>;
+  /** INCREMENT: add to numeric attributes (use negative to decrement) */
+  incr?: Partial<Record<keyof T, number>>;
+  /** REMOVE: list of attribute names to remove */
+  remove?: (keyof T)[];
+  /** LIST APPEND: append values to list attributes */
+  append?: Partial<Record<keyof T, unknown[]>>;
+  /** LIST PREPEND: prepend values to list attributes */
+  prepend?: Partial<Record<keyof T, unknown[]>>;
+  /** IF NOT EXISTS: set value only if attribute doesn't exist */
+  ifNotExists?: Partial<T>;
+  /** ADD: atomic add to numeric attributes (creates attribute if missing) */
+  add?: Partial<Record<keyof T, number>>;
+  /** SET PATH: update nested attributes using dot notation */
+  setPath?: Record<string, unknown>;
+  /** COMPUTE: cross-attribute math operations */
+  compute?: Partial<Record<keyof T, [keyof T, "+" | "-", keyof T]>>;
+};
+
+/**
+ * Update operation in a transaction
+ * @example
+ * ```ts
+ * // All operations can be combined in a single update
+ * {
+ *   update: {
+ *     key: { pk: 'user#123', sk: 'profile' },
+ *
+ *     // Value operations
+ *     set: { name: 'Alice', status: 'active' },     // SET #name = :name, #status = :status
+ *     incr: { loginCount: 1, failedAttempts: -1 },  // SET #x = #x + :val (negative to decrement)
+ *     remove: ['tempToken', 'oldField'],            // REMOVE #tempToken, #oldField
+ *
+ *     // List operations
+ *     append: { tags: ['new-tag'] },                // SET #tags = list_append(#tags, :tags)
+ *     prepend: { notifications: [latest] },         // SET #notif = list_append(:notif, #notif)
+ *
+ *     // Conditional & set operations
+ *     ifNotExists: { createdAt: Date.now() },       // SET #createdAt = if_not_exists(#createdAt, :val)
+ *     add: { viewCount: 1 },                        // ADD #viewCount :val (atomic, creates if missing)
+ *
+ *     // Advanced operations
+ *     setPath: { 'address.city': 'NYC' },           // SET #address.#city = :val (nested)
+ *     compute: { total: ['subtotal', '+', 'tax'] }, // SET #total = #subtotal + #tax
+ *
+ *     // Conditional execution
+ *     conditions: [{ key: 'version', op: '=', value: 1 }]
+ *   }
+ * }
+ * ```
+ */
 export type TransactUpdate<T extends object = Record<string, unknown>> = {
-  update: {
+  update: UpdateOperations<T> & {
     key: Key;
-    /** Update expression (e.g., 'SET #count = #count + :inc') */
-    expr: string;
     /** Type-safe conditions (like filters). Auto-generates expression attributes. */
     conditions?: ReadonlyArray<FilterClause<T>>;
     /** Raw condition expression. Use conditions for type-safety. */
     cond?: string;
-    /** Expression attribute values (for expr and/or cond) */
-    exprValues?: ExprValues;
-    /** Expression attribute names (for expr and/or cond) */
-    exprNames?: ExprNames;
   };
 };
 
-/** ConditionCheck operation - validates a condition without modifying the item */
+/** Return values options for update operations */
+export type UpdateReturnValues =
+  | "none"
+  | "allOld"
+  | "updatedOld"
+  | "allNew"
+  | "updatedNew";
+
+/**
+ * Props for standalone update function
+ */
+export type UpdateProps<T extends object = Record<string, unknown>> = {
+  /** Table name (optional if set on client) */
+  tableName?: string;
+  /** Primary key of item to update */
+  key: Key;
+  /** Type-safe conditions (like filters) */
+  conditions?: ReadonlyArray<FilterClause<T>>;
+  /** Raw condition expression */
+  cond?: string;
+  /** What values to return after update */
+  returnValues?: UpdateReturnValues;
+  /** SET: assign values to attributes */
+  set?: Partial<T>;
+  /** INCREMENT: add to numeric attributes (use negative to decrement) */
+  incr?: Partial<Record<keyof T, number>>;
+  /** REMOVE: list of attribute names to remove */
+  remove?: (keyof T)[];
+  /** LIST APPEND: append values to list attributes */
+  append?: Partial<Record<keyof T, unknown[]>>;
+  /** LIST PREPEND: prepend values to list attributes */
+  prepend?: Partial<Record<keyof T, unknown[]>>;
+  /** IF NOT EXISTS: set value only if attribute doesn't exist */
+  ifNotExists?: Partial<T>;
+  /** ADD: atomic add to numeric attributes (creates attribute if missing) */
+  add?: Partial<Record<keyof T, number>>;
+  /** SET PATH: update nested attributes using dot notation */
+  setPath?: Record<string, unknown>;
+  /** COMPUTE: cross-attribute math operations */
+  compute?: Partial<Record<keyof T, [keyof T, "+" | "-", keyof T]>>;
+};
+
+/**
+ * ConditionCheck operation - validates a condition without modifying the item
+ * @example
+ * // Type-safe conditions (recommended)
+ * { conditionCheck: { key: { pk, sk }, conditions: [{ key: 'pk', op: 'attribute_exists' }] } }
+ *
+ * // Raw expression
+ * { conditionCheck: { key: { pk, sk }, cond: 'attribute_exists(pk)' } }
+ */
 export type TransactConditionCheck<T extends object = Record<string, unknown>> =
   {
     conditionCheck: {
+      key: Key;
       /** Type-safe conditions (like filters). Auto-generates expression attributes. */
       conditions?: ReadonlyArray<FilterClause<T>>;
       /** Raw condition expression. Use conditions for type-safety. */
@@ -382,7 +517,6 @@ export type TransactConditionCheck<T extends object = Record<string, unknown>> =
       exprValues?: ExprValues;
       /** Expression attribute names for raw cond */
       exprNames?: ExprNames;
-      key: Key;
     };
   };
 
