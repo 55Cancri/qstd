@@ -1,5 +1,74 @@
 import type { Preset } from "@pandacss/dev";
 
+const normalizeBorderColor = (raw: string) => {
+  const borderColor = raw.trim();
+  const isKeyword =
+    /^(currentColor|transparent|inherit|initial|unset|revert)$/i.test(
+      borderColor
+    );
+  const isHex = /^#/.test(borderColor);
+  const isFunc =
+    /^(rgb|rgba|hsl|hsla|lab|lch|oklab|oklch|color)\(/i.test(borderColor);
+  const isVarRef = /^var\(/.test(borderColor);
+  const looksLikeScaleToken = /^[a-zA-Z][\w-]*\.\d{2,3}$/.test(borderColor);
+  const looksLikeSemanticToken = /^[a-zA-Z][\w-]*-[\w-]+$/.test(borderColor);
+  const shouldWrap =
+    !isKeyword &&
+    !isHex &&
+    !isFunc &&
+    !isVarRef &&
+    (looksLikeScaleToken || looksLikeSemanticToken);
+
+  return shouldWrap
+    ? `var(--colors-${borderColor.replace(/\./g, "-")})`
+    : borderColor;
+};
+
+const parseBorderShorthand = (value: string) => {
+  const raw = value.trim();
+
+  if (
+    raw === "none" ||
+    raw === "0" ||
+    raw === "0px" ||
+    raw === "0rem" ||
+    raw === "0em"
+  ) {
+    return {
+      width: "0",
+      style: "none",
+      color: undefined as string | undefined,
+    };
+  }
+
+  const parts = raw.split(/\s+/);
+  let width = "";
+  let style = "";
+  let color = "";
+
+  parts.forEach((part) => {
+    if (
+      /^\d+(\.\d+)?(px|em|rem|%|pt|pc|in|cm|mm|ex|ch|vw|vh|vmin|vmax)$/.test(
+        part
+      )
+    )
+      width = part;
+    else if (
+      /^(none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)$/.test(
+        part
+      )
+    )
+      style = part;
+    else color = part;
+  });
+
+  return {
+    width: width || undefined,
+    style: style || undefined,
+    color: color ? normalizeBorderColor(color) : undefined,
+  };
+};
+
 /**
  * QSTD PRESET - Single Source of Truth for Styles
  *
@@ -277,6 +346,36 @@ const preset: Preset = {
         values: { type: "number" },
         transform(value: number) {
           return { "&, & path": { strokeWidth: value } };
+        },
+      },
+      borderBottom: {
+        values: { type: "string" },
+        transform(value) {
+          if (typeof value !== "string") return {};
+
+          const parsed = parseBorderShorthand(value);
+
+          return {
+            ...(parsed.width !== undefined && { borderBottomWidth: parsed.width }),
+            ...(parsed.style !== undefined && {
+              borderBottomStyle: parsed.style,
+            }),
+            ...(parsed.color !== undefined && { borderBottomColor: parsed.color }),
+          };
+        },
+      },
+      borderTop: {
+        values: { type: "string" },
+        transform(value) {
+          if (typeof value !== "string") return {};
+
+          const parsed = parseBorderShorthand(value);
+
+          return {
+            ...(parsed.width !== undefined && { borderTopWidth: parsed.width }),
+            ...(parsed.style !== undefined && { borderTopStyle: parsed.style }),
+            ...(parsed.color !== undefined && { borderTopColor: parsed.color }),
+          };
         },
       },
       debug: {
