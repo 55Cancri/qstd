@@ -7,8 +7,9 @@ const normalizeBorderColor = (raw: string) => {
       borderColor
     );
   const isHex = /^#/.test(borderColor);
-  const isFunc =
-    /^(rgb|rgba|hsl|hsla|lab|lch|oklab|oklch|color)\(/i.test(borderColor);
+  const isFunc = /^(rgb|rgba|hsl|hsla|lab|lch|oklab|oklch|color)\(/i.test(
+    borderColor
+  );
   const isVarRef = /^var\(/.test(borderColor);
   const looksLikeScaleToken = /^[a-zA-Z][\w-]*\.\d{2,3}$/.test(borderColor);
   const looksLikeSemanticToken = /^[a-zA-Z][\w-]*-[\w-]+$/.test(borderColor);
@@ -349,33 +350,25 @@ const preset: Preset = {
         },
       },
       borderBottom: {
-        values: { type: "string" },
         transform(value) {
           if (typeof value !== "string") return {};
-
           const parsed = parseBorderShorthand(value);
-
           return {
-            ...(parsed.width !== undefined && { borderBottomWidth: parsed.width }),
-            ...(parsed.style !== undefined && {
-              borderBottomStyle: parsed.style,
-            }),
-            ...(parsed.color !== undefined && { borderBottomColor: parsed.color }),
-          };
+            ...(parsed.width && { borderBottomWidth: parsed.width }),
+            ...(parsed.style && { borderBottomStyle: parsed.style }),
+            ...(parsed.color && { borderBottomColor: parsed.color }),
+          } as unknown as undefined;
         },
       },
       borderTop: {
-        values: { type: "string" },
         transform(value) {
           if (typeof value !== "string") return {};
-
           const parsed = parseBorderShorthand(value);
-
           return {
-            ...(parsed.width !== undefined && { borderTopWidth: parsed.width }),
-            ...(parsed.style !== undefined && { borderTopStyle: parsed.style }),
-            ...(parsed.color !== undefined && { borderTopColor: parsed.color }),
-          };
+            ...(parsed.width && { borderTopWidth: parsed.width }),
+            ...(parsed.style && { borderTopStyle: parsed.style }),
+            ...(parsed.color && { borderTopColor: parsed.color }),
+          } as unknown as undefined;
         },
       },
       debug: {
