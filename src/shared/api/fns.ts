@@ -47,6 +47,50 @@ const isDev = (): boolean => {
 export const isAbsolute = (path: string) => path.startsWith("http");
 
 /**
+ * Join an API `baseUrl` and a request `path` without creating `//` between them.
+ *
+ * Why this exists:
+ * - Many apps (including Stockpile) call the API client with leading-slash paths
+ *   like `"/media"` (easy to read, consistent with server routes).
+ * - Some deploy tooling naturally emits base URLs with a trailing slash
+ *   (e.g. `"https://api.example.com/v1/"`).
+ * - Naive string concatenation would produce `"https://.../v1//media"`, which can
+ *   break routing in gateways/CDNs and is hard to debug.
+ *
+ * This helper intentionally does **not** attempt full URL normalization; it only
+ * guarantees a single `/` at the join boundary while preserving:
+ * - Existing query strings in `path` (e.g. `"/users?limit=10"`)
+ * - Relative behavior when `baseUrl` is empty (same as the legacy implementation)
+ *
+ * @example
+ * ```ts
+ * joinBaseAndPath("https://api.example.com/v1", "/users");   // "https://api.example.com/v1/users"
+ * joinBaseAndPath("https://api.example.com/v1/", "/users");  // "https://api.example.com/v1/users"
+ * joinBaseAndPath("https://api.example.com/v1", "users");    // "https://api.example.com/v1/users"
+ * joinBaseAndPath("", "/users");                              // "/users"
+ * ```
+ */
+const joinBaseAndPath = (baseUrl: string, path: string): string => {
+  if (!baseUrl) return path;
+  if (!path) return baseUrl;
+
+  // Query/hash-only "paths" should attach directly (no slash insertion).
+  if (path.startsWith("?") || path.startsWith("#")) {
+    return `${baseUrl.replace(/\/+$/, "")}${path}`;
+  }
+
+  const trimmedBase = baseUrl.replace(/\/+$/, "");
+  const trimmedPath = path.replace(/^\/+/, "");
+
+  // Preserve a trailing slash request (rare, but intentional when used).
+  if (!trimmedPath && path.startsWith("/")) {
+    return `${trimmedBase}/`;
+  }
+
+  return `${trimmedBase}/${trimmedPath}`;
+};
+
+/**
  * Build the final request URL from a path, a `baseUrl`, and optional query params.
  *
  * The app calls the API client with "internal" paths like `/entries` and expects
@@ -91,8 +135,8 @@ export const prepareUrl = (
     );
   }
 
-  const base = isAbsolute(path) ? "" : props.baseUrl;
-  let url = `${base}${path}`;
+  const baseUrl = isAbsolute(path) ? "" : props.baseUrl;
+  let url = joinBaseAndPath(baseUrl, path);
 
   if (props.params) {
     const searchParams = new URLSearchParams();
