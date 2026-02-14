@@ -2,6 +2,7 @@ import {
   format,
   formatISO,
   formatDistanceToNow,
+  parse,
   addSeconds,
   addMinutes,
   addHours,
@@ -263,6 +264,15 @@ type DateOptions = {
   pattern?: string;
   /** Include time component */
   includeTime?: boolean;
+  /**
+   * date-fns parse format for the input string.
+   * When provided and input is a string, uses `date-fns/parse` instead of `new Date()`.
+   * Useful for non-standard date formats (e.g., PDF dates: "yyyyMMddHHmmss").
+   *
+   * @example
+   * formatDate("20240115120000", { parseFormat: "yyyyMMddHHmmss" })
+   */
+  parseFormat?: string;
 };
 
 /**
@@ -277,13 +287,17 @@ type DateOptions = {
  * formatDate(date, { style: "long" }) // "December 1, 2023"
  * formatDate(date, { includeTime: true }) // "Dec 1, 2023 3:30 PM"
  * formatDate(date, { pattern: "yyyy-MM-dd" }) // Custom format
+ * formatDate("20240115120000", { parseFormat: "yyyyMMddHHmmss", includeTime: true }) // Parse non-standard input
  */
 export const formatDate = (input: DateInput, options: DateOptions = {}) => {
-  const { style = "medium", pattern, includeTime = false } = options;
+  const { style = "medium", pattern, includeTime = false, parseFormat } =
+    options;
 
   // Convert input to Date object
   let date: Date;
-  if (typeof input === "string") {
+  if (typeof input === "string" && parseFormat) {
+    date = parse(input, parseFormat, new Date());
+  } else if (typeof input === "string") {
     date = new Date(input);
   } else if (typeof input === "number") {
     date = new Date(input);
