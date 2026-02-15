@@ -9,6 +9,7 @@ export * as Flow from "../shared/flow";
 export * as Random from "../shared/random";
 export * as Log from "../shared/log";
 export * as Api from "../shared/api";
+export * as LexoRank from "../shared/lexorank";
 
 // Server-specific utilities
 export * as Os from "./os";
