@@ -16,6 +16,40 @@ export const getTableNameOrThrow = (
   );
 };
 
+/**
+ * DynamoDB transact writes can fail because another writer touched one of the
+ * same items at the same time.
+ *
+ * Callers usually want to retry that specific case, but they should still let
+ * every other DynamoDB failure surface immediately.
+ */
+export const isTransactionConflictError = (error: unknown) => {
+  const errorName =
+    error instanceof Error
+      ? error.name
+      : typeof error === "object" &&
+          error &&
+          "name" in error &&
+          typeof (error as { name?: unknown }).name === "string"
+        ? (error as { name: string }).name
+        : "";
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" &&
+          error &&
+          "message" in error &&
+          typeof (error as { message?: unknown }).message === "string"
+        ? (error as { message: string }).message
+        : "";
+
+  return (
+    errorName === "TransactionConflictException" ||
+    errorName === "TransactionCanceledException" ||
+    /TransactionConflict|Transaction cancelled/i.test(errorMessage)
+  );
+};
+
 export const validateFindProps = <T extends object = Record<string, unknown>>(
   props: _t.FindProps<T> & { first?: boolean; raw?: boolean },
   tableName: string
