@@ -42,12 +42,29 @@ export type WebsocketEvent = APIGatewayProxyEvent;
 
 export type ApigwEvent = APIGatewayProxyEventV2;
 export type ApigwResult = APIGatewayProxyResultV2;
+export type HandlerResult = Response | ApigwResult;
+export type HandlerFn<T extends ApigwEvent | WebsocketEvent> = (
+  event: T
+) => Promise<ApigwResult> | ApigwResult;
+export type Handler<T extends ApigwEvent | WebsocketEvent> = (
+  event: T
+) => Promise<HandlerResult>;
+export type HandlerFactory<T extends ApigwEvent | WebsocketEvent> = (
+  fn: HandlerFn<T>
+) => Handler<T>;
+export type RestHandlerFn = HandlerFn<ApigwEvent>;
+export type RestHandler = Handler<ApigwEvent>;
+export type RestHandlerFactory = HandlerFactory<ApigwEvent>;
+export type WebsocketHandlerFn = HandlerFn<WebsocketEvent>;
+export type WebsocketHandler = Handler<WebsocketEvent>;
+export type WebsocketHandlerFactory = HandlerFactory<WebsocketEvent>;
 
 export type SqsEvent = SQSEvent;
 export type SqsContext = Context;
 export type SQSHandler = AwsSqsHandler;
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 export type SqsCallback = Callback<SQSBatchResponse | void>;
+export type SqsHandlerFactory = (fn: SqsHandlerFn) => SqsHandlerFn;
 
 export type ResponseOptions = {
   /**

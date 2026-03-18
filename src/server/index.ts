@@ -15,6 +15,7 @@ export * as LexoRank from "../shared/lexorank";
 export * as Os from "./os";
 export * as File from "./file";
 export * as Lambda from "./aws/lambda";
+export * as ApiGw from "./aws/apigw";
 export * as DDB from "./aws/ddb";
 export * as SNS from "./aws/sns";
 export * as SQS from "./aws/sqs";

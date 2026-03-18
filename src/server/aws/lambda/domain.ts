@@ -8,14 +8,15 @@ import * as _f from "./fns";
  * @param fn
  * @returns
  */
-export const createRestHandler = _f.createHandlerFactory<_t.ApigwEvent>();
+export const createRestHandler: _t.RestHandlerFactory =
+  _f.createHandlerFactory<_t.ApigwEvent>();
 
 /**
  * Same as rest handler but just receives a websocket event.
  * @param fn
  * @returns
  */
-export const createWebsocketHandler =
+export const createWebsocketHandler: _t.WebsocketHandlerFactory =
   _f.createHandlerFactory<_t.WebsocketEvent>();
 
 /**
@@ -73,8 +74,8 @@ export const withBatchFailures = () => {
  * });
  * ```
  */
-export const createSqsHandler =
-  (fn: _t.SqsHandlerFn): _t.SqsHandlerFn =>
+export const createSqsHandler: _t.SqsHandlerFactory =
+  (fn) =>
   async (event) => {
     const result = await fn(event);
 

@@ -59,7 +59,7 @@ export const response = <T = unknown>(
  * @returns
  */
 export const createHandlerFactory =
-  <T extends _t.ApigwEvent | _t.WebsocketEvent>() =>
+  <T extends _t.ApigwEvent | _t.WebsocketEvent>(): _t.HandlerFactory<T> =>
   (fn: (event: T) => Promise<_t.ApigwResult> | _t.ApigwResult) =>
   async (event: T) => {
     try {
