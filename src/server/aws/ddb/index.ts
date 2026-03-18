@@ -1,6 +1,6 @@
 export * from "./domain";
 export * from "./literals";
-export { isTransactionConflictError } from "./fns";
+export { isConditionalConflictError, isTransactionConflictError } from "./fns";
 export { copyTable } from "./copy-table";
 export type {
   Key,

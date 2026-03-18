@@ -27,4 +27,26 @@ describe("server/aws/ddb fns", () => {
       false
     );
   });
+
+  it("detects conditional conflict errors by name", () => {
+    expect(
+      _f.isConditionalConflictError({
+        name: "ConditionalCheckFailedException",
+      })
+    ).toBe(true);
+    expect(
+      _f.isConditionalConflictError({
+        name: "TransactionConflictException",
+      })
+    ).toBe(false);
+  });
+
+  it("detects conditional conflict errors by message", () => {
+    expect(
+      _f.isConditionalConflictError(new Error("The conditional request failed"))
+    ).toBe(true);
+    expect(
+      _f.isConditionalConflictError(new Error("Transaction cancelled"))
+    ).toBe(false);
+  });
 });

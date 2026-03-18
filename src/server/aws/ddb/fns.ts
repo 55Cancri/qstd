@@ -1,6 +1,27 @@
 import type { NativeAttributeValue } from "@aws-sdk/lib-dynamodb";
 import * as _t from "./types";
 
+const getErrorNameAndMessage = (error: unknown) => ({
+  errorName:
+    error instanceof Error
+      ? error.name
+      : typeof error === "object" &&
+          error &&
+          "name" in error &&
+          typeof (error as { name?: unknown }).name === "string"
+        ? (error as { name: string }).name
+        : "",
+  errorMessage:
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" &&
+          error &&
+          "message" in error &&
+          typeof (error as { message?: unknown }).message === "string"
+        ? (error as { message: string }).message
+        : "",
+});
+
 /**
  * Resolve table name from candidates, returning the first truthy value
  * @throws Error if no table name is found
@@ -24,29 +45,29 @@ export const getTableNameOrThrow = (
  * every other DynamoDB failure surface immediately.
  */
 export const isTransactionConflictError = (error: unknown) => {
-  const errorName =
-    error instanceof Error
-      ? error.name
-      : typeof error === "object" &&
-          error &&
-          "name" in error &&
-          typeof (error as { name?: unknown }).name === "string"
-        ? (error as { name: string }).name
-        : "";
-  const errorMessage =
-    error instanceof Error
-      ? error.message
-      : typeof error === "object" &&
-          error &&
-          "message" in error &&
-          typeof (error as { message?: unknown }).message === "string"
-        ? (error as { message: string }).message
-        : "";
+  const { errorMessage, errorName } = getErrorNameAndMessage(error);
 
   return (
     errorName === "TransactionConflictException" ||
     errorName === "TransactionCanceledException" ||
     /TransactionConflict|Transaction cancelled/i.test(errorMessage)
+  );
+};
+
+/**
+ * Conditional writes fail when another writer changed the guarded row first.
+ *
+ * Callers usually want to re-read and retry that case, while still surfacing
+ * genuine validation or infrastructure failures immediately.
+ */
+export const isConditionalConflictError = (error: unknown) => {
+  const { errorMessage, errorName } = getErrorNameAndMessage(error);
+
+  return (
+    errorName === "ConditionalCheckFailedException" ||
+    /ConditionalCheckFailed|conditional check failed|conditional request failed/i.test(
+      errorMessage
+    )
   );
 };
 
