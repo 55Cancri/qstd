@@ -220,11 +220,23 @@ type BaseFindProps<T extends object = Record<string, unknown>> = {
    * ```
    */
   filters?: ReadonlyArray<FilterClause<T>>;
-  /** Limit number of items returned per page (optional) */
+  /**
+   * Limit number of items returned per page (optional).
+   *
+   * When `recursive` is enabled this stays a page-size hint for each DynamoDB
+   * request rather than a cap on the total number of accumulated items.
+   */
   limit?: number;
   /** Pagination token from previous query/scan (optional) */
   startKey?: Record<string, NativeAttributeValue>;
-  /** Fetch all pages recursively; pass function to control continuation (optional) */
+  /**
+   * Fetch all pages recursively; pass function to control continuation
+   * (optional).
+   *
+   * The callback runs after a fetched page has been added to the accumulated
+   * result set and only when DynamoDB returned a `LastEvaluatedKey` for a
+   * possible next page.
+   */
   recursive?: boolean | RecursiveFn<T>;
   /** Maximum items to fetch when using recursive (optional) */
   maxItems?: number;

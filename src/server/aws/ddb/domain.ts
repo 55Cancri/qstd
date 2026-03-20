@@ -108,6 +108,16 @@ export const create = (props?: {
  *   recursive: true,
  *   maxItems: 1000,
  * }); // allActive: User[]
+ *
+ * @example
+ * // Keep recursive reads bounded to smaller DynamoDB pages
+ * const rows = await find<User>(doc, {
+ *   tableName: 'users',
+ *   pk: { value: 'org#456' },
+ *   sk: { op: 'begins_with', value: 'user#' },
+ *   limit: 25,
+ *   recursive: true,
+ * }); // rows: User[]
  */
 // Overload 1: first + raw → { item: T | undefined; count; scannedCount }
 export function find<T extends object = Record<string, unknown>>(
@@ -366,10 +376,7 @@ export async function update<T extends object = Record<string, unknown>>(
   ddb: Client,
   props: _t.UpdateProps<T>
 ) {
-  const TableName = _f.getTableNameOrThrow(
-    props.tableName as string | undefined,
-    ddb.tableName
-  );
+  const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
   const names: Record<string, string> = {};
   const values: Record<string, NativeAttributeValue> = {};
 

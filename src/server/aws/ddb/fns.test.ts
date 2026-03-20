@@ -49,4 +49,17 @@ describe("server/aws/ddb fns", () => {
       _f.isConditionalConflictError(new Error("Transaction cancelled"))
     ).toBe(false);
   });
+
+  it("allows recursive finds to keep a bounded page size", () => {
+    expect(() =>
+      _f.validateFindProps(
+        {
+          limit: 25,
+          pk: { value: "user#123" },
+          recursive: true,
+        },
+        "users"
+      )
+    ).not.toThrow();
+  });
 });

@@ -80,9 +80,6 @@ export const validateFindProps = <T extends object = Record<string, unknown>>(
   if (!tableName) {
     throw new Error(`[ddb] "tableName" is required`);
   }
-  if (props.limit && props.recursive) {
-    throw new Error(`[ddb] "limit" and "recursive" cannot be used together`);
-  }
 
   // Query-specific validations
   if (!isScan) {
