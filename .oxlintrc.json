@@ -1,0 +1,49 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "node", "oxc"],
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "builtin": true
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/styled-system/**",
+    "**/playground/dist/**",
+    "**/.tsbuildinfo"
+  ],
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+        "playground/src/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"
+      ],
+      "env": {
+        "browser": true
+      }
+    },
+    {
+      "files": [
+        "src/server/**/*.{js,mjs,cjs,ts,mts,cts}",
+        "*.config.{js,cjs,mjs,ts,cts,mts}",
+        "scripts/**/*.{js,mjs}",
+        "tests/**/*.{js,mjs,ts,tsx}",
+        "playground/*.config.{js,cjs,ts}"
+      ],
+      "env": {
+        "node": true
+      }
+    }
+  ]
+}

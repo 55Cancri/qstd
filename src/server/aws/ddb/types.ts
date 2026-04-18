@@ -10,7 +10,7 @@ export type Credentials = DynamoDBClientConfig["credentials"];
 export type Key = { pk: Pk; sk: Sk };
 // export type Key = { pk: string; sk: string };
 
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- intentional pattern for string autocomplete hints
+// Preserve literal completions while still accepting arbitrary string keys.
 export type StrWithAutocomplete<T> = T | (string & Record<never, never>);
 export type Pk = StrWithAutocomplete<"pk" | "gsi-pk" | "gsi2-pk" | "gsi-2-pk">;
 export type Sk = StrWithAutocomplete<"sk" | "gsi-sk" | "gsi2-sk" | "gsi-2-sk">;

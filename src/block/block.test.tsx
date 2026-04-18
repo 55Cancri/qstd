@@ -77,10 +77,10 @@ describe("Block Component", () => {
 
       // For now, these compile but the overload system provides some protection
       const currentBehavior = [
-        <Block multiple />, // Currently allowed but not ideal
-        <Block txt multiple />, // Currently allowed but not ideal
-        <Block txt button />, // Currently allowed but not ideal
-        <Block filepicker input />, // Currently allowed but not ideal
+        <Block key="multiple-div" multiple />, // Currently allowed but not ideal
+        <Block key="multiple-text" txt multiple />, // Currently allowed but not ideal
+        <Block key="text-button" txt button />, // Currently allowed but not ideal
+        <Block key="filepicker-input" filepicker input />, // Currently allowed but not ideal
       ];
 
       expect(documentedIssues.length).toBe(4);

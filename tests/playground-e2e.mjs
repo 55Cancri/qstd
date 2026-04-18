@@ -17,7 +17,6 @@
 
 import { chromium } from "playwright";
 import fs from "fs";
-import path from "path";
 
 const PLAYGROUND_URL = "http://localhost:5173";
 const SCREENSHOTS_DIR = "../memories/test-screenshots";

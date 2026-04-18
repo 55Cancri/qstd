@@ -5,7 +5,6 @@ import type { RadioOption } from "qstd/react";
 export default function App() {
   const [theme, setTheme] = React.useState<"light" | "dark">("light");
   const [isChecked, setIsChecked] = React.useState(false);
-  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [isOn, setIsOn] = React.useState(false);
   const [txtarea, setTxtareaVal] = React.useState("");
   const [progress1, setProgress1] = React.useState(0);

@@ -75,7 +75,7 @@ export const validateFindProps = <T extends object = Record<string, unknown>>(
   props: _t.FindProps<T> & { first?: boolean; raw?: boolean },
   tableName: string
 ) => {
-  const isScan = "scan" in props && props.scan === true;
+  const isScan = props.scan === true;
 
   if (!tableName) {
     throw new Error(`[ddb] "tableName" is required`);
@@ -83,22 +83,17 @@ export const validateFindProps = <T extends object = Record<string, unknown>>(
 
   // Query-specific validations
   if (!isScan) {
-    const queryProps = props as {
-      indexName?: string;
-      sk?: _t.SkCond;
-      pk?: unknown;
-    };
-    if (!queryProps.pk) {
+    if (!props.pk) {
       throw new Error(
         `[ddb] [find] "pk" is required for Query mode. Use scan: true to scan without pk.`
       );
     }
     if (
-      queryProps.sk &&
-      "key" in queryProps.sk &&
-      queryProps.sk.key &&
-      queryProps.sk.key !== "sk" &&
-      !queryProps.indexName
+      props.sk &&
+      "key" in props.sk &&
+      props.sk.key &&
+      props.sk.key !== "sk" &&
+      !props.indexName
     ) {
       throw new Error(
         `[ddb] [find] you provided a custom sk but no indexName. If this is a mistake, change this error to a warn.`

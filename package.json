@@ -1,6 +1,6 @@
 {
   "name": "qstd",
-  "version": "0.3.91",
+  "version": "0.3.92",
   "description": "Standard Block component and utilities library with Panda CSS",
   "author": "malin1",
   "license": "MIT",
@@ -59,7 +59,7 @@
     "typecheck:perf": "tsc --noEmit --extendedDiagnostics",
     "typecheck:trace": "tsc --noEmit --generateTrace ./performance/ts-trace",
     "analyze:tsserver": "bash performance/analyze-tsserver.sh",
-    "lint": "eslint ."
+    "lint": "oxlint ."
   },
   "peerDependencies": {
     "framer-motion": "^12.38.0",
@@ -83,6 +83,7 @@
     "@fortawesome/free-solid-svg-icons": "^7.0.0",
     "@fortawesome/react-fontawesome": "^3.0.1",
     "arktype": "2",
+    "await-spawn": "^4.0.2",
     "aws-lambda": "latest",
     "date-fns": "4",
     "music-metadata-browser": "^2.5.11",
@@ -90,29 +91,22 @@
     "react-icons": "^5.5.0",
     "react-loader-spinner": "^6.1.6",
     "react-spinners": "^0.17.0",
-    "use-immer": "^0.11.0",
-    "await-spawn": "^4.0.2",
-    "signale": "^1.4.0"
+    "signale": "^1.4.0",
+    "use-immer": "^0.11.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@eslint/json": "^0.13.2",
     "@pandacss/dev": "^1.2.0",
-    "@pandacss/eslint-plugin": "^0.2.14",
     "@types/aws-lambda": "latest",
     "@types/node": "^22.10.5",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.8",
     "@types/signale": "^1.4.7",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
     "framer-motion": "^12.38.0",
-    "globals": "^16.2.0",
+    "oxlint": "^1.60.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tsup": "^8.0.0",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.46.4",
     "vitest": "^3.1.4"
   },
   "keywords": [

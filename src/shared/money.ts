@@ -25,7 +25,7 @@ export const convertToUsd = (cents?: number | string, opts: Opts = {}) => {
  * @returns
  */
 export const convertToCents = (dollars: string | number) => {
-  const str = dollars.toString().replaceAll(/[\$,]+/g, "");
+  const str = dollars.toString().replaceAll(/[$,]+/g, "");
   return Number(str) * 100;
 };
 

@@ -38,7 +38,7 @@ export const create = (props?: {
         // Whether to automatically convert empty strings, blobs, and sets to `null`.
         convertEmptyValues: false, // false, by default.
         // Whether to remove undefined values while marshalling.
-        removeUndefinedValues: false, // false, by default.
+        removeUndefinedValues: true, // false, by default.
         // Whether to convert typeof object to map attribute.
         convertClassInstanceToMap: false, // false, by default.
       },
@@ -156,7 +156,7 @@ export async function find<T extends object = Record<string, unknown>>(
   try {
     const TableName = _f.getTableNameOrThrow(props.tableName, ddb.tableName);
     const { filters, projection, debug } = props;
-    const isScan = "scan" in props && props.scan === true;
+    const isScan = props.scan === true;
 
     _f.validateFindProps(props, TableName);
 
@@ -165,14 +165,15 @@ export async function find<T extends object = Record<string, unknown>>(
     const values: Record<string, NativeAttributeValue> = {};
 
     // Only build KeyConditionExpression for Query mode
-    const KeyConditionExpression = isScan
-      ? undefined
-      : _f.buildKeyConditionExpression(
-          (props as { pk: { key?: string; value: string } }).pk,
-          (props as { sk?: _t.SkCond }).sk,
-          names,
-          values
-        );
+    let KeyConditionExpression: string | undefined;
+    if (!isScan) {
+      KeyConditionExpression = _f.buildKeyConditionExpression(
+        props.pk,
+        props.sk,
+        names,
+        values
+      );
+    }
 
     const FilterExpression = filters
       ? _f.buildFilterExpression(filters, names, values)
@@ -198,42 +199,45 @@ export async function find<T extends object = Record<string, unknown>>(
     let pageCount = 0;
     let totalItems = 0;
 
-    do {
+    let shouldContinue = true;
+
+    while (shouldContinue) {
       // Check safety limits before querying
       if (props.maxPages && pageCount >= props.maxPages) break;
 
-      const command = isScan
-        ? new ScanCommand({
-            TableName,
-            IndexName: props.indexName,
-            FilterExpression,
-            Limit: props.limit,
-            ProjectionExpression,
-            ExclusiveStartKey: startKey,
-            ConsistentRead: props.strong,
-            ...(Object.keys(names).length > 0 && {
-              ExpressionAttributeNames: names,
-            }),
-            ...(Object.keys(values).length > 0 && {
-              ExpressionAttributeValues: values,
-            }),
-          })
-        : new QueryCommand({
-            TableName,
-            IndexName: props.indexName,
-            KeyConditionExpression,
-            FilterExpression,
-            Limit: props.limit,
-            ProjectionExpression,
-            ExclusiveStartKey: startKey,
-            ConsistentRead: props.strong,
+      let command: ScanCommand | QueryCommand;
+
+      if (isScan) {
+        command = new ScanCommand({
+          TableName,
+          IndexName: props.indexName,
+          FilterExpression,
+          Limit: props.limit,
+          ProjectionExpression,
+          ExclusiveStartKey: startKey,
+          ConsistentRead: props.strong,
+          ...(Object.keys(names).length > 0 && {
             ExpressionAttributeNames: names,
+          }),
+          ...(Object.keys(values).length > 0 && {
             ExpressionAttributeValues: values,
-            ScanIndexForward:
-              (props as { sort?: "asc" | "desc" }).sort === "desc"
-                ? false
-                : true,
-          });
+          }),
+        });
+      } else {
+        command = new QueryCommand({
+          TableName,
+          IndexName: props.indexName,
+          KeyConditionExpression,
+          FilterExpression,
+          Limit: props.limit,
+          ProjectionExpression,
+          ExclusiveStartKey: startKey,
+          ConsistentRead: props.strong,
+          ExpressionAttributeNames: names,
+          ExpressionAttributeValues: values,
+          ScanIndexForward: props.sort === "desc" ? false : true,
+        });
+      }
 
       const result = await ddb.client.send(command);
       const pageItems = (result.Items ?? []) as T[];
@@ -245,9 +249,15 @@ export async function find<T extends object = Record<string, unknown>>(
       // Check if should continue recursing
       if (props.recursive) {
         // Check max items limit
-        if (props.maxItems && totalItems >= props.maxItems) break;
+        if (props.maxItems && totalItems >= props.maxItems) {
+          shouldContinue = false;
+          continue;
+        }
         // No more pages
-        if (!startKey) break;
+        if (!startKey) {
+          shouldContinue = false;
+          continue;
+        }
         // Check recursive condition
         if (typeof props.recursive === "function") {
           const page: _t.RawResponse<T> = {
@@ -256,15 +266,15 @@ export async function find<T extends object = Record<string, unknown>>(
             count: result.Count ?? 0,
             items: pageItems,
           };
-          const shouldContinue = props.recursive(page, pageCount, totalItems);
-          if (!shouldContinue) break;
+          shouldContinue = props.recursive(page, pageCount, totalItems);
+          continue;
         }
-        // else recursive === true, continue
+        continue;
       } else {
         // Not recursive, stop after first page
-        break;
+        shouldContinue = false;
       }
-    } while (true);
+    }
 
     // Build raw response
     const rawResponse: _t.RawResponse<T> = {

@@ -38,7 +38,12 @@ const MotionDiv = _l.motionTags.div;
 // Public container for callers to define their own menu surface.
 // Keep it simple like other Block compound components.
 export function MenuContainer(props: _t.BaseBlockProps) {
-  const { children, onAnimationStart, onAnimationComplete, ...rest } = props;
+  const {
+    children,
+    onAnimationStart: _onAnimationStart,
+    onAnimationComplete: _onAnimationComplete,
+    ...rest
+  } = props;
   return (
     <Div {...rest} role="menu" data-menu-container>
       {children}
